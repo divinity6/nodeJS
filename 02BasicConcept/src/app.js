@@ -9,7 +9,9 @@ const http = require( 'http' );
  * @return { Server } server - 서벅 객체를 반환한다
  */
 const server = http.createServer( ( req , res ) => {
-    console.log( req );
+    console.log( "req.url" , req.url ); // /
+    console.log( "req.method" , req.method );
+    console.log( "req.headers" , req.headers );
     process.exit();
 } );
 
