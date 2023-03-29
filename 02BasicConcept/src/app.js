@@ -1,4 +1,5 @@
 const http = require( 'http' );
+const fs = require( 'fs' );
 
 /**
  * 서버생성시 꼭 필요
@@ -9,10 +10,36 @@ const http = require( 'http' );
  * @return { Server } server - 서벅 객체를 반환한다
  */
 const server = http.createServer( ( req , res ) => {
-    console.log( "req.url" , req.url ); // /
-    console.log( "req.method" , req.method );
-    console.log( "req.headers" , req.headers );
-    process.exit();
+    const url = req.url;
+    const method = req.method;
+
+    /** 최상위 도메인에 접속했을 경우 */
+    if( '/' === url ){
+        res.write( '<html>' );
+        res.write( '<head><title>Enter Message</title></head>' );
+        res.write( '<body><form action="/message" method="POST"><input type="text" name="message" /><button type="submit">Send</button></form></body>' );
+        res.write( '</html>' );
+        return res.end();
+    }
+
+    /** POST 요청으로 message path 에 도착했을 경우 */
+    if ( '/message' === url && 'POST' === method ){
+        /** 현재 서버 파일위치에 message.txt 파일 생성 */
+        fs.writeFileSync( 'message.txt' , 'DUMMY' );
+        res.writeHead( 302 , {
+            Location : '/'
+        } );
+        return res.end();
+    }
+    /** 응답유형 데이터 정보 */
+    res.setHeader( 'Content-Type' , 'text/html' );
+    res.write( '<html>' );
+    res.write( '<head><title>My First Page</title></head>' );
+    res.write( '<body><h1>Hello from my Node.js Server</h1></body>' );
+    res.write( '</html>' );
+    /** res 에 end 를 작성한 후에는 write 를 계속해서 작성할 수 없다 */
+    res.end();
+    // process.exit();
 } );
 
 /**

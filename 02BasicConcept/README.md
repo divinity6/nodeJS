@@ -144,3 +144,21 @@
 
 
 - headers : http header
+
+---
+
+### Response
+
+- setHeader : 응답유형 메시지 정보( Content-Type 등 )
+
+
+- write : 응답 데이터 작성
+
+
+- end : 응답 데이터 작성 마무리
+
+
+- writeHead : 메타정보를 한꺼번에 입력할 수 있게 해준다
+
+
+- writeFileSync : 파일시스템
