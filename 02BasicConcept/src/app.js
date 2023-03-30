@@ -24,8 +24,23 @@ const server = http.createServer( ( req , res ) => {
 
     /** POST 요청으로 message path 에 도착했을 경우 */
     if ( '/message' === url && 'POST' === method ){
-        /** 현재 서버 파일위치에 message.txt 파일 생성 */
-        fs.writeFileSync( 'message.txt' , 'DUMMY' );
+
+        const body = [];
+        req.on( 'data' , ( chunk ) => {
+            console.log( "data chunk" , chunk );
+            body.push( chunk );
+        } );
+
+        req.on( 'end' , () => {
+            /** 새로운 Buffer 가 생성되고 body 안에 있는 데이터가 추가된다 */
+            const parseBody = Buffer.concat( body ).toString();
+            console.log( "end parseBody" , parseBody );
+
+            const message = parseBody.split( '=' )[ 1 ];
+            /** 현재 서버 파일위치에 message.txt 파일 생성 */
+            fs.writeFileSync( 'message.txt' , message );
+        } );
+
         res.writeHead( 302 , {
             Location : '/'
         } );
