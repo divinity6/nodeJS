@@ -31,20 +31,42 @@ const server = http.createServer( ( req , res ) => {
             body.push( chunk );
         } );
 
-        req.on( 'end' , () => {
+        return req.on( 'end' , () => {
             /** 새로운 Buffer 가 생성되고 body 안에 있는 데이터가 추가된다 */
             const parseBody = Buffer.concat( body ).toString();
             console.log( "end parseBody" , parseBody );
 
             const message = parseBody.split( '=' )[ 1 ];
-            /** 현재 서버 파일위치에 message.txt 파일 생성 */
-            fs.writeFileSync( 'message.txt' , message );
+            /**
+             * @name writeFileSync
+             *
+             *  - 현재 서버 파일위치에 message.txt 파일 생성
+             *
+             * --> writeFileSync 메서드에서 sync 는 동기화를 뜻한다
+             *
+             * --> 즉 async await 처럼, writeFile , 즉, file 이 생성되기전까지
+             *     기다리는 메서드이다
+             *
+             * */
+            // fs.writeFileSync( 'message.txt' , message );
+
+            /**
+             * @name writeFile
+             *
+             * - 반대로 writeFile 메서드는 callback 을 이용하여 파일처리가 끝난이후 시점을
+             *   처리할 수 있다
+             *
+             * - 파라미터로 받는 값은 err 정보다
+             */
+            fs.writeFile( 'message.txt' , message , ( err ) => {
+                res.writeHead( 302 , {
+                    Location : '/'
+                } );
+                return res.end();
+            });
+
         } );
 
-        res.writeHead( 302 , {
-            Location : '/'
-        } );
-        return res.end();
     }
     /** 응답유형 데이터 정보 */
     res.setHeader( 'Content-Type' , 'text/html' );

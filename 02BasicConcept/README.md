@@ -210,3 +210,309 @@ req.on( 'data' , ( chunk ) => {} );
 req.on( 'end' , () => {} );
 
 ````
+
+### 비동기 코드
+
+- fileSystem 객체의
+  - writeFileSync 메서드는 다음구문을 분석하지 않고,
+  - file 을 다쓸때까지 기다리는 메서드다
+  - 반대로 writeFile 메서드는 콜백으로 
+  - file 동작이 완료된 후 실행할 이벤트를 등룍할 수 있다
+
+---
+
+### Single Thread, Event Loop & Blocking Code
+
+> Incoming Requests
+>
+> ---
+> 
+> < Your Code > | **Single JavaScript Thread** 
+> 
+>> --> ( start ) --> Event Loop
+>>
+>> **Handle Event Callbacks**
+> 
+>> --> fs ( Send to ) --> Worker Pool --> Different Thread(s)!
+>>
+>> --> Event Loop
+>>
+>> **Do the Heavy Lifting**
+>  
+
+- Node.js 코드에서 꼭 기억해야하는 것은 Node.js 는 
+
+
+- Single Thread Javascript 만 사용한다는 것이다
+  - Thread : 
+    - 운영체제 프로세스로 하나의 스레드만 사용한다면
+    - 어떻게 여러개의 요청을 처리할 수 있을까?
+    - 각 요청마다 Thread 를 지정할 수 없기 때문에,
+    - 결국 모두 하나의 Thread 에서 실행되고
+    - 보안상의 문제가 제기될 것이다
+      - ( A 요청 데이터와 B 요청의 데이터가 서로 접근하는등... )
+    - 성능에서 제일 중요한 점으로
+    - 요청 A 를 처리중이라면, 요청 B 는 처리할 수 없는 것인가?
+    - Node.js 는 둘 다 처리할 수 있다
+
+
+- fileSystem( fs ) 에 접근할 수 있는 코드가 있다고 할 때,
+
+
+- 보통 파일을 다루는 작업은 시간이 오래걸린다
+  - 파일의 크기가 클수도있고, 꼭 바로 완료되는 것은 아니다
+
+
+- 따라서 만약 첫번째 요청에서 파일을 처리하고 있을때,
+
+
+- 두 번째 요청은 처리할 수 없기 때문에 기다려야하거나, 거부되기도 한다
+  - ( 해당 사용자에 의해 web page 가 다운되는 것이다 )
+
+
+- 중요한 구조체인 Event Loop 는 Node.js 가 시작되면 자동으로 시작된다
+
+
+- Event Loop 는 Event Callback 을 다룬다
+
+
+- 특정 event 가 일어났을때, Event Loop 가 해당 event 를 처리한다
+  - ( 모든 콜백을 파악하고 있어서 코드를 실행한다 )
+
+
+- 그러나 시간이 오래걸리는 파일 연산에는 도움되지 않는다
+
+
+- Event Loop 는 **파일연산등에 대한 연산들은 다루지 않는다**
+
+
+- 오직 완성된 쓰기 파일에 정의한 콜백에 대한 코드들만 처리한다
+  - ( 금방 끝낼 수 있는 코드들 )
+
+
+- 대신 파일 시스템 연산등의 오래걸리는 연산은 Worker Pool( 워커 풀 )에 보내진다
+  - ( 이 역시 Node.js 가 자동으로 시작하고 관리한다 )
+
+
+- 무거운 작업을 담당하는 Worker Pool 은 
+  - Javascript 코드로부터 완전히 분리되어 
+  - 다른 여러 스레드에서 작동할 수 있다
+  - ( 앱을 실행하는 운영 체제와 연관이 있다 )
+
+
+- 코드로부터 분리되어 있기 때문에 무거운 작업을 처리할 수 있다
+
+
+- 파일과 관련된 작업을 할 때는, 
+  - Worker Pool 의 Worker 가 코드, 요청 , Event Loop 와 
+  - 분리된 상태에서 작업을 수행한다
+
+
+- 그러나 Event Loop 와는 한가지 연결점이 있다
+  - Worker 가 작업을 끝마치면, 
+  - 예를들어 파일 읽기를 마치면 읽기 파일연산에 대한 콜백이 실행되는데
+  - EventLoop 가 event 와 callback 을 책임지기 때문에,
+  - 결국 Event Loop 에 들어가게 될 것이다
+
+
+- Node.js 가 알맞은 callback 을 실행시킨다
+
+
+- 이렇게 배후에서는 많은 일이 일어나지만 실제로 이런 수행들을 code 로 작성할 필요가 없다
+
+---
+
+### The Event Loop
+
+>
+> **Event Loop**
+> 
+>> **Timers**
+>>
+>> Execute setTimeout,
+>>
+>> setInterval Callbacks
+> 
+>> **Pending Callbacks**
+>>
+>> Execute I/O-related
+>>
+>> ( I/O : Input & Output ) : Disk & Network Operations
+>>
+>> Callbacks that were deferred
+>
+>> **Poll**
+>>
+>> Retrieve new I/O events,
+>>
+>> execute their callbacks
+>
+>> **Check**
+>>
+>> Execute setImmediate()
+>>
+>> callbacks
+>
+>> **Close Callbacks**
+>>
+>> Execute all 'close' event
+>>
+>> callbacks
+> 
+> ( refs === 0 ) -->
+> 
+> **process.exit** 
+
+- Loop Cycle
+
+---
+
+#### Timers
+
+
+- Event Loop 란 Node.js 에 의해 실행되어 
+
+
+- Node.js 를 계속 실행하도록 하는 Loop 로 모든 callback 을 처리한다
+
+
+- 또한 callback 을 처리하는데 일정한 순서가 있다
+  - ( Looping 을 계속하는 Loop! )
+
+
+- 새로운 Loop 가 시작될 때마다 실행해야하는 TimerCallback 이 있는지 체크한다
+
+
+- setTimeout 을 설정하면, 타이머가 끝나면 실행할 콜백을 Node.js 가 알고 있어서,
+
+
+- 새로운 Loop 가 일어날 때마다, setTimeout callback 을 실행할 것이다
+
+---
+
+#### Pending Callbacks
+
+- 다음으로 다른 callback 등을 체크하는데 
+  - 예를 들어 읽기, 쓰기 파일의 연산이 끝나 callback 이 있을 수 있는데, 
+  - 이런 callback 을 실행한다
+
+
+- **I/O** ( input & output ) : 읽기 쓰기등 보통 오래걸리는 블로킹 연산을 가르킨다
+
+
+- 이때, Node.js 가 적절한 시점에 이 단계를 떠나는데, 
+
+
+- 만약, 처리되지 않은 callback 이 너무 많이 있다면,
+
+
+- Loop 를 이어가는 대신, 남은 callback 을 다음 Loop 에서 실행하도록 미룬다
+
+---
+
+#### Poll
+
+- 이렇게 열린 callback 들을 다 처리하고 나면, **Poll** 단계에 돌입하게 된다
+
+
+- Poll 단계에서는 Node.js 가 새로운 I/O 이벤트를 찾아 최대한 해당 event 의 callback 을 빨리 실행하도록 한다
+
+
+- 불가능하다면 실행을 미루고, Pending Callbacks 로 등록하게 된다
+
+
+- 또한 Timer 가 다되어 실행해야하는 callback 도 확인하는데, 
+  - 만약, 존재한다면 Timers 단계로 넘어가 바로 실행하기도 한다
+  - ( 즉, Loop 를 이어가지 않고 다시 돌아가기도 한다 )
+
+
+- 만약 없다면 Loop 가 계속된다
+
+---
+
+#### Check
+
+- Check 단계에서는 setImmediate callback 이 실행된다
+
+
+- setImmediate : 
+  - setTimeout 이나, setInterval 처럼 바로 실행되기는 하지만,
+  - 반드시 열린 callback 들이 모두 실행된 다음에 실행된다
+
+
+- 보통 setTimeout 보다 1ms 만큼 빠르지만, 현재 주기가 끝나거나, 
+
+
+- 적어도 현 반복에 열린 callback 을 처리한 후에 일어난다
+
+
+- 그 후에는 이론적인 단계로 들어선다
+
+---
+
+#### Close Callbacks
+
+- 이제 close event callback 이 모두 실행된다
+
+
+- close event callback 을 등록했다면, 이시점에 해당 callback 을 실행한다
+
+---
+
+#### 정리
+
+- 먼저 Timer callback 을 실행하고, 
+
+
+- I/O 관련 callback 및 다른 event callback 을 실행 및
+
+
+- setImmediate callback 을 실행 후
+
+
+- 마지막으로 close event callback 을 실행한다
+  - ( close event callback 은 따로 처리하게 된다 )
+
+---
+
+#### process.exit
+
+- 그 후, 프로그람을 종료하는데 그 전에 등록한 event handler 가 남아있는지 확실히 해야한다
+
+
+- Node.js 는 내부적으로 열린 event Listener 를 추적해서,
+
+
+- references 나 ref 로 숫자를 센다
+
+
+- 새로운 callback 이 등록되거나, 새로운 event listener 가 등록될 때마다 1 씩 증가한다 
+  - ( 추후 처리해야할 작업이 늘어날때마다... )
+
+
+- 반대로 eventListener 가 필요없어지거나, 콜백이 완료될때마다 1 씩 감소한다
+
+
+- 특히, server 환경에서( createServer ) listen 을 통해 들어오는 요청을 듣는 event 들은
+
+
+- 절대 끝나지 않는 event 이기 때문에, **refs 는 항상 1 이상일 것이다**
+
+
+---
+
+### 보안
+
+- createServer 의 listen 메서드의 callback 은 들어오는 새 요청마다 실행되고,
+
+
+- 해당 요청에만 실행된다는 뜻이므로, 요청 및 응답 객체에 어떤 작업을 해도,
+
+
+- 다른 요청 및 응답 객체에는 유출되지 않는다
+
+
+- 즉, 각 가능의 범위를 다른 기능이 접근할 수 없고, 
+
+
+- JS 원리에 따라 기본으로 분리가 되어있는 것이다
