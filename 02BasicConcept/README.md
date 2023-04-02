@@ -516,3 +516,52 @@ req.on( 'end' , () => {} );
 
 
 - JS 원리에 따라 기본으로 분리가 되어있는 것이다
+
+---
+
+### routes.js
+
+````javascript
+/** 
+ * @test.js
+ * 
+ * - Node.js 전역객체인 Module 
+ *   객체에 export 하면 require 로 사용할 수 있다
+ * 
+ * */
+module.export = myObject;
+
+/**
+ * @test.js
+ *
+ * - 이와 같은 방식으로도 내보낼 수 있다
+ *
+ * */
+module.export.myObject = myObject;
+/**
+ * - 앞에 module 을 생략해도된다
+ */
+exports.myObject = myObject;
+
+/**
+ * @app.js
+ * 
+ * - 글로벌 모듈이 아니기 때문에 사용할때는,
+ *   해당 파일 경로를 입력한다
+ */
+require( './test.js' );
+
+````
+
+- url 확인등 라우팅 로직을 포함한 파일
+
+
+- url 라우팅 관련 로직을 분리한다
+
+
+- 그 후 createServer 콜백 핸들러에 해당 import 한 함수를 사용한다
+
+
+- Node.js 의 모듈 시스템에서 중요한 점은 파일 내용의 캐시가 저장되고, 외부에서 수정할 수 없다는 것이다
+  - ( 만약 위 코드의 routes 객체에 새로운 프로퍼티를 추가할 수 없다 )
+  
