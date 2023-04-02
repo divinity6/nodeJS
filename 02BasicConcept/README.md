@@ -565,3 +565,74 @@ require( './test.js' );
 - Node.js 의 모듈 시스템에서 중요한 점은 파일 내용의 캐시가 저장되고, 외부에서 수정할 수 없다는 것이다
   - ( 만약 위 코드의 routes 객체에 새로운 프로퍼티를 추가할 수 없다 )
   
+
+---
+
+### Module Summary
+
+#### Program Lifecycle & Event Loop
+
+- Node.js 는 non-blocking 방식으로 동작한다
+  - non-blocking 방식 :
+  - 즉, **함수를 호출하더라도, 그함수의 완료여부를 신경쓰지 않고 계속 진행**
+  - ( 제어권을 해당 함수에 넘겨주지 않음 )
+  - 단지 동기상태일때는 그 함수가 완료되었는지 자꾸 물어봐고 완료되면 다음코드를 실행함
+
+
+- 수많은 callback 과 event 들을 등록해두면, 특정 작업이 끝난 후에
+
+
+- Node.js 가 해당 코드를 작동시킨다
+
+
+- loop 는 계속해서 새로운 event 를 기다리다가, 
+
+
+- event 가 발생하면, 운영체제가 어떤 조치를 취할 수 있도록 한다음, 스레드를 비운다
+
+#### Asynchronous Code
+
+- JS 코드는 non-blocking 방식이어야 해서, 
+
+
+- callback 등 event 기반 방식을 이용한다
+  - 코드가 바로 실행되서 메인 스레드가 막히지 않도록
+  - 등록해서 나중에 실행하게 한다
+
+
+- **어느 경우에도 메인 스레드가 막히면 안되게 설계되어 있다**
+
+#### Requests & Response
+
+- 요청 데이터안의 chunks 들을 파싱
+  - ( Streams , Buffer )
+
+
+- 중복 응답을 보내지 않게 조심해야 한다
+  - 하나의 res 가 끝난 후 다른 res 를 보내지 않아야하는데,
+  - 비동기식 특성에 따라, 바로 실행되지 않을 수 있다는 사실을
+  - 잊으면 실수하기 쉽다
+
+
+- 따라서, 코드를 어디에 작성하느냐가 중요하다( callback 등... )
+
+#### Node.js & Core Modules
+
+- Node.js 에는 내장된 글로벌 코어 모듈을 주로 사용한다
+  - ( http , fs , path ... )
+
+
+- coreModule 로 exports 를하고 require 로 불러올 수 있다
+
+---
+
+- 공식 Node.js 자료: https://nodejs.org/en/docs/guides/
+
+
+- 모든 코어 모듈에 대한 Node.js 참고자료: https://nodejs.org/dist/latest/docs/api/
+
+
+- Node.js 이벤트 루프 추가자료: https://nodejs.org/en/docs/guides/event-loop-timers-and-nexttick/
+
+
+- 블로킹 및 논블로킹 코드:https://nodejs.org/en/docs/guides/dont-block-the-event-loop/
