@@ -39,3 +39,19 @@
 
 - **Terminal 은 기본적으로 전역( global dependency )에서 해당 명령을 검색**하기 때문에 package.json 의 script 에 명령어로 추가해줘야 사용할 수 있다
   - ( script 는 로컬에서 검색 후 해당 패키지를 실행한다 )
+
+---
+
+### Types of Errors
+
+- Syntax Errors
+  - 가장 많이 발생하는 오류 유형
+
+
+- Runtime Errors
+  - 코드 실행이 멈춰버리는 유형
+
+
+- Logical Errors
+  - 가장 찾아내기 어려움
+  - 앱은 제대로 작동하지 않지만, 오류 메시지는 뜨지 않을 경우
