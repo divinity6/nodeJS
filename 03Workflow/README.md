@@ -55,3 +55,23 @@
 - Logical Errors
   - 가장 찾아내기 어려움
   - 앱은 제대로 작동하지 않지만, 오류 메시지는 뜨지 않을 경우
+
+---
+
+### nodemon
+
+- nodejs 환경에서 디버깅 중이나 실행 중 변경사항이 일어날 경우 자동으로 서버를 재시작해준다
+
+
+- configuration : nodemon 설치경로 입력 
+  - 예) Node parameter : node_modules/nodemon/bin/nodemon.js
+
+---
+
+- Node.js 디버깅에 대한 추가 정보:
+  - https://nodejs.org/en/docs/guides/debugging-getting-started/
+
+
+
+- Visual Studio Code에서 노드 디버깅하기: 
+  - https://code.visualstudio.com/docs/nodejs/nodejs-debugging
