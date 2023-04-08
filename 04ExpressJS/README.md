@@ -42,3 +42,54 @@
   - **프레임워크** : 도구와 규칙의 모음
   - 어플리케이션과 코드를 어떤 구조로 구축해야할지,
   - 어떻게 코드를 작성해야할지에 대한 규칙등
+
+---
+
+### Middleware
+
+- express.js 는 미들웨어와 깊게 연관되어 있고,
+  - 최종적으로 미들웨어₩ 들어오는 요청을 express.js 에 의한,
+  - 다양한 함수를 통해 자동으로 이동하는 것이다
+  - https://patterns-dev-kr.github.io/design-patterns/mediator-middleware-pattern/
+  - 다양한 기능들을 함수하나로 처리하는 것이 아닌, 다양한 객체들로 나눠 처리할 수 있다
+
+
+````javascript
+const app = express();
+/**
+ * - use 메서드를 사용하면,
+ *
+ * - express.js 에서 제공하는 다양한 미들웨어 함수들을 이용할 수 있다
+ * 
+ * - 함수를 첫번째 파라미터로 작성하면, 들어온느 모든 요청에 대해 동작한다
+ * 
+ * - next 는 함수로 이 함수를 실행하면,
+ * 
+ * - 해당 app.use 콜백이 실행되고, 다음 use 에 작성한 콜백이 실행되도록 해준다
+ */
+app.use( ( req , res , next ) => {
+  console.log( 'In the middleware!!' );
+  next();
+} );
+
+/**
+ *  next 를 실행하면 위의 코드를 실행 후, 아래에 있는 이 app.use 를 실행한다
+ */
+app.use( ( req , res , next )=> {
+  console.log( 'In another middleware!!' );
+} );
+
+
+````
+
+````javascript
+
+/**
+ * - send : express.js 에서 제공하는 유틸 메서드
+ * 
+ * - 기본 제공 타입은 text/html 이다
+ */
+res.send( any )
+
+
+````
