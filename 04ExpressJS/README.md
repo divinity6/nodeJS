@@ -61,7 +61,7 @@ const app = express();
  *
  * - express.js 에서 제공하는 다양한 미들웨어 함수들을 이용할 수 있다
  * 
- * - 함수를 첫번째 파라미터로 작성하면, 들어온느 모든 요청에 대해 동작한다
+ * - 함수를 첫번째 파라미터로 작성하면, 들어오는 모든 요청에 대해 동작한다
  * 
  * - next 는 함수로 이 함수를 실행하면,
  * 
@@ -93,3 +93,44 @@ res.send( any )
 
 
 ````
+
+### Routing
+
+- express.js 공식 문서
+  - https://expressjs.com/en/4x/api.html
+
+
+- app.use 의 첫 번째 파라미터로 path 를 설정할 수 있고, 파라미터만 넘겨줄 수도있다
+  - 기본값은 '/' 이다
+  - / 의 뜻은 도메인 뒤에오는 Path 가 / 라는뜻이 아니라,
+  - 뒤에오는 Path 가 / 로 시작한다는 뜻이다
+
+
+````javascript
+
+app.use( '/add-product' , ( req , res , next )=> {
+  console.log( 'In another middleware!!' );
+  res.send( '<h1>Hello from Express!</h1>' );
+} );
+
+app.use( '/' , ( req , res , next )=> {
+  console.log( 'In another middleware!!' );
+  res.send( '<h1>Hello from Express!</h1>' );
+} );
+
+````
+
+- add-product 요청을 위에 작성하는 이유는,
+  요청이 파일 위에서부터 아래로 내려가고,
+
+
+- next() 를 호출하지 않으면, 다음 미들웨어로 넘어가지 않기 때문이다
+
+
+- 즉 add-product 경로를 만나면, 다음 use 를 실행하지 않는다!
+
+
+- 위의 코드는 요청을 여러 미들웨어로 라우팅해준다
+
+
+- **run 에 로그가 두개찍히는 이유는, favicon 요청때문!!**
