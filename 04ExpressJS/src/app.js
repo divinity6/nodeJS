@@ -1,14 +1,16 @@
 const express = require( 'express' );
+const bodyParser = require( 'body-parser' );
 
 const app = express();
 
 /**
- * - 맨 위의 route 부터 처리
+ * - 본문 해석 미들웨어
+ *
+ * - urlencoded 메서드는 내부에서 next 를 호출하여
+ *
+ * - 다음 라우팅 미들웨어를 실행하도록 해준다
  */
-app.use( '/' , ( req , res , next )=> {
-    console.log( 'This always runs!' );
-    next();
-} )
+app.use( bodyParser.urlencoded({ extended : false } ) );
 
 /**
  * - add-product 요청을 위에 작성하는 이유는,
@@ -19,8 +21,19 @@ app.use( '/' , ( req , res , next )=> {
  * - 즉 add-product 경로를 만나면, 다음 use 를 실행하지 않는다!
  */
 app.use( '/add-product' , ( req , res , next )=> {
-    console.log( 'In another middleware!!' );
-    res.send( '<h1>The Add Product Page!</h1>' );
+    res.send( '' +
+        '<form action="/product" method="POST">' +
+            '<input type="text" name="title" />' +
+            '<button type="submit">Add Product</button>' +
+        '</form>' );
+} );
+
+/**
+ * - 라우팅 경로가 다르기때문에 / 앞이면, 어디에 둬도 충돌하지 않는다
+ */
+app.use( '/product' , ( req , res , next ) => {
+    console.log( 'req.body' ,  req.body );
+    res.redirect('/')
 } );
 
 /**
@@ -29,7 +42,6 @@ app.use( '/add-product' , ( req , res , next )=> {
  * - express.js 에서 제공하는 다양한 미들웨어 함수들을 이용할 수 있다
  */
 app.use( '/' , ( req , res , next )=> {
-    console.log( 'In another middleware!!' );
     res.send( '<h1>Hello from Express!</h1>' );
 } );
 

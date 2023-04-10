@@ -134,3 +134,41 @@ app.use( '/' , ( req , res , next )=> {
 
 
 - **run 에 로그가 두개찍히는 이유는, favicon 요청때문!!**
+
+````javascript
+
+app.use( '/product' , ( req , res , next ) => {
+    console.log( 'req.body' ,  req.body );
+    res.redirect('/');
+} );
+
+````
+
+- redirect 는 expressJS 의 또다른 편의성 함수
+
+
+- 기본적으로 req 는 요청 본문을 해석하지 않는다
+
+
+- 따라서, 요청 본문을 해석할 미들웨어를 따로 둬야한다
+
+
+- 보통 요청 본문을 해석하는 미들웨어는 라우팅 미들웨어 이전에 두는데,
+
+
+- 요청이 어디로 향하든 본문이 먼저 분석되어야 하기 때문이다 
+
+````javascript
+
+app.use( bodyParser.urlencoded() );
+
+````
+
+- 본문 해석 미들웨어
+  - urlencoded 메서드는 내부에서 next 를 호출하여
+  - 다음 라우팅 미들웨어를 실행하도록 해준다
+
+
+- 또한 요청 본문을 파싱해준다
+  - 파일등과 같은것은 다른 분석 미들웨어를 사용해야한다
+  - 이것이 express.js 의 높은 확장성이다
