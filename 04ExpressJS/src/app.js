@@ -24,7 +24,9 @@ app.use( shopRoutes );
 
 app.use( adminRoutes );
 
-
+app.use( ( req , res , next ) => {
+    res.status( 404 ).send( '<h1>Page not found</h1>' );
+} );
 
 /**
  * - express 내부에서 createServer 를 해서 서버를 만들어준다

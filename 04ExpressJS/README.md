@@ -198,8 +198,6 @@ app.delete();
 
 ````javascript
 
-const router = express.Router();
-
 // /routes/admin.js
 const router = express.Router();
 
@@ -236,3 +234,28 @@ app.use( adminRoutes );
   - 정확히 일치하는 path 로 매핑된다
   - 따라서, 정확한 path 를 입력하지 않으면 에러가 발생한다
   - 그러나, 순서를 신경쓰는것은 중요한 습관이다
+
+  
+### Error
+
+````javascript
+
+// app.js
+
+// ... 다른 라우팅 파일
+
+app.use( ( req , res , next ) => {
+  res.status( 404 ).send( '<h1>Page not found</h1>' );
+} );
+
+````
+
+- error 페이지를 추가하려면, 모든 요청을 처리하는 router 를 맨 아래 추가해주면 된다
+  - GET 요청 뿐만 아니라, 모든 http 메서드를 처리한다
+
+
+- res 로 응답 처리 전에 메서드 체이닝으로 응답요청을 처리할 수 있다
+  - setHeader
+  - status 등...
+  - 단지 마지막이 send 메서드이기만 하면 된다
+  
