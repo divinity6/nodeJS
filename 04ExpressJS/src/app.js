@@ -4,6 +4,14 @@ const bodyParser = require( 'body-parser' );
 const app = express();
 
 /**
+ * - 내보낸 router 파일을 import
+ * @type {Router}
+ */
+const adminRoutes = require( './routes/admin.js' );
+
+const shopRoutes = require( './routes/shop.js' );
+
+/**
  * - 본문 해석 미들웨어
  *
  * - urlencoded 메서드는 내부에서 next 를 호출하여
@@ -12,38 +20,11 @@ const app = express();
  */
 app.use( bodyParser.urlencoded({ extended : false } ) );
 
-/**
- * - add-product 요청을 위에 작성하는 이유는,
- *   요청이 파일 위에서부터 아래로 내려가고,
- *
- * - next() 를 호출하지 않으면, 다음 미들웨어로 넘어가지 않기 때문이다
- *
- * - 즉 add-product 경로를 만나면, 다음 use 를 실행하지 않는다!
- */
-app.use( '/add-product' , ( req , res , next )=> {
-    res.send( '' +
-        '<form action="/product" method="POST">' +
-            '<input type="text" name="title" />' +
-            '<button type="submit">Add Product</button>' +
-        '</form>' );
-} );
+app.use( shopRoutes );
 
-/**
- * - 라우팅 경로가 다르기때문에 / 앞이면, 어디에 둬도 충돌하지 않는다
- */
-app.use( '/product' , ( req , res , next ) => {
-    console.log( 'req.body' ,  req.body );
-    res.redirect('/')
-} );
+app.use( adminRoutes );
 
-/**
- * - use 메서드를 사용하면,
- *
- * - express.js 에서 제공하는 다양한 미들웨어 함수들을 이용할 수 있다
- */
-app.use( '/' , ( req , res , next )=> {
-    res.send( '<h1>Hello from Express!</h1>' );
-} );
+
 
 /**
  * - express 내부에서 createServer 를 해서 서버를 만들어준다

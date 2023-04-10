@@ -100,7 +100,7 @@ res.send( any )
   - https://expressjs.com/en/4x/api.html
 
 
-- app.use 의 첫 번째 파라미터로 path 를 설정할 수 있고, 파라미터만 넘겨줄 수도있다
+- **app.use** 의 첫 번째 파라미터로 path 를 설정할 수 있고, 파라미터만 넘겨줄 수도있다
   - 기본값은 '/' 이다
   - / 의 뜻은 도메인 뒤에오는 Path 가 / 라는뜻이 아니라,
   - 뒤에오는 Path 가 / 로 시작한다는 뜻이다
@@ -172,3 +172,67 @@ app.use( bodyParser.urlencoded() );
 - 또한 요청 본문을 파싱해준다
   - 파일등과 같은것은 다른 분석 미들웨어를 사용해야한다
   - 이것이 express.js 의 높은 확장성이다
+
+````javascript
+
+app.use();
+app.get();
+app.post();
+app.patch();
+app.put();
+app.delete();
+
+````
+
+- HTTP 메서드의 갯수만큼 해당 요청에만 작동하는 메서드가 존재한다
+
+
+````
+|- /routes            # 라우팅 파일
+|     |-  admin.js    # 매장관리자의 제품생성 처리 관련 라우팅 파일
+|     |
+|     |-  shop.js     # 사용자가 보게될 내용
+````
+
+- 라우팅 관련 코드를 /routes 폴더로 분리
+
+````javascript
+
+const router = express.Router();
+
+// /routes/admin.js
+const router = express.Router();
+
+router.use();
+router.get();
+router.post();
+router.patch();
+router.put();
+router.delete();
+
+module.exports = router;
+
+// app.js
+const adminRoutes = require( './routes/admin.js' );
+
+app.use( adminRoutes );
+
+````
+
+- expressJS 에서 제공하는 router 를 이용하면, 다른 파일에서 app 의 메서드들을 그대로 이용할 수 있다
+
+
+- export 로 내보내고, 해당 경로를 require 로 가져올 수 있다
+
+
+- 이 라우터의 장점은 라우터 자체가 유효한 미들웨어 함수다
+
+
+- 라우트 객체를 이용하여 app.use 에 미들웨어로 등록할 수 있다
+
+
+- app.use 가 아닌, http 메서드를 이용하여 등록하면 
+  - 도메인 뒤의 path 를 포함하는 값이 아니라, 
+  - 정확히 일치하는 path 로 매핑된다
+  - 따라서, 정확한 path 를 입력하지 않으면 에러가 발생한다
+  - 그러나, 순서를 신경쓰는것은 중요한 습관이다
