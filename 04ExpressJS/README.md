@@ -292,3 +292,53 @@ router.post( '/add-product' , ( req , res , next ) => {
 
 - 즉, app.use 메서드의 첫 번째 파라미터로 공통 root 라우터를 지정할 수 있다
   
+---
+
+### views
+
+````
+|- /views                       # View 를 관리하는 디렉터리
+|     |
+|     |-  shop.html             # / 에 방문하는 사용자에게 제공
+|     |
+|     |-  add-product.html      # /admin/add-product 방문하는 사용자에게 제공
+````
+
+- MVC 패턴 중 View 를 관리하는 디렉터리
+
+
+---
+
+### sendFile path
+
+````javascript
+
+// shop.js
+router.get( '/' , ( req , res , next )=> {
+  res.sendFile( path.join( __dirname , '../' , 'views' , 'shop.html' ) );
+} );
+
+````
+
+- res 객체의 메서드 sendFile 로 사용자에게 파일을 전송할 수 있다
+
+
+- 경로의 경우 shop.js 에서부터의 경로가 아닌, shop.js 가 import 된, app.js 의 경로에서부터 시작해야한다
+
+
+- 그러나, / 로 시작하는 경로는 프로젝트 경로가 아닌, 운영체제 루트 폴더를 가르킨다
+
+
+- 따라서, path 를 설정하려면, Node.js 가 제공하는 path 모듈을 사용해야 한다
+
+
+- path 의 join 메서드는 파라미터 값들을 병합해준다
+
+
+- **join 메서드를 사용하는 이유는 리눅스와 윈도우 모두에서 작동하는 방식으로 path 를 생성해주기 때문이다!**
+  - window 에서는 \ 로 경로가잡히고, 리눅스에서는 / 로 경로가 잡히는데,
+  - join 메서드는 이들을 해결해준다
+  - 따라서, 수동으로 경로를 잡는것이 아닌 join 메서드를 사용한다
+
+
+- 또한 __**dirname** 은 해당 파일이 속한 디렉터리 경로를 나타낸다
