@@ -258,4 +258,37 @@ app.use( ( req , res , next ) => {
   - setHeader
   - status 등...
   - 단지 마지막이 send 메서드이기만 하면 된다
+
+---
+
+### Path Filtering
+
+````javascript
+
+// app.js
+app.use( '/admin' , adminRoutes );
+
+// /routes/admin.js
+router.get( '/add-product' , ( req , res , next )=> {
+  res.send( '' +
+          '<form action="/add-product" method="POST">' +
+          '<input type="text" name="title" />' +
+          '<button type="submit">Add Product</button>' +
+          '</form>' );
+} );
+
+router.post( '/add-product' , ( req , res , next ) => {
+  console.log( 'req.body' ,  req.body );
+  res.redirect( '/' );
+} );
+
+````
+
+- 같은 add-product 경로라도, http 메서드가 다르면 다른 라우터가 된다
+
+
+- 오직 /admin 으로 시작하는 router 만이 admin.js 를 탄다
+
+
+- 즉, app.use 메서드의 첫 번째 파라미터로 공통 root 라우터를 지정할 수 있다
   
