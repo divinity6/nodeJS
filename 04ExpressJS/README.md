@@ -413,3 +413,29 @@ app.use( express.static( path.join( __dirname , 'public' ) ) );
 
 
 - 여러개의 정적폴더( public , static )을 등록할 수 있고, 원하는 파일을 찾을때까지 등록한 모든 폴더를 탐색하게 된닽
+
+---
+
+### Module Summary
+
+- express.js 에서 미들웨어 개념은 매우 중요하다
+
+
+- 미들웨어 함수는 요청 객체나 응답 객체를 받아서, 응답 전송을 도와주는 객체다
+
+
+- 응답을 client 로 전송하는게 아닌 이상 next 함수를 호출하는 개념등.
+
+
+- 따라서 미들웨어를 구축해서, 요청을 변환하고, 정보를 읽어내고,
+
+
+- 액세스하는 라우트에 따라 다른 응답을 전송할 수 있다
+
+
+- express.static 을 사용하면 정적파일들을 제공해 줄 수 있다
+
+---
+
+- Express.js 공식 참고자료:  
+  - https://expressjs.com/en/starter/installing.html
