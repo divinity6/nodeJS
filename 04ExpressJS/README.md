@@ -376,3 +376,40 @@ path.dirname( '/Users/username/Documents/example.txt' )
 
 
 - 이방법은 모든 운영체제에서 동작하고 항상 루트파일 경로를 알려준다
+
+
+---
+
+### public/static
+
+
+- 웹 어플리케이션에서 정적 파일( Static file )을 제공하는데 사용되는 폴더이다
+  - ( HTML , CSS , JavaScript )
+  - 서버측에서 동적으로 생성되는 컨텐츠와 달리, 클라이언트 측에서 직접 다운로드되어 실행된다
+  - 처리하는데 많은 시간과 리소스가 들지 않아 성능 개선을 위해 사용된다
+
+
+- 도메인 주소창에 /routes , /views 등으로 접근하면 라우트경로가 일치하지 않기 때문에 접근이 거부된다
+  - 따라서, 라우트 경로에 매핑시켜 파일을 제공해야하는데, 
+  - express.Router 나 다른 미들웨어에서 처리되지 않고, 
+  - 동적으로 생성할 필요가 없는 정적 파일들을 제공해준다
+
+````javascript
+// app.js
+/** public 폴더에 대한 액세스 허  */
+app.use( express.static( path.join( __dirname , 'public' ) ) );
+````
+````html
+<!-- shop.html -->
+<link rel="stylesheet" href="/css/main.css" />
+````
+
+
+- 이렇게 작성하면 사용자가 public 경로에 액세스할 수 있다 
+
+
+- .css , .js 등 어떤 파일을 찾는 요청이라면 자동으로 public 폴더로 포워딩 해준다
+  - 예) /css/main.css
+
+
+- 여러개의 정적폴더( public , static )을 등록할 수 있고, 원하는 파일을 찾을때까지 등록한 모든 폴더를 탐색하게 된닽
