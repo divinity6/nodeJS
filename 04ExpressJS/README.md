@@ -339,6 +339,40 @@ router.get( '/' , ( req , res , next )=> {
   - window 에서는 \ 로 경로가잡히고, 리눅스에서는 / 로 경로가 잡히는데,
   - join 메서드는 이들을 해결해준다
   - 따라서, 수동으로 경로를 잡는것이 아닌 join 메서드를 사용한다
+  - 따라서 join 메서드 안에서는 상위 디렉터리로 가는 경로도 ../ 가 아닌 .. 을 사용할 수 있다
+  
+
+- 또한 **__dirname** 은 해당 파일이 속한 디렉터리 경로를 나타낸다
+
+---
+
+### path helper
+
+````javascript
+
+// path.js
+const path = require( 'path' );
+
+module.exports = path.dirname( process.mainModule.filename );
+
+````
+
+- 폴더 내부에서 상위 경로를 찾을때, ../ 나 .. 을 사용할 수도 있지만, helper 함수를 이용하여 더 좋게 구현할 수 있다
+  - 해당 헬퍼함수는 path.dirname( process.mainModule.filename ) 로 
+  - 진입하는 스크립트가 위치한 디렉터리 경로를 가져오고
+  - 메인 모듈이 어떤 파일에서 시작되었는지 알 수 있다
+  - ( 현재 : app.js )
 
 
-- 또한 __**dirname** 은 해당 파일이 속한 디렉터리 경로를 나타낸다
+````javascript
+
+const path = require( 'path' );
+
+path.dirname( '/Users/username/Documents/example.txt' )
+// /Users/username/Documents
+````
+
+- filePath 문자열에서 디렉터리 경로를 추출하여 반환한다
+
+
+- 이방법은 모든 운영체제에서 동작하고 항상 루트파일 경로를 알려준다
