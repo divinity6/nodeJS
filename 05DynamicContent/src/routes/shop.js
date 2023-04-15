@@ -14,6 +14,7 @@ const router = express.Router();
 router.get( '/' , ( req , res , next )=> {
     console.log( "shop.js" , adminData.products )
     // res.sendFile( path.join( rootDir , 'views' , 'shop.html' ) );
+    const products = adminData.products;
     /**
      * - 모든 view 파일이 views 폴더에 있다고, app.set 으로 정의했기 때문에
      *   경로를 생략해도 되고,
@@ -22,7 +23,7 @@ router.get( '/' , ( req , res , next )=> {
      *
      * - 모든 .pug 파일을 탐색할 것이다
      */
-    res.render( 'shop' )
+    res.render( 'shop' , { prods : products , docTitle : 'Shop' } )
 } );
 
 module.exports = router;

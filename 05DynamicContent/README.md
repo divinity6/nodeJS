@@ -158,3 +158,18 @@ app.get('/', function(req, res) {
 
 
 - view 엔진 설정 및 view 파일의 경로, 이름 데이터를 파라미터로 받는다
+
+
+- 두 번째 파라미터로 해당 렌더링 파일에 값을 전달해 줄 수 있다
+
+````jade
+   each product in prods
+````
+- vue 의 v-for 처럼 반복하는 pug 문법 
+
+
+- pug 를 이용하여 데이터가 변경되면, 자동으로 화면에 렌더링된다( nodemon 이 아닌, 일반 node 로 실행시에도... )
+  - ( 템플릿은 서버측 코드에 포함되지 않고 클라이언트 코드이기 때문 )
+
+- Pug에 대해 더 알고 싶으시다면 다음 링크에서 공식 참고자료를 확인해보세요. 
+  - https://pugjs.org/api/getting-started.html
