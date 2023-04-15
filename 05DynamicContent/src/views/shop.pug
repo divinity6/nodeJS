@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+html(lang="en")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport",content="width=device-width, initial-scale=1.0")
+        meta(http-equiv="X-UA-Compatible",content="ie=edge")
+        title My Shop
+        link(rel="stylesheet",href="/css/main.css" )
+        link(rel="stylesheet",href="/css/product.css" )
+    body
+        // class 를 추가할때는 .뒤에 삽입, 맨앞에 tag 가온다
+        header.main-header
+            nav.main-header__nav
+               ul.main-header__item-list
+                    li.main-header__item
+                        // html attribute 는() 에 삽입
+                        // 그 뒤에 text 입력
+                        a.active(href="/") Shop
+                    li.main-header__item
+                        a(href="/admin/add-product") Add Product

@@ -5,6 +5,17 @@ const path = require("path");
 const app = express();
 
 /**
+ * - pug 라이브러리를 view engine 으로 사용
+ */
+app.set('view engine', 'pug');
+
+/**
+ *  - 서버에서 렌더링 할 뷰가 위치한 디렉토리 경로를 설정하는 역할.
+ *
+ */
+app.set('views', './views');
+
+/**
  * - 내보낸 router 파일을 import
  */
 const adminData = require( './routes/admin.js' );

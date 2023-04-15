@@ -89,3 +89,72 @@
 
 
 - 동적 컨텐츠를 등록하여 html 파일을 얻을 수 있다
+
+---
+
+### Pug
+
+````shell
+npm i --save ejs pug express-handlebars
+````
+
+- 위의 설치한 세개의 파일은 express 에 의존된 패키지들이다
+
+
+- app.set 에 사용자 정의 string 을 넣으면 해당 값을 반환하지만,
+
+
+- built-in string 을 넣으면 두번째 파라미터 값으로 해당 built-in 객체를 설정하겠다는 뜻이다
+  - 예) 'view-engin' , 'pug' : Pug 를 사용하여 view engine 을 설정한다는 뜻
+
+````javascript
+/** app.set 으로 전체 global 구성 값을 설정할 수 있다 */
+app.set( 'title' , 'My Site' );
+/** app.get 으로 해당 값을 가져올 수 있다 */
+app.get( 'title' ); // My Site
+````
+
+- pug 를 활용하여 동적으로 HTML 을 컴파일하고, 렌더링할 장소를 가르켜주고 있다
+
+````javascript
+/**
+ * - pug 라이브러리를 view engine 으로 사용
+ */
+app.set( 'view engine' , 'pug' );
+/**
+ * - 서버에서 렌더링 할 뷰가 위치한 디렉토리 경로를 설정하는 역할.
+ */
+app.set('views', 'directory_path');
+````
+
+#### shop.pug
+
+- pug 는 일반 html 과 다르게 동작한다
+
+
+- pug 엔진이 코드를 일반 HTML 코드로 컴파일 해준다
+
+
+- pug 는 들여쓰기로 구문을 분석하므로 들여쓰기가 매우 중요하다
+
+
+- app.set 으로 pug 를 사용한다고 알렸지만, 사용하지 않는다
+  - 내보내는 파일이 일반 html 이기 때문...
+  
+
+````javascript
+
+/**
+ * index 라는 이름의 뷰 파일을 렌더링하고, 
+ * 그 결과를 클라이언트에게 응답으로 보내주는 예시
+ */
+app.get('/', function(req, res) {
+  res.render('index', { title: 'Express' });
+});
+
+````
+
+- view 템플릿을 렌더링하여 HTML 문자열을 생성하고, 응답을 클라이언트에 보내준다
+
+
+- view 엔진 설정 및 view 파일의 경로, 이름 데이터를 파라미터로 받는다
