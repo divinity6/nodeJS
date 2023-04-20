@@ -197,3 +197,17 @@ extends 상속받을pug파일경로
    block 훅이름
         들여쓰기 후, 삽입할 컨텐츠 작성
 ````
+
+- 이렇게 content 를 삽입할 수 있다
+
+#### pug 에서 js 문법 사용시
+
+````jade
+extends 상속받을pug파일경로
+a(class=(path === '/admin/add-product' ? 'active' : ''))
+````
+
+-  일반적으로 active 를 줄때 router 의 path 경로를 이용하여 active 를 주는것이 확실하다
+
+
+- 또한, ()안에 작성한 코드들은 간단한 js 문법으로 비교할 수 있다
