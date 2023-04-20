@@ -173,3 +173,27 @@ app.get('/', function(req, res) {
 
 - Pug에 대해 더 알고 싶으시다면 다음 링크에서 공식 참고자료를 확인해보세요. 
   - https://pugjs.org/api/getting-started.html
+
+---
+
+### Pug layout
+
+- pug 또한, vue 처럼 layout 을 지원한다
+
+
+#### 내부 컨텐츠 정의시
+
+````jade
+   block 이위치에들어갈훅이름
+````
+
+- block 훅 으로 해당 blcok 영역에 들어갈 컨텐츠를 동적으로 넣어줄 수 있다
+
+#### 해당 block hook 사용시
+
+````jade
+extends 상속받을pug파일경로
+
+   block 훅이름
+        들여쓰기 후, 삽입할 컨텐츠 작성
+````
