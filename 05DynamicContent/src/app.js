@@ -1,13 +1,18 @@
 const express = require( 'express' );
 const bodyParser = require( 'body-parser' );
 const path = require("path");
+const expressHbs = require( 'express-handlebars' );
 
 const app = express();
 
 /**
- * - pug 라이브러리를 view engine 으로 사용
+ * - 등록되지 않은 새로운 템플릿엔진을 등록한다
  */
-app.set('view engine', 'pug');
+app.engine( 'hbs' , expressHbs() );
+/**
+ * - handlebars 라이브러리를 view engine 으로 사용
+ */
+app.set('view engine', 'hbs');
 
 /**
  *  - 서버에서 렌더링 할 뷰가 위치한 디렉토리 경로를 설정하는 역할.

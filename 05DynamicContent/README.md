@@ -211,3 +211,82 @@ a(class=(path === '/admin/add-product' ? 'active' : ''))
 
 
 - 또한, ()안에 작성한 코드들은 간단한 js 문법으로 비교할 수 있다
+
+---
+
+### Handlebars
+
+- 또다른 Template engine 이다
+
+
+- Pug 는 내장된 engine 이지만, Express handlebars 는 아니다
+
+````javascript
+  /**
+    * - 등록되지 않은 새로운 템플릿엔진을 등록하는 메서드
+    * 
+    * @param { string } 뷰엔진의 확장자 - hbs or handlebars
+    * @param { any } renderingFnc - 뷰엔진의 렌더링 함수 
+    */
+    app.engine( "hbs" , expressHbs() );
+
+    /**
+     * - handlebars 라이브러리를 view engine 으로 사용
+     */
+    app.set('view engine', 'hbs');
+````
+
+- view 엔진으로 handlebars 를 등록하면, view 엔진이 handlebars 로 변경된다
+
+
+- handlebars 는 일반 html 구문과 비슷하다( pug 만큼 미니멀하지 않다 )
+
+> ````handlebars
+>   <p> {{ pageTitle }} </p>
+> ````
+
+- js 코드를 사용하는 방법은 {{}} 를 이용하여 안에 작성한다
+  - ( vue 처럼... )
+
+````handlebars
+{{!-- 조건식 --}}
+{{#if 조건식}}
+   조건식이 참일 때 출력될 내용
+{{/if}}
+
+{{!-- 반복문 --}}
+{{#each 배열}}
+  배열의 요소에 대한 출력 내용
+{{/each}}
+
+{{!-- 주석 내용 --}}
+````
+
+
+
+````handlebars
+
+{{!-- 표현식을 허용하지 않음 --}}
+{{#if prods.length > 0 }}
+
+{{!-- 선언만 가능 --}}
+{{#if hasProduct }}
+````
+
+- 핸들바는 내부문법에서 표현식을 허용하지 않고, 선언값만 true, false 로 구분한다
+
+
+- 즉, express 에서 해당 값을 연산 후, 결괏값을 template 에서 사용해야 한다
+
+````handlebars
+
+{{#each prods}}
+  {{!-- this 로 Loop 를 도는 객체의 프로퍼티에 접근가능 --}}
+  {{ this.title }}
+{{/each}}
+````
+
+- handlebars 는 this 로 자기자신을 가진 객체에 접근가능하다
+
+
+- handlebars 는 template 에 논리를 두지않고, js 에서 모든 로직을 처리한 후 데이터만 작성할 수 있다
