@@ -23,7 +23,14 @@ router.get( '/' , ( req , res , next )=> {
      *
      * - 모든 .pug 파일을 탐색할 것이다
      */
-    res.render( 'shop' , { prods : products , pageTitle : 'Shop' , path : '/' , hasProducts : 0 < products.length } )
+    res.render( 'shop' , {
+        prods : products ,
+        pageTitle : 'Shop' ,
+        path : '/' ,
+        hasProducts : 0 < products.length,
+        activeShop : true,
+        productCSS : true,
+    } )
 } );
 
 module.exports = router;

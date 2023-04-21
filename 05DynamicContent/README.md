@@ -279,7 +279,6 @@ a(class=(path === '/admin/add-product' ? 'active' : ''))
 - 즉, express 에서 해당 값을 연산 후, 결괏값을 template 에서 사용해야 한다
 
 ````handlebars
-
 {{#each prods}}
   {{!-- this 로 Loop 를 도는 객체의 프로퍼티에 접근가능 --}}
   {{ this.title }}
@@ -290,3 +289,50 @@ a(class=(path === '/admin/add-product' ? 'active' : ''))
 
 
 - handlebars 는 template 에 논리를 두지않고, js 에서 모든 로직을 처리한 후 데이터만 작성할 수 있다
+
+---
+
+### handlebars layouts
+
+````javascript
+
+/**
+ * - 등록되지 않은 새로운 템플릿엔진을 등록한다
+ *
+ * --> handlebars 는 layout 을 적용하려면, layoutsDir 를 설정해줘야한다
+ * 
+ * --> defaultLayout : 기본 레이아웃 파일
+ * 
+ * --> extname : 사용할 확장자이름
+ */
+app.engine( 'hbs' , expressHbs( { 
+  layoutsDir : 'views/layouts/' , 
+  defaultLayout : 'main-layout' , 
+  extname : 'hbs' 
+} ) );
+````
+
+- handlebars 는 layouts 를 등록해줘야한다
+  - ( 기본경로일 경우에는 생략 가능 )
+
+#### 내부 컨텐츠 정의시
+
+````handlebars
+{{{ body }}}
+````
+
+- {{{}}} 플레이스 홀더로 해당 플레이스홀더에 들어갈 컨텐츠를 동적으로 넣어줄 수 있다
+
+#### 해당 block hook 사용시
+
+````handlebars
+{{{ body }}}
+````
+
+- 이렇게 content 를 삽입할 수 있다
+
+````javascript
+{ layout : false }
+````
+
+- handlebars 에서 인식하는 key 로 layout 을 false 로 해주면 레이아웃을 사용하지 않을 수 있다

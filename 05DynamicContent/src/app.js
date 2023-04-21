@@ -7,8 +7,14 @@ const app = express();
 
 /**
  * - 등록되지 않은 새로운 템플릿엔진을 등록한다
+ *
+ * --> handlebars 는 layout 을 적용하려면, layoutsDir 를 설정해줘야한다
  */
-app.engine( 'hbs' , expressHbs() );
+app.engine( 'hbs' , expressHbs( {
+    layoutsDir : 'views/layouts/' ,
+    defaultLayout : 'main-layout' ,
+    extname : 'hbs'
+} ) );
 /**
  * - handlebars 라이브러리를 view engine 으로 사용
  */
