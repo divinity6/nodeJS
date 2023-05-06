@@ -1,24 +1,13 @@
 const express = require( 'express' );
 const bodyParser = require( 'body-parser' );
 const path = require("path");
-const expressHbs = require( 'express-handlebars' );
 
 const app = express();
 
 /**
- * - 등록되지 않은 새로운 템플릿엔진을 등록한다
- *
- * --> handlebars 는 layout 을 적용하려면, layoutsDir 를 설정해줘야한다
+ * - ejs 라이브러리를 view engine 으로 사용
  */
-app.engine( 'hbs' , expressHbs( {
-    layoutsDir : 'views/layouts/' ,
-    defaultLayout : 'main-layout' ,
-    extname : 'hbs'
-} ) );
-/**
- * - handlebars 라이브러리를 view engine 으로 사용
- */
-app.set('view engine', 'hbs');
+app.set('view engine', 'ejs');
 
 /**
  *  - 서버에서 렌더링 할 뷰가 위치한 디렉토리 경로를 설정하는 역할.

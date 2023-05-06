@@ -336,3 +336,27 @@ app.engine( 'hbs' , expressHbs( {
 ````
 
 - handlebars 에서 인식하는 key 로 layout 을 false 로 해주면 레이아웃을 사용하지 않을 수 있다
+
+---
+
+### EJS
+
+- EJS 는 PUG 처럼 즉시 지원되는 템플릿 엔진이기에 engine 의 파라미터를 작성할 필요가 없다
+
+
+- 아래처럼 view engine 을 ejs 로 설정해주기만 하면 된다
+
+````javascript
+/**
+ * - ejs 라이브러리를 view engine 으로 사용
+ */
+app.set('view engine', 'ejs');
+````
+
+- ejs 는 동적 데이터를 바인딩할때 <%= %> 구문을 사용한다
+
+
+- 데이터가 아닌, 표현식이면 <% %> 로 = 를 생략한다
+
+
+- 바닐라 자바스크립트의 모든 내장함수들을 지원한다
