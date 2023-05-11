@@ -24,3 +24,14 @@
   - Model 과 View 와 연결점
   - 중간 논리를 책임진다
   - 예시) Router
+
+
+---
+
+### routes
+
+- 현재 routes 폴더안에서 데이터등에 접근( products )하고, View 에 반환( res.render )하고 있다 
+  - 그러나 이는 전형적인 controller 의 역할이다
+
+
+- controller 를 나누게되면 해당하는 router 와 해당 controller 가 무엇인지 쉽게 알 수 있다
