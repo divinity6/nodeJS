@@ -35,3 +35,12 @@
 
 
 - controller 를 나누게되면 해당하는 router 와 해당 controller 가 무엇인지 쉽게 알 수 있다
+
+---
+
+### Models
+
+- MVC 패턴의 model( 데이터 ) 부분
+
+
+- 데이터베이스와 연결논리등이 추가될 경우 Model 분리효과가 나타난다
