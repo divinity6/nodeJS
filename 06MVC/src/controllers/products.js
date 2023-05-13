@@ -1,4 +1,3 @@
-const adminData = require("../routes/admin");
 const products = [];
 
 /**
