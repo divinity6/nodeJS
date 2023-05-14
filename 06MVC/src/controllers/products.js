@@ -38,14 +38,15 @@ exports.postAddProduct = ( req , res , next ) => {
  */
 exports.getProducts = ( req , res , next )=> {
 
-    const products = Product.fetchAll();
+    Product.fetchAll( ( products ) => {
+        res.render( 'shop' , {
+            prods : products ,
+            pageTitle : 'Shop' ,
+            path : '/' ,
+            hasProducts : 0 < products.length,
+            activeShop : true,
+            productCSS : true,
+        } );
+    } );
 
-    res.render( 'shop' , {
-        prods : products ,
-        pageTitle : 'Shop' ,
-        path : '/' ,
-        hasProducts : 0 < products.length,
-        activeShop : true,
-        productCSS : true,
-    } )
 }

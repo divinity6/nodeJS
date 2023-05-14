@@ -44,3 +44,93 @@
 
 
 - 데이터베이스와 연결논리등이 추가될 경우 Model 분리효과가 나타난다
+
+
+- 데이터에 관련된 역할을 담당한다
+
+---
+
+### Views
+
+- MVC 패턴의 view( 화면 ) 부분
+
+
+- 사용자가 보는화면에 논리가 많이 들어가면 안된다
+
+
+---
+### Controllers
+
+- MVC 패턴의 controller( 중재자 ) 부분
+
+
+- Model 과 View 의 연결부분역할을 수행한다
+
+---
+
+
+### fileSystem
+
+- 데이터베이스가 아닌, 파일에 json 형태로 저장해 둘 수 있다
+
+
+
+- 아래 코드를 통해 해당 파일의 패스를 읽어올 수 있다
+
+````javascript
+
+const path = require( 'path' );
+
+/**
+ * 
+ * @param { string } path - 파일 경로
+ * @param { string } folder - 폴더이름
+ * @param { string } file - 파일이름
+ */
+const _path = path.join(
+    path.dirname( process.mainModule.filename ) ,
+    'data' ,
+    'products.json'
+);
+
+
+````
+
+- 아래 코드를 통해 파일을 버퍼별로 읽어올 수 있다
+
+````javascript
+
+const fs = require( 'fs' );
+
+/**
+ * @param { string } path - 파일 위치 패스
+ * @param { callback : ( err , fileContent ) => any } callback - 파일을 읽은 후 실행할 콜백
+ */
+fs.readFile( _path ,( err, fileContent ) => {
+    console.log( err );
+    console.log( fileContent );
+} );
+
+````
+
+- 아래 코드를 통해 파일을 저장할 수 있다
+
+````javascript
+
+const fs = require( 'fs' );
+
+/**
+ * @param { string } path - 파일 위치 패스
+ * @param { any } data - 저장할 데이터
+ * @param { callback : ( err ) => any } callback - 파일을 읽은 후 실행할 콜백
+ */
+fs.writeFile( path , JSON.stringify( products ) , ( err ) => {
+  console.log( err );
+} );
+
+
+````
+---
+
+- MVC 에 대해 더 알아보기: 
+  - https://developer.mozilla.org/en-US/docs/Glossary/MVC
