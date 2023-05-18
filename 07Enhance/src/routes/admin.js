@@ -1,9 +1,11 @@
 /**
  * - 매장관리자의 제품생성 처리 관련 라우팅 파일
+ *
+ * --> 실제 페이지 패스의 접근경로
  */
 const express = require( 'express' );
 
-const productController = require( '../controllers/products' );
+const adminController = require( '../controllers/admin' );
 
 const path = require("path");
 
@@ -12,9 +14,12 @@ const router = express.Router();
 
 
 // /admin/add-product => GET
-router.get( '/add-product' , productController.getAddProduct );
+router.get( '/add-product' , adminController.getAddProduct );
+
+// /admin/products => GET
+router.get( '/products' , adminController.getProducts );
 
 // /admin/add-product => POST
-router.post( '/add-product' , productController.postAddProduct );
+router.post( '/add-product' , adminController.postAddProduct );
 
 module.exports = router;
