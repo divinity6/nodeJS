@@ -50,6 +50,20 @@ exports.getCart = ( req , res , next ) => {
 }
 
 /**
+ * - Cart Controller
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.getOrders = ( req , res , next ) => {
+
+    res.render( 'shop/orders' , {
+        pageTitle : 'Your Orders' ,
+        path : '/orders' ,
+    } );
+}
+
+/**
  * - Checkout Controller
  * @param req
  * @param res
