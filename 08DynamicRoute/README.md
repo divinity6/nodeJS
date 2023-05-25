@@ -4,3 +4,14 @@
 
 
 - 라우트 파라미터를 사용하는 범 및 query 사용법을 익힌다
+
+````javascript
+/** 동적 라우트 추가 - : 뒤에 작성 */
+router.get( '/products/:productId' , ( req , res , next ) =>{
+    /**
+     * - 동적 라우트 Id 는 req 의 params 로 접근해 가져올 수 있다
+     */
+    console.log( req.params.productId );
+} );
+
+````

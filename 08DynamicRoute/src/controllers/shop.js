@@ -1,7 +1,7 @@
 const Product = require( '../models/product' );
 
 /**
- * - 제품 페이지 반환 Controller
+ * - 제품 리스트 페이지 반환 Controller
  * @param req
  * @param res
  * @param next
@@ -16,6 +16,18 @@ exports.getProducts = ( req , res , next )=> {
         } );
     } );
 
+}
+
+/**
+ * - 제품 페이지 반환 Controller
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.getProduct = ( req , res , next ) =>{
+    const prodId = req.params.productId;
+    console.log( "productId" , prodId );
+    res.redirect( '/' );
 }
 
 /**
