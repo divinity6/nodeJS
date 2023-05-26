@@ -40,6 +40,16 @@ module.exports = class Product {
         getProductsFromFile( callback );
     }
 
+    /** fs 에서 전체 제품을 읽어 해당 id 의 제품을 찾아 callback 으로 전송 */
+    static findById( id , callback ){
+        getProductsFromFile( ( products ) => {
+
+            const product = products.find( p => p.id === id );
+
+            callback( product );
+        } );
+    }
+
     title;
     imageUrl;
     description;
