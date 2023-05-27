@@ -31,7 +31,7 @@ exports.getProduct = ( req , res , next ) =>{
         res.render( 'shop/product-detail' , {
             pageTitle : product.title ,
             path : '/products',
-            prod : product,
+            product,
         } )
     } );
 }
@@ -69,6 +69,20 @@ exports.getCart = ( req , res , next ) => {
 
 /**
  * - Cart Controller
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.postCart = ( req , res , next ) => {
+    const prodId = req.body.productId;
+
+    console.log( "prodId" , prodId );
+
+    res.redirect( '/cart' );
+}
+
+/**
+ * - Post Cart Controller
  * @param req
  * @param res
  * @param next

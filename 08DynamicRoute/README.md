@@ -15,3 +15,9 @@ router.get( '/products/:productId' , ( req , res , next ) =>{
 } );
 
 ````
+
+- include 시 2번째 파라미터로 해당 데이터를 전달할 수 있다
+
+````ejs
+<%- include( '../includes/add-to-cart.ejs' , { product : product } ) %>
+````
