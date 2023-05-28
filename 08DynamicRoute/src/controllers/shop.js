@@ -1,4 +1,5 @@
 const Product = require( '../models/product' );
+const Cart = require( '../models/cart' );
 
 /**
  * - 제품 리스트 페이지 반환 Controller
@@ -77,6 +78,10 @@ exports.postCart = ( req , res , next ) => {
     const prodId = req.body.productId;
 
     console.log( "prodId" , prodId );
+
+    Product.findById( prodId , ( product ) => {
+         Cart.addProduct( prodId , product.price );
+    } );
 
     res.redirect( '/cart' );
 }
