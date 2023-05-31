@@ -23,13 +23,10 @@ exports.getProducts = ( req , res , next )=> {
  * @param next
  */
 exports.getAddProduct = ( req , res , next )=> {
-    res.render( 'admin/add-product' , {
+    res.render( 'admin/edit-product' , {
         pageTitle : 'Add Product' ,
         path : "/admin/add-product",
-        active : true,
-        activeAddProduct : true,
-        formsCSS : true,
-        productCSS : true
+        editing : false,
     } )
 }
 
@@ -49,4 +46,42 @@ exports.postAddProduct = ( req , res , next ) => {
     product.save();
 
     res.redirect( '/' );
+}
+
+/**
+ * - wpvna vuswlq 페이지 반환 Controller
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.getEditProduct = ( req , res , next )=> {
+
+    const editMode = req.query.edit;
+
+    if ( !editMode ){
+        console.log( "dd" )
+        return res.redirect( '/' );
+    }
+    const prodId = req.params.productId;
+
+    console.log( "req.params" , req.params );
+
+    Product.findById( prodId , product => {
+
+        if ( !product ){
+            console.log( "p" )
+            return res.redirect( '/' );
+        }
+
+        console.log( "product" , product );
+
+        res.render( 'admin/edit-product' , {
+            pageTitle : 'Edit Product' ,
+            path : "/admin/edit-product",
+            editing : editMode,
+            product,
+        } )
+    } );
+
+
 }
