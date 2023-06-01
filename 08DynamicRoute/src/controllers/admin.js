@@ -40,7 +40,7 @@ exports.postAddProduct = ( req , res , next ) => {
 
     const { title , imageUrl , description , price } = req.body;
 
-    const product = new Product( title , imageUrl , description , price );
+    const product = new Product( null , title , imageUrl , description , price );
 
     console.log( "Res" , req.body );
     product.save();
@@ -49,7 +49,7 @@ exports.postAddProduct = ( req , res , next ) => {
 }
 
 /**
- * - wpvna vuswlq 페이지 반환 Controller
+ * - 제품 수정 페이지 반환 Controller
  * @param req
  * @param res
  * @param next
@@ -83,5 +83,32 @@ exports.getEditProduct = ( req , res , next )=> {
         } )
     } );
 
+}
 
+/**
+ * - 제품 수정  Controller
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.postEditProduct = ( req , res , next ) => {
+    const prodId = req.body.productId;
+    const updatedTitle = req.body.title;
+    const updatedPrice = req.body.price;
+    const updatedImageUrl = req.body.imageUrl;
+    const updatedDesc = req.body.description;
+
+    const updatedProduct = new Product(
+        prodId ,
+        updatedTitle ,
+        updatedImageUrl ,
+        updatedDesc ,
+        updatedPrice
+    );
+
+    console.log( "updatedProduct" , updatedProduct );
+    updatedProduct.save();
+
+    console.log( "after" );
+    res.redirect( "/admin/products" );
 }

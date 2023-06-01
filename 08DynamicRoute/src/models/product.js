@@ -56,7 +56,8 @@ module.exports = class Product {
     price;
     id;
 
-    constructor( title , imageUrl , description , price ) {
+    constructor( id , title , imageUrl , description , price ) {
+        this.id = id;
         this.title = title;
         this.imageUrl = imageUrl;
         this.description = description;
@@ -65,18 +66,23 @@ module.exports = class Product {
 
     save(){
 
-        this.id = Math.random().toString();
-
         getProductsFromFile( ( products , _path ) => {
-            /**
-             * - 기존 파일에 새로운 파일을 추가하고, 파일시스템에 저장
-             */
-            products.push( this );
+            if ( this.id ){
+                const existingProductIndex = products.findIndex( p => p.id === this.id );
+                products[ existingProductIndex ] = this;
+            }
+            else {
+                /**
+                 * - 기존 파일에 새로운 파일을 추가하고, 파일시스템에 저장
+                 */
+                products.push( this );
+
+                this.id = Math.random().toString();
+            }
 
             fs.writeFile( _path , JSON.stringify( products ) , ( err ) => {
-                console.log( err );
+                console.log( "err" , err );
             } );
-
         } );
     }
 
