@@ -7,10 +7,6 @@ const _path = path.join(
     'cart.json'
 );
 
-/**
- * - Cart 클래스
- * @type {Cart}
- */
 module.exports = class Cart {
 
     static addProduct( id , productPrice ) {
@@ -49,6 +45,34 @@ module.exports = class Cart {
              * - 파일 저장
              */
             fs.writeFile( _path , JSON.stringify( cart ) , ( err ) => {
+                console.log( "err" , err );
+            } );
+        } );
+    }
+
+    static deleteProduct( id , productPrice ){
+
+        fs.readFile( _path , ( err , fileContent ) => {
+            const  cart = JSON.parse( fileContent );
+            if ( err ){
+               return;
+            }
+
+            const updatedCart = { ...cart };
+            const product = updatedCart.products.find( prod => prod.id === id );
+            if ( !( product ) ){
+                return;
+            }
+            const productQty = product.qty;
+
+            updatedCart.products = updatedCart.products.filter( prod => prod.id !== id );
+            /** 제품의 수량만큼 가격을 뺀값이 총합이된다 */
+            updatedCart.totalPrice = updatedCart.totalPrice - ( Number( productPrice ) * productQty );
+
+            /**
+             * - 파일 저장
+             */
+            fs.writeFile( _path , JSON.stringify( updatedCart ) , ( err ) => {
                 console.log( "err" , err );
             } );
         } );

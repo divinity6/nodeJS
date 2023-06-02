@@ -109,6 +109,20 @@ exports.postEditProduct = ( req , res , next ) => {
     console.log( "updatedProduct" , updatedProduct );
     updatedProduct.save();
 
-    console.log( "after" );
+    res.redirect( "/admin/products" );
+}
+
+/**
+ * - 제품 제거 Controller
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.postDeleteProduct = (  req , res , next ) => {
+    const prodId = req.body.productId;
+
+    Product.deleteById( prodId , () => {
+    } );
+
     res.redirect( "/admin/products" );
 }

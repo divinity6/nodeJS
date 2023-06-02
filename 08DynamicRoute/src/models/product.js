@@ -1,5 +1,6 @@
 const fs = require( 'fs' );
 const path = require( 'path' );
+const Cart = require( './cart' );
 
 /**
  * - 파일에서부터 제품을 가져오는 helper 함수
@@ -47,6 +48,24 @@ module.exports = class Product {
             const product = products.find( p => p.id === id );
 
             callback( product );
+        } );
+    }
+
+    /** fs 에서 전체 제품을 읽어 해당 id 의 제품을 제거 */
+    static deleteById( id ){
+        getProductsFromFile( ( products , _path ) => {
+            const product = products.find( p => p.id === id );
+            const updatedProducts = products.filter( p => p.id !== id );
+
+            fs.writeFile( _path , JSON.stringify( updatedProducts ) , ( err ) => {
+                if ( !err ){
+                    Cart.deleteProduct( id , product.price );
+                }
+                else {
+                    console.log( "err" , err );
+                }
+
+            } );
         } );
     }
 
