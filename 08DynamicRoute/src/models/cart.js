@@ -77,4 +77,16 @@ module.exports = class Cart {
             } );
         } );
     }
+
+    /** 모든 제품 가져오기 */
+    static getCart( callback ){
+        fs.readFile( _path , ( err , fileContent ) => {
+            let cart = JSON.parse( fileContent );
+
+            if ( err ){
+               cart = null;
+            }
+            callback( cart )
+        } );
+    }
 }
