@@ -3,7 +3,7 @@
 - 라우트에 동적 데이터를 전달
 
 
-- 라우트 파라미터를 사용하는 범 및 query 사용법을 익힌다
+- 동적 라우팅
 
 ````javascript
 /** 동적 라우트 추가 - : 뒤에 작성 */
@@ -21,3 +21,5 @@ router.get( '/products/:productId' , ( req , res , next ) =>{
 ````ejs
 <%- include( '../includes/add-to-cart.ejs' , { product : product } ) %>
 ````
+
+- 라우트 공식 참고자료:https ://expressjs.com/en/guide/routing.html
