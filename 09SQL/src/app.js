@@ -2,6 +2,7 @@ const express = require( 'express' );
 const bodyParser = require( 'body-parser' );
 
 const errorController = require( './controllers/error' );
+const db = require( './util/database' );
 
 const app = express();
 
@@ -23,6 +24,11 @@ const adminRoutes = require( './routes/admin.js' );
 
 const shopRoutes = require( './routes/shop.js' );
 
+/**
+ * - db sql 문법 이용가능
+ */
+// db.execute( 'SELECT * FROM ' );
+console.log( "db" , db );
 
 const path = require("path");
 

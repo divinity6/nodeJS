@@ -238,3 +238,18 @@ SELECT * FROM users WHERE age > 28
 
 
 - 상관관계가 중요하지 않는 이유는 주문정보를 단일문서에 배치할 수 있기 때문이다
+
+---
+
+### NodeJS MySQL
+
+- NodeJS 에서 mysql 코드 작성 및 실행가능하게 해준다
+
+````shell
+npm install --save mysql2
+````
+
+- 쿼리를 실행할때마다, 연결했다 끊었다하는것이 아닌,
+
+
+- connectionPool 을 통해 실행할 쿼리가 있을때마다 활용하는것이 효율적이다
