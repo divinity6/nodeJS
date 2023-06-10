@@ -4,6 +4,8 @@ const bodyParser = require( 'body-parser' );
 const errorController = require( './controllers/error' );
 const db = require( './util/database' );
 
+const path = require("path");
+
 const app = express();
 
 /**
@@ -26,11 +28,17 @@ const shopRoutes = require( './routes/shop.js' );
 
 /**
  * - db sql 문법 이용가능
+ *
+ * --> pool 을 promise 객체로 내보냈다는걸 기억해라
  */
-// db.execute( 'SELECT * FROM ' );
-console.log( "db" , db );
-
-const path = require("path");
+db.execute( 'SELECT * FROM products;' )
+    .then( ( result ) => {
+        console.log( '<<database connection result>> :' , result[ 0 ] );
+        console.log( '<<database connection meta>> :' , result[ 1 ] );
+    } )
+    .catch( err => {
+        console.log( '<<database connection err>> :' , err );
+    } );
 
 
 /**

@@ -253,3 +253,44 @@ npm install --save mysql2
 
 
 - connectionPool 을 통해 실행할 쿼리가 있을때마다 활용하는것이 효율적이다
+
+````javascript
+/** 아래 형식으로 mysql 을 가져올 수 있다 */
+const mysql = require( 'mysql2' );
+
+const pool = mysql.createPool( {
+  host : 'localhost',
+  user : 'root',
+  database : 'node_complete',
+  password : 'Tpsl782505@'
+} );
+
+module.exports = pool.promise();
+
+````
+
+- 가져올때, 첫번째 배열은 해당 테이블의 데이터이며, 
+
+
+- 두번째 배열은 해당 테이블의 메타 정보를 담고 있다
+
+````javascript
+
+const db = require( './util/database' );
+
+/**
+ * - db sql 문법 이용가능
+ *
+ * --> pool 을 promise 객체로 내보냈다는걸 기억해라
+ * 
+ * // result : [ 테이블데이터[] , 테이블메타정보[] ]
+ */
+db.execute( 'SELECT * FROM products;' )
+        .then( ( result ) => {
+          console.log( '<<database connection result>>' , result );
+        } )
+        .catch( err => {
+          console.log( '<<database connection err>>' , err );
+        } );
+
+````
