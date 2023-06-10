@@ -9,13 +9,17 @@ const Cart = require( '../models/cart' );
  */
 exports.getProducts = ( req , res , next )=> {
 
-    Product.fetchAll( ( products ) => {
-        res.render( 'shop/product-list' , {
-            prods : products ,
-            pageTitle : 'All Products' ,
-            path : '/products' ,
-        } );
-    } );
+    Product.fetchAll()
+        .then( ( [ rows , fieldData ] ) => {
+
+            res.render( 'shop/product-list' , {
+                prods : rows ,
+                pageTitle : 'All Products' ,
+                path : '/products' ,
+            } );
+
+        } )
+        .catch( err => console.log( '<<CartDataFetchErr>> :' , err ) );
 
 }
 
@@ -45,13 +49,17 @@ exports.getProduct = ( req , res , next ) =>{
  */
 exports.getIndex = ( req , res , next ) => {
 
-    Product.fetchAll( ( products ) => {
-        res.render( 'shop/index' , {
-            pageTitle : 'Shop' ,
-            path : '/' ,
-            prods : products ,
-        } );
-    } );
+    Product.fetchAll()
+        .then( ( [ rows , fieldData ] ) => {
+
+            res.render( 'shop/index' , {
+                pageTitle : 'Shop' ,
+                path : '/' ,
+                prods : rows ,
+            } );
+
+        } )
+        .catch( err => console.log( '<<CartDataFetchErr>> :' , err ) );
 }
 
 /**
@@ -63,23 +71,27 @@ exports.getIndex = ( req , res , next ) => {
 exports.getCart = ( req , res , next ) => {
 
     Cart.getCart( cart => {
-        Product.fetchAll( ( products ) => {
+        Product.fetchAll()
+            .then( ( [ rows , fieldData ] ) => {
 
-            const cartProducts = [];
+                const cartProducts = [];
 
-            for ( const product of products ){
-                const cartProductData = cart.products.find( prod => prod.id === product.id );
-                if ( cartProductData ){
-                    cartProducts.push( { productData : product , qty : cartProductData.qty } );
+                for ( const product of rows ){
+                    const cartProductData = cart.products.find( prod => prod.id === product.id );
+                    if ( cartProductData ){
+                        cartProducts.push( { productData : product , qty : cartProductData.qty } );
+                    }
                 }
-            }
 
-            res.render( 'shop/cart' , {
-                pageTitle : 'Your Cart' ,
-                path : '/cart' ,
-                products : cartProducts,
-            } );
-        } );
+                res.render( 'shop/cart' , {
+                    pageTitle : 'Your Cart' ,
+                    path : '/cart' ,
+                    products : cartProducts,
+                } );
+
+            } )
+            .catch( err => console.log( '<<CartDataFetchErr>> :' , err ) );
+
 
     } )
 
