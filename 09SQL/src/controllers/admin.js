@@ -43,9 +43,10 @@ exports.postAddProduct = ( req , res , next ) => {
     const product = new Product( null , title , imageUrl , description , price );
 
     console.log( "Res" , req.body );
-    product.save();
+    product.save().then( () => {
+        res.redirect( '/' );
+    } ).catch( err => console.log( '<<AddDataFetchErr>> :' , err ) );;
 
-    res.redirect( '/' );
 }
 
 /**

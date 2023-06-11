@@ -35,6 +35,17 @@ module.exports = class Product {
     }
 
     save(){
+        /**
+         * - 삽입 명령 , 해당 테이블명, 테이블 필드명 테이블 값
+         *
+         * --> VALUES 에 데이터를 삽입할때, SQL 인젝션 공격을 방지하기 위해 ? 를 사용한다
+         *
+         * --> 그후 다음 파라미터로, 삽입할 데이터를 순서에 맞게 전달한다
+         *
+         * --> 이렇게 하면, MySQL 에서 안전하게 파싱해 전달해준다
+         */
+        return db.execute( 'INSERT INTO products ( title , price , imageUrl , description ) VALUES (?, ?, ?, ?)',
+            [ this.title , this.price , this.imageUrl , this.description ] );
     }
 
 

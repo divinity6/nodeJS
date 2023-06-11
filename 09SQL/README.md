@@ -294,3 +294,18 @@ db.execute( 'SELECT * FROM products;' )
         } );
 
 ````
+
+- 데이터를 삽입할때는 insert 쿼리를 사용한다
+
+````sql
+INSERT INTO prodoucts ( title , price , imageUrl , description ) VALUES ( 데이터들... );
+````
+
+- 그러나 NodeJS 로 삽입할 경우, SQL 인젝션 공격을 방지하기위해, mysql 모듈에서 제공해주는 파라미터를 이용한
+
+````javascript
+const db = require( '../util/database' );
+
+db.execute( 'INSERT INTO products ( title , price , imageUrl , description ) VALUES (?, ?, ?, ?)',
+[ this.title , this.price , this.imageUrl , this.description ] );
+````
