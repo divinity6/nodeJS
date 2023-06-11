@@ -309,3 +309,29 @@ const db = require( '../util/database' );
 db.execute( 'INSERT INTO products ( title , price , imageUrl , description ) VALUES (?, ?, ?, ?)',
 [ this.title , this.price , this.imageUrl , this.description ] );
 ````
+
+- 데이터를 가져올때, WHERE 옵션을 통해서, 매칭하는 행의 데이터만 가져올 수 있다
+
+````javascript
+const db = require( '../util/database' );
+
+/**
+ * - WHERE 의 조건에 따라 행의 수를 제한할 수 있다
+ *
+ * --> 즉, WHERE 에 해당하는 행들만 불러오는것
+ *
+ * --> SELECT * 이기때문에 WHERE 조건에 맞는 행의 모든 열 데이터들을 불러온다
+ */
+return db.execute( 'SELECT * FROM products WHERE products.id = ?' , [ id ] );
+````
+
+- 어플리케이션의 논리가 복잡할수록, 쿼리역시 복잡해질 수 밖에 없다
+
+
+- 따라서, 보통 SQL 쿼리들을 사용하지 않고도 연결, 삭제 ,추가등의 기능을 제공하는 JS 내장 객체들을 이용한다 
+
+
+- NodeJS 에 추가할 수 있는 외부 패키지를 추가하면 훨씬 쉬워진다
+
+
+- Sequelize 를 이용하면 쿼리를 대신작성할 수 있는 쉬운 모듈을 제공한다

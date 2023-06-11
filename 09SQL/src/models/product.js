@@ -14,6 +14,14 @@ module.exports = class Product {
 
     /** database 에서 전체 제품을 읽어 해당 id 의 제품을 찾아 반환 */
     static findById( id , callback ){
+        /**
+         * - WHERE 의 조건에 따라 행의 수를 제한할 수 있다
+         *
+         * --> 즉, WHERE 에 해당하는 행들만 불러오는것
+         *
+         * --> SELECT * 이기때문에 WHERE 조건에 맞는 행의 모든 열 데이터들을 불러온다
+         */
+        return db.execute( 'SELECT * FROM products WHERE products.id = ?' , [ id ] );
     }
 
     /** database 에서 전체 제품을 읽어 해당 id 의 제품을 제거 */

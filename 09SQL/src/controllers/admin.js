@@ -7,13 +7,16 @@ const Product = require( "../models/product" );
  * @param next
  */
 exports.getProducts = ( req , res , next )=> {
-    Product.fetchAll( ( products ) => {
-        res.render( 'admin/products' , {
-            prods : products ,
-            pageTitle : 'Admin Products' ,
-            path : '/admin/products' ,
-        } );
-    } );
+
+    Product.fetchAll()
+        .then( ( [ rows , fieldData ] ) => {
+            res.render( 'admin/products' , {
+                prods : rows ,
+                pageTitle : 'Admin Products' ,
+                path : '/admin/products' ,
+            } );
+        } )
+        .catch( err => console.log( '<<getDataFetchErr>> :' , err ) );
 }
 
 /**
@@ -43,9 +46,11 @@ exports.postAddProduct = ( req , res , next ) => {
     const product = new Product( null , title , imageUrl , description , price );
 
     console.log( "Res" , req.body );
-    product.save().then( () => {
-        res.redirect( '/' );
-    } ).catch( err => console.log( '<<AddDataFetchErr>> :' , err ) );;
+    product.save()
+        .then( () => {
+            res.redirect( '/' );
+        } )
+        .catch( err => console.log( '<<AddDataFetchErr>> :' , err ) );
 
 }
 

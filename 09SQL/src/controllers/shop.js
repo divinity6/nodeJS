@@ -32,13 +32,15 @@ exports.getProducts = ( req , res , next )=> {
 exports.getProduct = ( req , res , next ) =>{
     const prodId = req.params.productId;
 
-    Product.findById( prodId , product => {
-        res.render( 'shop/product-detail' , {
-            pageTitle : product.title ,
-            path : '/products',
-            product,
+    Product.findById( prodId )
+        .then( ( [ rows ] ) => {
+            res.render( 'shop/product-detail' , {
+                pageTitle : rows[ 0 ].title ,
+                path : '/products',
+                product : rows[ 0 ],
+            } )
         } )
-    } );
+        .catch( err => console.log( '<<findDataFetchErr>> :' , err ) );
 }
 
 /**
