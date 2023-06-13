@@ -1,21 +1,22 @@
-/**
- * - 이곳에서 mySQL 과 연결하고, 쿼리를 실행하게 하는 연결 객체를 전달받도록 한다
- */
-const mysql = require( 'mysql2' );
+const Sequelize = require( 'sequelize' );
 
 /**
- * - 단일 연결이 아닌, pool 로 설정해서,
- *   실행할 쿼리가 있을때마다 항상 활용할 수 있게하는것이 좋다
+ * - table 명
  *
- * - 그렇지 않을경우, 매쿼리마다 연결 , 연결끊기를 실행해야 한다
+ * - username
  *
- * - Pool 을 이용하면 다중  쿼리연결을 지원해준다
+ * - password
+ *
+ * - options
  */
-const pool = mysql.createPool( {
-    host : 'localhost',
-    user : 'root',
-    database : 'node_complete',
-    password : 'Tpsl782505@'
+const sequelize = new Sequelize( 'node_complete', 'root' , 'Tpsl782505@' , {
+    dialect : 'mysql',
+    host : 'localhost'
 } );
 
-module.exports = pool.promise();
+/**
+ * - 이렇게 설정하면 자동으로 sequelize 객체가 생성되어 db 에 자동으로 연결될 것이다
+ *
+ * --> 정확히는 ConnectionPool 을 자동으로 생성한다
+ */
+module.exports = sequelize;

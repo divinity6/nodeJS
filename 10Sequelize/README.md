@@ -25,3 +25,13 @@ db.execute( 'INSERT INTO products ( title , price , imageUrl , description ) VAL
 
 
 - Sequelize 는 데이터베이스를 다루는 Model 을 제공하며, 모델을 정의할 수 있게한다.
+
+
+- sequelize 설치
+````shell
+npm install --save sequelize
+````
+
+### Sequelize
+
+- sequelize 는 백그라운드에서 mysql2 를 내무적으로 사용하기 때문에 설치해두어야한다
