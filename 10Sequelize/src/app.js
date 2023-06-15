@@ -43,6 +43,9 @@ app.use( '/admin' , adminRoutes );
 
 app.use( errorController.get404 );
 
+/**
+ * - 데이터베이스와 sync 를 맞춘 후 앱을 실행한다
+ */
 sequelize.sync()
     .then( result => {
         // console.log( "result" , result );

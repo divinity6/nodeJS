@@ -67,6 +67,24 @@ const Product = sequelize.define( 'product' , {
     allowNull : false,
   }
 } );
+
+/**
+ * - 제품 생성
+ *
+ * --> Sequelize 는 db 에 저장시 비동기로 처리한다
+ */
+Product.create( {
+  title,
+  imageUrl,
+  description,
+  price
+} )
+.then( result => {
+  console.log( '<<Created Product by Database>> :' , result )
+} )
+.catch( err => {
+  console.log( '<<AddDataFetchErr>> :' , err )
+} );
 ````
 
 - sequelize 에서는 자동으로 table 이 없더라도 생성하도록 명령을 내릴 수 있다
@@ -84,3 +102,5 @@ const sequelize = require( '../util/database' );
 sequelize.sync()
 
 ````
+
+- 

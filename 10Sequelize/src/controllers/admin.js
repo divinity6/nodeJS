@@ -43,14 +43,23 @@ exports.postAddProduct = ( req , res , next ) => {
 
     const { title , imageUrl , description , price } = req.body;
 
-    const product = new Product( null , title , imageUrl , description , price );
-
-    console.log( "Res" , req.body );
-    product.save()
-        .then( () => {
-            res.redirect( '/' );
+    /**
+     * - 해당 데이터를 자동으로 database 에 저장한다
+     *
+     * --> Sequelize 는 db 에 저장시 비동기로 처리한다
+     */
+    Product.create( {
+        title,
+        imageUrl,
+        description,
+        price
+    } )
+        .then( result => {
+            console.log( '<<Created Product by Database>> :' , result )
         } )
-        .catch( err => console.log( '<<AddDataFetchErr>> :' , err ) );
+        .catch( err => {
+            console.log( '<<AddDataFetchErr>> :' , err )
+        } );
 
 }
 
