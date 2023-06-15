@@ -9,6 +9,11 @@ const Cart = require( '../models/cart' );
  */
 exports.getProducts = ( req , res , next )=> {
 
+    /**
+     *  - 전체 제품 조회
+     *
+     *  --> where 문을 이용해 원하는 조건을 필터링할 수 있다
+     */
     Product.findAll()
         .then( products => {
             res.render( 'shop/product-list' , {
@@ -29,12 +34,15 @@ exports.getProducts = ( req , res , next )=> {
 exports.getProduct = ( req , res , next ) =>{
     const prodId = req.params.productId;
 
-    Product.findById( prodId )
-        .then( ( [ rows ] ) => {
+    /**
+     * - id 를 이용한 단건 제품 조회
+     */
+    Product.findByPk( prodId )
+        .then( ( product ) => {
             res.render( 'shop/product-detail' , {
-                pageTitle : rows[ 0 ].title ,
+                pageTitle : product.title ,
                 path : '/products',
-                product : rows[ 0 ],
+                product :product,
             } )
         } )
         .catch( err => console.log( '<<findDataFetchErr>> :' , err ) );

@@ -37,22 +37,9 @@ npm install --save sequelize
 - sequelize 는 백그라운드에서 mysql2 를 내무적으로 사용하기 때문에 설치해두어야한다
 
 
-- sequelize 에서 findById 대신 findByPk 를 사용할 것을 권장한다
-
-````javascript
-/**
- * - Sequelize
- */
-// bad
-findById();
-
-// good
-findByPk();
-
-````
-
-
 - sequelize 를 이용한 모델 설정예시
+
+
 ````javascript
 const Sequelize = require( 'sequelize' );
 
@@ -100,7 +87,63 @@ Product.create( {
 .catch( err => {
   console.log( '<<AddDataFetchErr>> :' , err )
 } );
+
+/**
+ *  - 전체 제품 조회
+ *
+ *  --> where 문을 이용해 원하는 조건을 필터링할 수 있다
+ */
+Product.findAll()
+  .then( products => {
+    res.render( 'shop/product-list' , {
+      prods : products ,
+      pageTitle : 'All Products' ,
+      path : '/products' ,
+    } );
+  } )
+  .catch( err => console.log( '<<getDataFetchErr>> :' , err ) );
+
+/**
+ * - findAll 의 where 조건절을 이용한 데이터 조회
+ */
+Product.findAll( { where : {id : prodId} } )
+  .then( ( [ product ] ) => {
+    res.render( 'shop/product-detail' , {
+      pageTitle : product.title ,
+      path : '/products',
+      product :product,
+    } )
+  } )
+  .catch( err => console.log( '<<findDataFetchErr>> :' , err ) );
+
+/**
+ * - id 를 이용한 단건 제품 조회
+ */
+Product.findByPk( prodId )
+  .then( ( product ) => {
+    res.render( 'shop/product-detail' , {
+      pageTitle : product.title ,
+      path : '/products',
+      product :product,
+    } )
+  } )
+  .catch( err => console.log( '<<findDataFetchErr>> :' , err ) );
 ````
+
+- sequelize 에서 단건조회시 findById 대신 findByPk 를 사용할 것을 권장한다
+
+````javascript
+/**
+ * - Sequelize
+ */
+// bad
+Product.findById( prodId );
+
+// good
+Product.findByPk( prodId );
+
+````
+
 
 - sequelize 에서는 자동으로 table 이 없더라도 생성하도록 명령을 내릴 수 있다
 
