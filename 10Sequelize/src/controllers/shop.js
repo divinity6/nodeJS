@@ -9,18 +9,15 @@ const Cart = require( '../models/cart' );
  */
 exports.getProducts = ( req , res , next )=> {
 
-    Product.fetchAll()
-        .then( ( [ rows , fieldData ] ) => {
-
+    Product.findAll()
+        .then( products => {
             res.render( 'shop/product-list' , {
-                prods : rows ,
+                prods : products ,
                 pageTitle : 'All Products' ,
                 path : '/products' ,
             } );
-
         } )
-        .catch( err => console.log( '<<CartDataFetchErr>> :' , err ) );
-
+        .catch( err => console.log( '<<getDataFetchErr>> :' , err ) );
 }
 
 /**
@@ -51,17 +48,16 @@ exports.getProduct = ( req , res , next ) =>{
  */
 exports.getIndex = ( req , res , next ) => {
 
-    Product.fetchAll()
-        .then( ( [ rows , fieldData ] ) => {
-
+    Product.findAll()
+        .then( products => {
+            console.log( "<<products>>" , products[ 0 ] )
             res.render( 'shop/index' , {
                 pageTitle : 'Shop' ,
                 path : '/' ,
-                prods : rows ,
+                prods : products ,
             } );
-
         } )
-        .catch( err => console.log( '<<CartDataFetchErr>> :' , err ) );
+        .catch( err => console.log( '<<getDataFetchErr>> :' , err ) );
 }
 
 /**
@@ -73,12 +69,13 @@ exports.getIndex = ( req , res , next ) => {
 exports.getCart = ( req , res , next ) => {
 
     Cart.getCart( cart => {
-        Product.fetchAll()
-            .then( ( [ rows , fieldData ] ) => {
+
+        Product.findAll()
+            .then( products => {
 
                 const cartProducts = [];
 
-                for ( const product of rows ){
+                for ( const product of products ){
                     const cartProductData = cart.products.find( prod => prod.id === product.id );
                     if ( cartProductData ){
                         cartProducts.push( { productData : product , qty : cartProductData.qty } );
@@ -90,12 +87,9 @@ exports.getCart = ( req , res , next ) => {
                     path : '/cart' ,
                     products : cartProducts,
                 } );
-
             } )
-            .catch( err => console.log( '<<CartDataFetchErr>> :' , err ) );
-
-
-    } )
+            .catch( err => console.log( '<<getDataFetchErr>> :' , err ) );
+    } );
 
 }
 

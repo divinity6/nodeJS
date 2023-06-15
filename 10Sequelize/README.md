@@ -37,6 +37,21 @@ npm install --save sequelize
 - sequelize 는 백그라운드에서 mysql2 를 내무적으로 사용하기 때문에 설치해두어야한다
 
 
+- sequelize 에서 findById 대신 findByPk 를 사용할 것을 권장한다
+
+````javascript
+/**
+ * - Sequelize
+ */
+// bad
+findById();
+
+// good
+findByPk();
+
+````
+
+
 - sequelize 를 이용한 모델 설정예시
 ````javascript
 const Sequelize = require( 'sequelize' );
@@ -102,5 +117,3 @@ const sequelize = require( '../util/database' );
 sequelize.sync()
 
 ````
-
-- 
