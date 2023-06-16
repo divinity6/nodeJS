@@ -193,3 +193,5 @@ const sequelize = require( '../util/database' );
 sequelize.sync()
 
 ````
+
+### UserModel - 더미 로그인 사용자 모델

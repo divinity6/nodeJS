@@ -3,7 +3,7 @@ const Sequelize = require( 'sequelize' );
 const sequelize = require( '../util/database' );
 
 /**
- * - 제품 단일 Model
+ * - 제품 단일 Model Table
  */
 const Product = sequelize.define( 'product' , {
     id : {
