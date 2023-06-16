@@ -55,7 +55,8 @@ exports.postAddProduct = ( req , res , next ) => {
         price
     } )
         .then( result => {
-            console.log( '<<Created Product by Database>> :' , result )
+            console.log( '<<Created Product by Database>> :' , result );
+            res.redirect( '/admin/products' );
         } )
         .catch( err => {
             console.log( '<<AddDataFetchErr>> :' , err )
@@ -148,8 +149,16 @@ exports.postEditProduct = ( req , res , next ) => {
 exports.postDeleteProduct = (  req , res , next ) => {
     const prodId = req.body.productId;
 
-    Product.deleteById( prodId , () => {
-    } );
-
-    res.redirect( "/admin/products" );
+    Product.findByPk( prodId )
+        .then( product => {
+            /**
+             * - 해당 제품을 삭제하고 Promise 객체를 반환한다
+             */
+            return product.destroy();
+        } )
+        .then( result => {
+            console.log( '<<destroyProduct>> :' , result );
+            res.redirect( "/admin/products" );
+        } )
+        .catch( err => console.log( '<<findDataFetchErr>> :' , err ) );
 }

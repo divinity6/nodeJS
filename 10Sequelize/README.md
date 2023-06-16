@@ -128,6 +128,13 @@ Product.findByPk( prodId )
     } )
   } )
   .catch( err => console.log( '<<findDataFetchErr>> :' , err ) );
+
+/**
+ * - destroy 로 모든 제품 삭제
+ *
+ * --> where 조건을 통해 해당 쿼리에 해당하는 제품만 제거할 수 있다
+ */
+Product.destroy( {} );
 ````
 
 - sequelize 에서 단건조회시 findById 대신 findByPk 를 사용할 것을 권장한다
@@ -159,6 +166,13 @@ Product.findByPk( prodId ).then( product => {
    * Promise 를 반횐한다
    */
   product.save(); // 데이터베이스에 저장
+
+  /**
+   * - delete Product!!
+   * 
+   * Promise 를 반횐한다
+   */
+  product.destroy(); // 데이터 베이스에서 삭제
 } );
 
 ````
