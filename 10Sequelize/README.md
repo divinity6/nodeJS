@@ -144,6 +144,25 @@ Product.findByPk( prodId );
 
 ````
 
+- sequelize 로 가져온 데이터의 save 메서드를 호출하면 데이터베이스에 저장시켜준다
+
+
+- 만약, 해당데이터가 존재하지 않는다면 새로 생성하고, 존재한다면 업데이트해준다
+
+````javascript
+
+// good
+Product.findByPk( prodId ).then( product => {
+  /**
+   * - update Product!!
+   * 
+   * Promise 를 반횐한다
+   */
+  product.save(); // 데이터베이스에 저장
+} );
+
+````
+
 
 - sequelize 에서는 자동으로 table 이 없더라도 생성하도록 명령을 내릴 수 있다
 
