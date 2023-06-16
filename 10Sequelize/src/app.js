@@ -5,6 +5,8 @@ const bodyParser = require( 'body-parser' );
 
 const errorController = require( './controllers/error' );
 const sequelize = require( './util/database' );
+const Product = require( './models/product' );
+const User = require( './models/user' );
 
 const app = express();
 
@@ -44,9 +46,41 @@ app.use( '/admin' , adminRoutes );
 app.use( errorController.get404 );
 
 /**
- * - 데이터베이스와 sync 를 맞춘 후 앱을 실행한다
+ * - Product 와 User Table 이 관계를 맺는다는 뜻인데,
+ *
+ * User Table 안에 Product 가 속하는 관계 설정
+ * ( 즉, 사용자가 제품을 생성했다라는 뜻 )
+ *
+ * - 두번째 파라미터로 해당 관계가 어떻게 관리될지를 정의할 수 있다
  */
-sequelize.sync()
+Product.belongsTo( User , {
+    constraints : true, // 데이터 무결성을 유지하기위해 외래 키 제약조건 생성
+    onDelete : 'CASCADE' // 삭제가 Product 를 대상으로도 실행된다는 뜻( 사용자 삭제시 관련 가격도 모두삭제 등 : 기본값이다 )
+} );
+
+/**
+ * - User 모델이 Product 모델을 여러개 가지는 관계를 설정한다는 뜻
+ *
+ * --> 사용자는 하나 이상의 제품을 상점에 추가할 수 있기 때문
+ *
+ * --> ( options )belongsTo 를 hasMany 로 대체할 수 있다
+ *
+ * --> 따라서, 현재는 양방향으로 관계를 맺고 있다
+ */
+User.hasMany( Product );
+
+/**
+ * - 데이터베이스와 sync 를 맞춘 후 앱을 실행한다
+ *
+ * --> 위의 관계를 맺는 메서드들을 작성한 상태에서는 모델에 대한 Table 을 생성하고,
+ *     정의하는 관계들을 데이터베이스 내부에 정의해 준다
+ *
+ * --> sync : 데이터베이스와 모델간의 동기화
+ */
+sequelize
+    .sync( {
+        force : true, // 기존 테이블을 강제로 제거하고 새로 스키마를 적용한다( 실제 데이터가 모두 손실될 수 있음 )
+    } )
     .then( result => {
         // console.log( "result" , result );
         app.listen( 3000 );
