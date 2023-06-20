@@ -39,6 +39,19 @@ app.use( bodyParser.urlencoded({ extended : false } ) );
 
 app.use( express.static( path.join( __dirname , 'public' ) ) );
 
+app.use( ( req , res , next ) => {
+    User.findByPk( 1 )
+        .then( user => {
+            /**
+             * - 요청 객체에 사용자 정보 sequelize 객체 저장하여
+             *   어디서든 접근하여 쓸 수 있도록 수정
+             */
+            req.uesr = user;
+            next();
+        } )
+        .catch( err => console.log( '<<findUserErr>>' , err ) );
+} );
+
 app.use( shopRoutes );
 
 app.use( '/admin' , adminRoutes );
@@ -78,11 +91,25 @@ User.hasMany( Product );
  * --> sync : 데이터베이스와 모델간의 동기화
  */
 sequelize
-    .sync( {
-        force : true, // 기존 테이블을 강제로 제거하고 새로 스키마를 적용한다( 실제 데이터가 모두 손실될 수 있음 )
-    } )
+    .sync()
+    /**
+     * - 사용자 생성코드들
+     */
     .then( result => {
+        /**
+         * - 1 번째 id 로 사용자가 있는지 체크
+         */
+        return User.findByPk( 1 );
         // console.log( "result" , result );
+    } )
+    .then( user => {
+        if ( !user ){
+           return  User.create( { name : 'Max' , email: 'test@test.com' } );
+        }
+        return Promise.resolve( user );
+    } )
+    .then( user => {
+        console.log( "앱시작 User :" , user );
         app.listen( 3000 );
     } )
     .catch( err => {
