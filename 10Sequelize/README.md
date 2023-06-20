@@ -135,6 +135,7 @@ Product.findByPk( prodId )
  * --> where 조건을 통해 해당 쿼리에 해당하는 제품만 제거할 수 있다
  */
 Product.destroy( {} );
+
 ````
 
 - sequelize 에서 단건조회시 findById 대신 findByPk 를 사용할 것을 권장한다
@@ -232,6 +233,9 @@ Product.belongsTo( User , {
  * --> ( options )belongsTo 를 hasMany 로 대체할 수 있다
  *
  * --> 따라서, 현재는 양방향으로 관계를 맺고 있다
+ * 
+ * --> User 와 Product 가 관계를 맺고 있기 때문에,
+ * Sequelize 에서 user 객체에 Product 를 생성하는 메서드들을 자동으로 제공해서 넣어준다
  */
 User.hasMany( Product );
 
@@ -256,4 +260,41 @@ sequelize
           console.log( "err" , err );
         } );
 
+````
+
+- Sequelize 에서 해당 테이블을 포함하는 관계를 맺으면, 관계를 맺은 테이블을 생성하는 메서드를 제공해준다
+
+````javascript
+
+/**
+ * - User 모델이 Product 모델을 포함하는 관계를 맺음
+ */
+User.hasMany( Product );
+
+/**
+ * - 어디서든 사용할 수 있게 req 객체에 user sequelize 할당 
+ */
+app.use( ( req , res , next ) => {
+  User.findByPk( 1 )
+          .then( user => {
+            req.user = user;
+            next();
+          } )
+          .catch( err => console.log( '<<findUserErr>>' , err ) );
+} );
+
+
+/**
+ * - 해당 데이터를 자동으로 database 에 저장한다
+ *
+ * --> Sequelize 는 db 에 저장시 비동기로 처리한다
+ *
+ * --> Sequelize 에서 관계설정시 자동으로 해당 관계된 테이블 생성 메서드를 지원해준다
+ */
+req.user.createProduct( {
+  title,
+  price,
+  imageUrl,
+  description,
+} )
 ````

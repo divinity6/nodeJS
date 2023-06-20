@@ -43,17 +43,21 @@ exports.postAddProduct = ( req , res , next ) => {
 
     const { title , imageUrl , description , price } = req.body;
 
+    console.log( "req" , req.user );
+
     /**
      * - 해당 데이터를 자동으로 database 에 저장한다
      *
      * --> Sequelize 는 db 에 저장시 비동기로 처리한다
+     *
+     * --> Sequelize 에서 관계설정시 자동으로 해당 관계된 테이블 생성 메서드를 지원해준다
      */
-    Product.create( {
-        title,
-        imageUrl,
-        description,
-        price
-    } )
+    req.user.createProduct( {
+            title,
+            price,
+            imageUrl,
+            description,
+        } )
         .then( result => {
             console.log( '<<Created Product by Database>> :' , result );
             res.redirect( '/admin/products' );

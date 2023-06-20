@@ -42,11 +42,12 @@ app.use( express.static( path.join( __dirname , 'public' ) ) );
 app.use( ( req , res , next ) => {
     User.findByPk( 1 )
         .then( user => {
+
             /**
              * - 요청 객체에 사용자 정보 sequelize 객체 저장하여
              *   어디서든 접근하여 쓸 수 있도록 수정
              */
-            req.uesr = user;
+            req.user = user;
             next();
         } )
         .catch( err => console.log( '<<findUserErr>>' , err ) );
@@ -79,6 +80,9 @@ Product.belongsTo( User , {
  * --> ( options )belongsTo 를 hasMany 로 대체할 수 있다
  *
  * --> 따라서, 현재는 양방향으로 관계를 맺고 있다
+ *
+ * --> User 와 Product 가 관계를 맺고 있기 때문에,
+ *     Sequelize 에서 user 객체에 Product 를 생성하는 메서드( createProduct )들을 자동으로 제공해서 넣어준다
  */
 User.hasMany( Product );
 
