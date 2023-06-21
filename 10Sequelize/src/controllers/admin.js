@@ -8,7 +8,8 @@ const Product = require( "../models/product" );
  */
 exports.getProducts = ( req , res , next )=> {
 
-    Product.findAll()
+    // Product.findAll()
+    req.user.getProducts()
         .then( products => {
             res.render( 'admin/products' , {
                 prods : products ,
@@ -42,8 +43,6 @@ exports.getAddProduct = ( req , res , next )=> {
 exports.postAddProduct = ( req , res , next ) => {
 
     const { title , imageUrl , description , price } = req.body;
-
-    console.log( "req" , req.user );
 
     /**
      * - 해당 데이터를 자동으로 database 에 저장한다
@@ -84,10 +83,15 @@ exports.getEditProduct = ( req , res , next )=> {
     }
     const prodId = req.params.productId;
 
+
     console.log( "req.params" , req.params );
 
-    Product.findByPk( prodId )
-        .then( product => {
+    /**
+     * - id 가 prodId 인 Product 반환
+     */
+    // Product.findByPk( prodId )
+    req.user.getProducts( { where : { id : prodId } } )
+        .then( ([ product ]) => {
             if ( !product ){
                 console.log( "p" )
                 return res.redirect( '/' );

@@ -113,7 +113,6 @@ sequelize
         return Promise.resolve( user );
     } )
     .then( user => {
-        console.log( "앱시작 User :" , user );
         app.listen( 3000 );
     } )
     .catch( err => {
