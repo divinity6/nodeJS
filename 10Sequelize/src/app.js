@@ -7,6 +7,8 @@ const errorController = require( './controllers/error' );
 const sequelize = require( './util/database' );
 const Product = require( './models/product' );
 const User = require( './models/user' );
+const Cart = require( './models/cart' );
+const CartItem = require( './models/cart-item' );
 
 const app = express();
 
@@ -87,6 +89,21 @@ Product.belongsTo( User , {
 User.hasMany( Product );
 
 /**
+ * - 사용자는 1 개의 장바구니를 가지고,
+ *   장바구니는 User 에 속하는 관계 설정
+ *
+ * - 또한 Cart 는 많은 수의 제품에 속함
+ * - 반대로 하나의 제품이 다수의 장바구니에 속하기도 함
+ *
+ * - 다대다 관계, 즉, 하나의 장바구니가 여러 제품을 담을 수 있고,
+ *   한 제품이 여러개의 장바구니에 들어갈 수 있음
+ */
+User.hasOne( Cart );
+Cart.belongsTo( User );
+Cart.belongsToMany( Product , { through : CartItem } );
+Product.belongsToMany( Cart , { through : CartItem } );
+
+/**
  * - 데이터베이스와 sync 를 맞춘 후 앱을 실행한다
  *
  * --> 위의 관계를 맺는 메서드들을 작성한 상태에서는 모델에 대한 Table 을 생성하고,
@@ -95,13 +112,14 @@ User.hasMany( Product );
  * --> sync : 데이터베이스와 모델간의 동기화
  */
 sequelize
-    .sync()
+    .sync( { force : true } )
+    // .sync()
     /**
      * - 사용자 생성코드들
      */
     .then( result => {
         /**
-         * - 1 번째 id 로 사용자가 있는지 체크
+         * - 1 번째 id 로 최소 한명의 사용자가 있는지 체크
          */
         return User.findByPk( 1 );
         // console.log( "result" , result );
