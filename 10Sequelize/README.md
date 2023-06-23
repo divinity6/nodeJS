@@ -211,6 +211,8 @@ sequelize.sync()
 ````javascript
 const Product = require( './models/product' );
 const User = require( './models/user' );
+const Cart = require( './models/cart' );
+const CartItem = require( './models/cart-item' );
 
 /**
  * - Product 와 User Table 이 관계를 맺는다는 뜻인데,
@@ -238,6 +240,27 @@ Product.belongsTo( User , {
  * Sequelize 에서 user 객체에 Product 를 생성하는 메서드들을 자동으로 제공해서 넣어준다
  */
 User.hasMany( Product );
+
+/**
+ * - 사용자는 1 개의 장바구니를 가지고,
+ *   장바구니는 User 에 속하는 관계 설정
+ *
+ * - 또한 Cart 는 많은 수의 제품에 속함
+ * - 반대로 하나의 제품이 다수의 장바구니에 속하기도 함
+ *
+ * - 다대다 관계, 즉, 하나의 장바구니가 여러 제품을 담을 수 있고,
+ *   한 제품이 여러개의 장바구니에 들어갈 수 있음
+ *
+ * --> 이렇게 설정해두면 앞에 get 이붙은 접두어로 해당 데이터를 가져올 수 있다
+ *
+ * --> user.getCart() : hasOne 이라 단수
+ *
+ * --> user.getProducts() : hasMany 라 복수
+ */
+User.hasOne( Cart );
+Cart.belongsTo( User );
+Cart.belongsToMany( Product , { through : CartItem } );
+Product.belongsToMany( Cart , { through : CartItem } );
 
 
 /**

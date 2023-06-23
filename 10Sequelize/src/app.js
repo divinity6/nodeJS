@@ -97,6 +97,12 @@ User.hasMany( Product );
  *
  * - 다대다 관계, 즉, 하나의 장바구니가 여러 제품을 담을 수 있고,
  *   한 제품이 여러개의 장바구니에 들어갈 수 있음
+ *
+ * --> 이렇게 설정해두면 앞에 get 이붙은 접두어로 해당 데이터를 가져올 수 있다
+ *
+ * --> user.getCart() : hasOne 이라 단수
+ *
+ * --> user.getProducts() : hasMany 라 복수
  */
 User.hasOne( Cart );
 Cart.belongsTo( User );
@@ -112,8 +118,8 @@ Product.belongsToMany( Cart , { through : CartItem } );
  * --> sync : 데이터베이스와 모델간의 동기화
  */
 sequelize
-    .sync( { force : true } )
-    // .sync()
+    // .sync( { force : true } )
+    .sync()
     /**
      * - 사용자 생성코드들
      */
@@ -124,13 +130,18 @@ sequelize
         return User.findByPk( 1 );
         // console.log( "result" , result );
     } )
+    /** 처음 사용자 생성 */
     .then( user => {
         if ( !user ){
            return  User.create( { name : 'Max' , email: 'test@test.com' } );
         }
         return Promise.resolve( user );
     } )
+    /** 처음 cart 생성 */
     .then( user => {
+        return user.createCart();
+    } )
+    .then( cart => {
         app.listen( 3000 );
     } )
     .catch( err => {
