@@ -80,6 +80,7 @@ exports.getCart = ( req , res , next ) => {
         .then( cart => {
             return cart.getProducts()
                 .then( products => {
+                    console.log( "product" , products[ 0 ].cartItem )
                     res.render( 'shop/cart' , {
                         pageTitle : 'Your Cart' ,
                         path : '/cart' ,
@@ -101,6 +102,7 @@ exports.getCart = ( req , res , next ) => {
 exports.postCart = ( req , res , next ) => {
     const prodId = req.body.productId;
     let fetchedCart;
+    let newQuantity = 1;
 
     /**
      * - 장바구니에 추가하고자 하는 제품이 존재하는지 확인 후,
@@ -109,26 +111,34 @@ exports.postCart = ( req , res , next ) => {
     req.user.getCart()
         .then( cart => {
             fetchedCart = cart;
+            /** cart 와 관계된 Product 들... */
             return cart.getProducts( { where : { id : prodId } } );
         } )
         .then( products => {
             const [ product ] = products;
-            let newQuantity = 1;
 
             if ( product ){
-                // ...
+                /**
+                 * - 장바구니에 저장된 제품의 수량을 얻게된다
+                 */
+                const oldQuantity = product.cartItem.quantity;
+                newQuantity += oldQuantity;
+
+                return Promise.resolve( product );
             }
 
             /**
-             * - 장바구니에 제품이 없을 경우 해당 제품을 cart 에 추가
-             *
-             * --> 업데이트할때, quantity 는 newQuantity 로 업데이트해서 저장
+             * - 장바구니에 제품이 없을 경우, 해당 제품을 Product 에서 조회
              * */
-            return Product.findByPk( prodId )
-                .then( product => {
-                    return fetchedCart.addProduct( product , { through : { quantity : newQuantity } } );
-                } )
-                .catch( err => console.log( '<<postCartNotFoundProductsErr>> :' , err ) );
+            return Product.findByPk( prodId );
+        } )
+        /**
+         * - 해당 제품을 저장
+         *
+         * - 업데이트할때, quantity 는 newQuantity 로 업데이트해서 저장
+         */
+        .then( product => {
+            return fetchedCart.addProduct( product , { through : { quantity : newQuantity } } );
         } )
         .then( () => {
             res.redirect( '/cart' );

@@ -259,6 +259,13 @@ User.hasMany( Product );
  */
 User.hasOne( Cart );
 Cart.belongsTo( User );
+/**
+ * - 이렇게 through 를 사용하게 되면,
+ *   Cart 와 Product 는 연결테이블로써 CartItem 을 사용하게 된다
+ *
+ * - CartItem 은 Cart 의 key 와 Product 의 key 를 가지고 있어,
+ *   서로 테이블의 값을 가져올때, 이 연결테이블을 이용해 가져올 수 있다
+ */
 Cart.belongsToMany( Product , { through : CartItem } );
 Product.belongsToMany( Cart , { through : CartItem } );
 
