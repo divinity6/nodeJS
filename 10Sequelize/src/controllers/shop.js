@@ -149,11 +149,20 @@ exports.postCart = ( req , res , next ) => {
 exports.postCartDeleteProdcut = ( req , res , next ) => {
     const prodId = req.body.productId;
 
-    Product.findById( prodId , ( product ) => {
-        Cart.deleteProduct( prodId , product.price );
-
-        res.redirect( 'cart' );
-    } );
+    req.user.getCart()
+        /** 해당 cart 의 제품들중 id 가 prodId 인 제품찾기 */
+        .then( cart => {
+            return cart.getProducts( { where : { id : prodId } } )
+        } )
+        /** 해당 제품의 cartItem( Cart 와 Product 의 연결 테이블 )에서 제거 */
+        .then( products => {
+            const [ product ] = products;
+            return product.cartItem.destroy();
+        } )
+        .then( () => {
+            res.redirect( 'cart' );
+        } )
+        .catch( err => console.log( '<<postDeleteCartProductsFetchErr>> :' , err ) );
 
 }
 
