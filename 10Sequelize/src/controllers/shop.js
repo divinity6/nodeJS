@@ -88,30 +88,7 @@ exports.getCart = ( req , res , next ) => {
                 } )
                 .catch( err => console.log( '<<getCartProductsFetchErr>> :' , err ) );
         } )
-        .catch( err => console.log( '<<getCartFetchErr>> :' , err ) )
-
-    // Cart.getCart( cart => {
-    //
-    //     Product.findAll()
-    //         .then( products => {
-    //
-    //             const cartProducts = [];
-    //
-    //             for ( const product of products ){
-    //                 const cartProductData = cart.products.find( prod => prod.id === product.id );
-    //                 if ( cartProductData ){
-    //                     cartProducts.push( { productData : product , qty : cartProductData.qty } );
-    //                 }
-    //             }
-    //
-    //             res.render( 'shop/cart' , {
-    //                 pageTitle : 'Your Cart' ,
-    //                 path : '/cart' ,
-    //                 products : cartProducts,
-    //             } );
-    //         } )
-    //         .catch( err => console.log( '<<getDataFetchErr>> :' , err ) );
-    // } );
+        .catch( err => console.log( '<<getCartFetchErr>> :' , err ) );
 
 }
 
@@ -123,14 +100,40 @@ exports.getCart = ( req , res , next ) => {
  */
 exports.postCart = ( req , res , next ) => {
     const prodId = req.body.productId;
+    let fetchedCart;
 
-    console.log( "prodId" , prodId );
+    /**
+     * - 장바구니에 추가하고자 하는 제품이 존재하는지 확인 후,
+     *   없으면 만들어주고, 있으면 증가시키면 된다
+     */
+    req.user.getCart()
+        .then( cart => {
+            fetchedCart = cart;
+            return cart.getProducts( { where : { id : prodId } } );
+        } )
+        .then( products => {
+            const [ product ] = products;
+            let newQuantity = 1;
 
-    Product.findById( prodId , ( product ) => {
-         Cart.addProduct( prodId , product.price );
-    } );
+            if ( product ){
+                // ...
+            }
 
-    res.redirect( '/cart' );
+            /**
+             * - 장바구니에 제품이 없을 경우 해당 제품을 cart 에 추가
+             *
+             * --> 업데이트할때, quantity 는 newQuantity 로 업데이트해서 저장
+             * */
+            return Product.findByPk( prodId )
+                .then( product => {
+                    return fetchedCart.addProduct( product , { through : { quantity : newQuantity } } );
+                } )
+                .catch( err => console.log( '<<postCartNotFoundProductsErr>> :' , err ) );
+        } )
+        .then( () => {
+            res.redirect( '/cart' );
+        } )
+        .catch( err => console.log( '<<postCartProductsFetchErr>> :' , err ) );
 }
 
 exports.postCartDeleteProdcut = ( req , res , next ) => {
