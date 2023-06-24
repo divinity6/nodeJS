@@ -9,6 +9,8 @@ const Product = require( './models/product' );
 const User = require( './models/user' );
 const Cart = require( './models/cart' );
 const CartItem = require( './models/cart-item' );
+const Order = require( './models/order' );
+const OrderItem = require( './models/order-item' );
 
 const app = express();
 
@@ -115,6 +117,17 @@ Cart.belongsTo( User );
  */
 Cart.belongsToMany( Product , { through : CartItem } );
 Product.belongsToMany( Cart , { through : CartItem } );
+/**
+ * - 주문은 하나의 사용자에 속한다
+ *
+ * - 반대로 사용자는 많은 주문을 가질 수 있다( 일대다 관계 )
+ *
+ * - 그리고, 하나의 주문은 많은 제품에 속할 수 있다
+ *
+ */
+Order.belongsTo( User );
+User.hasMany( Order );
+Order.belongsToMany( Product , { through : OrderItem } );
 
 /**
  * - 데이터베이스와 sync 를 맞춘 후 앱을 실행한다
