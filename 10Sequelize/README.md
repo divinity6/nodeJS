@@ -328,3 +328,19 @@ req.user.createProduct( {
   description,
 } )
 ````
+
+### Module Summary
+
+- SQL 데이터베이스는 스키마 엔진 유형으로, 엄격한 데이터 스키마와 데이터베이스 관계를 사용한다
+
+
+- Nodejs 에서 mysql2 같은 패키지를 이용해 쉽게 데이터베이스에 연결할 수 있다
+  - 이때, 직접 테이블을 추가하고, 테이블간 관계를 설정해야해야해서 번거롭다
+
+
+- 그러나, Sequelize 를 이용하면 JS 만으로 SQL 쿼리를 작성하지 않고도 , 
+  - 정의한 **Model 들을 가지고 데이터베이스와 상호작용할 수 있다**
+  - 관계설정( Associations )또한 마찬가지다
+
+
+- Sequelize 공식 참고자료:  http://docs.sequelizejs.com/

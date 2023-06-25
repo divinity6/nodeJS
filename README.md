@@ -22,6 +22,14 @@
 ### [ DynamicRoutes ]( https://github.com/divinity6/nodejs-study/tree/master/08DynamicRoute )
 - 동적 라우트 적용
 
+
+### [ SQL ]( https://github.com/divinity6/nodejs-study/tree/master/09SQL )
+- Nodejs 에서 SQL 사용
+
+
+### [ Sequelize ]( https://github.com/divinity6/nodejs-study/tree/master/10Sequelize )
+- Sequelize 를 이용해 SQL 사용
+
 ---
 
 - 출처 : https://www.udemy.com/course/nodejs-mvc-rest-apis-graphql-deno/
