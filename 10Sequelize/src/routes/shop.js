@@ -23,12 +23,13 @@ router.get( '/cart' , shopController.getCart );
 
 router.post( '/cart' , shopController.postCart );
 
-router.post( '/cart-delete-item' , shopController.postCartDeleteProdcut );
+router.post( '/cart-delete-item' , shopController.postCartDeleteProduct );
 
 router.post( '/create-order' , shopController.postOrder );
 
 router.get( '/orders' , shopController.getOrders );
 
-router.get( '/checkout' , shopController.getCheckout );
+/** checkout 기능 잠시 주석처리 */
+// router.get( '/checkout' , shopController.getCheckout );
 
 module.exports = router;

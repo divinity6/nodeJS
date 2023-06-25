@@ -83,9 +83,6 @@ exports.getEditProduct = ( req , res , next )=> {
     }
     const prodId = req.params.productId;
 
-
-    console.log( "req.params" , req.params );
-
     /**
      * - id 가 prodId 인 Product 반환
      */

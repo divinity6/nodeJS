@@ -21,7 +21,7 @@ exports.getProducts = ( req , res , next )=> {
                 path : '/products' ,
             } );
         } )
-        .catch( err => console.log( '<<getDataFetchErr>> :' , err ) );
+        .catch( err => console.log( '<<getProductsFetchErr>> :' , err ) );
 }
 
 /**
@@ -47,7 +47,7 @@ exports.getProduct = ( req , res , next ) =>{
                 product :product,
             } )
         } )
-        .catch( err => console.log( '<<findDataFetchErr>> :' , err ) );
+        .catch( err => console.log( '<<getProductFetchErr>> :' , err ) );
 }
 
 /**
@@ -67,7 +67,7 @@ exports.getIndex = ( req , res , next ) => {
                 prods : products ,
             } );
         } )
-        .catch( err => console.log( '<<getDataFetchErr>> :' , err ) );
+        .catch( err => console.log( '<<getIndexFetchErr>> :' , err ) );
 }
 
 /**
@@ -83,7 +83,6 @@ exports.getCart = ( req , res , next ) => {
 
     req.user.getCart()
         .then( cart => {
-            console.log( "Cart" , cart );
             return cart.getProducts()
                 .then( products => {
                     res.render( 'shop/cart' , {
@@ -151,10 +150,10 @@ exports.postCart = ( req , res , next ) => {
         .then( () => {
             res.redirect( '/cart' );
         } )
-        .catch( err => console.log( '<<postCartProductsFetchErr>> :' , err ) );
+        .catch( err => console.log( '<<postCartFetchErr>> :' , err ) );
 }
 
-exports.postCartDeleteProdcut = ( req , res , next ) => {
+exports.postCartDeleteProduct = ( req , res , next ) => {
     const prodId = req.body.productId;
 
     req.user.getCart()
@@ -170,7 +169,7 @@ exports.postCartDeleteProdcut = ( req , res , next ) => {
         .then( () => {
             res.redirect( 'cart' );
         } )
-        .catch( err => console.log( '<<postDeleteCartProductsFetchErr>> :' , err ) );
+        .catch( err => console.log( '<<postDeleteCartProductFetchErr>> :' , err ) );
 }
 
 
@@ -185,11 +184,23 @@ exports.postCartDeleteProdcut = ( req , res , next ) => {
  * @param next
  */
 exports.getOrders = ( req , res , next ) => {
+    /**
+     * - 사용자의 주문의 제품을 모두 가져옴
+     *
+     * --> app.js 의 관계설정을 Order.belongsToMany( Product , { through : OrderItem } );
+     *     로 했기 때문에 product 가 아닌 products 로 include 를 설정해야한다
+     * */
+    req.user.getOrders( { include : [ 'products' ] } )
+        .then( orders => {
+            res.render( 'shop/orders' , {
+                pageTitle : 'Your Orders' ,
+                path : '/orders' ,
+                orders : orders
+            } );
+        } )
+        .catch( err => console.log( '<<getOrdersFetchErr>> :' , err ) );
 
-    res.render( 'shop/orders' , {
-        pageTitle : 'Your Orders' ,
-        path : '/orders' ,
-    } );
+
 }
 
 /**
@@ -202,16 +213,19 @@ exports.getOrders = ( req , res , next ) => {
  * @param next
  */
 exports.postOrder = ( req , res , next ) => {
+
+    let fetchedCart;
+
     req.user.getCart()
         .then( cart => {
+            fetchedCart = cart;
             return cart.getProducts();
         } )
+        /** cart 의 제품들을 order 에 등록 */
         .then( products => {
             return req.user.createOrder()
                 .then( order => {
-                    /**
-                     * - cartItem 들에 저장된 수량들을 order 의 orderItem 에 복사하여 전달
-                     */
+                    /** cartItem 들에 저장된 수량들을 order 의 orderItem 에 복사하여 전달 */
                     return order.addProduct( products.map( product => {
                         product.orderItem = { quantity : product.cartItem.quantity };
                         return product;
@@ -219,7 +233,11 @@ exports.postOrder = ( req , res , next ) => {
                 } )
                 .catch( err => console.log( '<<postOrderCreateOrderErr>> :' , err ) );
         } )
-        .then( result => {
+        /** 그 후, cart 의 제품들을 모두 제거( 장바구니 비우기 ) */
+        .then( () => {
+            return fetchedCart.setProducts( null );
+        } )
+        .then( () => {
             res.redirect( '/orders' );
         } )
         .catch( err => console.log( '<<postOrderFetchErr>> :' , err ) );
@@ -227,14 +245,16 @@ exports.postOrder = ( req , res , next ) => {
 
 /**
  * - Checkout Controller
+ *
+ * --> 사용하지 않아 잠시 주석처리
  * @param req
  * @param res
  * @param next
  */
-exports.getCheckout = ( req , res , next ) => {
-
-    res.render( 'shop/checkout' , {
-        pageTitle : 'Checkout' ,
-        path : '/checkout' ,
-    } );
-}
+// exports.getCheckout = ( req , res , next ) => {
+//
+//     res.render( 'shop/checkout' , {
+//         pageTitle : 'Checkout' ,
+//         path : '/checkout' ,
+//     } );
+// }
