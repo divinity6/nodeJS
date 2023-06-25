@@ -1,5 +1,4 @@
 const Product = require( '../models/product' );
-const Cart = require( '../models/cart' );
 
 /**
  * - 제품 리스트 페이지 반환 Controller
@@ -27,6 +26,9 @@ exports.getProducts = ( req , res , next )=> {
 
 /**
  * - 제품 페이지 반환 Controller
+ *
+ * --> 제품 페이지 반환
+ *
  * @param req
  * @param res
  * @param next
@@ -70,6 +72,9 @@ exports.getIndex = ( req , res , next ) => {
 
 /**
  * - Cart Controller
+ *
+ * --> 제품페이지 반환
+ *
  * @param req
  * @param res
  * @param next
@@ -78,9 +83,9 @@ exports.getCart = ( req , res , next ) => {
 
     req.user.getCart()
         .then( cart => {
+            console.log( "Cart" , cart );
             return cart.getProducts()
                 .then( products => {
-                    console.log( "product" , products[ 0 ].cartItem )
                     res.render( 'shop/cart' , {
                         pageTitle : 'Your Cart' ,
                         path : '/cart' ,
@@ -95,6 +100,9 @@ exports.getCart = ( req , res , next ) => {
 
 /**
  * - Cart Controller
+ *
+ * --> Cart 에 해당 제품추가
+ *
  * @param req
  * @param res
  * @param next
@@ -163,11 +171,15 @@ exports.postCartDeleteProdcut = ( req , res , next ) => {
             res.redirect( 'cart' );
         } )
         .catch( err => console.log( '<<postDeleteCartProductsFetchErr>> :' , err ) );
-
 }
 
+
+
 /**
- * - Post Cart Controller
+ * - get Orders Controller
+ *
+ * --> 주문 정보 페이지 반환
+ *
  * @param req
  * @param res
  * @param next
@@ -178,6 +190,39 @@ exports.getOrders = ( req , res , next ) => {
         pageTitle : 'Your Orders' ,
         path : '/orders' ,
     } );
+}
+
+/**
+ * - post Orders Controller
+ *
+ * --> 카트에 있는 모든 제품을 orders 로 이동
+ *
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.postOrder = ( req , res , next ) => {
+    req.user.getCart()
+        .then( cart => {
+            return cart.getProducts();
+        } )
+        .then( products => {
+            return req.user.createOrder()
+                .then( order => {
+                    /**
+                     * - cartItem 들에 저장된 수량들을 order 의 orderItem 에 복사하여 전달
+                     */
+                    return order.addProduct( products.map( product => {
+                        product.orderItem = { quantity : product.cartItem.quantity };
+                        return product;
+                    } ) );
+                } )
+                .catch( err => console.log( '<<postOrderCreateOrderErr>> :' , err ) );
+        } )
+        .then( result => {
+            res.redirect( '/orders' );
+        } )
+        .catch( err => console.log( '<<postOrderFetchErr>> :' , err ) );
 }
 
 /**
