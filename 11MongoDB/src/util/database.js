@@ -1,22 +1,30 @@
-const Sequelize = require( 'sequelize' );
+const mongodb = require( 'mongodb' );
+
+const MongoClient = mongodb.MongoClient;
 
 /**
- * - table 명
+ * - mongoDB 에 연결
  *
- * - username
- *
- * - password
- *
- * - options
+ * @param callback
  */
-const sequelize = new Sequelize( 'node_complete', 'root' , 'Tpsl782505@' , {
-    dialect : 'mysql',
-    host : 'localhost'
-} );
+const mongoConnect = ( callback ) => {
+    /**
+     * --> https://cloud.mongodb.com/ 에서 사용한 사용자이름과 password 를 입력하면 된다
+     *
+     * --> mongodb+srv://<userID>:<password>@atlascluster.ebvlee7.mongodb.net/?retryWrites=true&w=majority
+     *
+     * --> 이 연결객체는 데이터베이스에 연결할 수 있는 client Promise 객체를 반환한다
+     */
+    MongoClient
+        .connect( 'mongodb+srv://hoon:hoonTest@atlascluster.ebvlee7.mongodb.net/?retryWrites=true&w=majority' )
+        .then( client => {
+            console.log( '<<ConnectedMongoDB>>' );
+            callback( client );
+        } )
+        .catch( err => {
+            console.log( '<<DataBaseConnectErr>> :' , err );
+        } );
+}
 
-/**
- * - 이렇게 설정하면 자동으로 sequelize 객체가 생성되어 db 에 자동으로 연결될 것이다
- *
- * --> 정확히는 ConnectionPool 을 자동으로 생성한다
- */
-module.exports = sequelize;
+module.exports = mongoConnect;
+

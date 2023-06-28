@@ -173,3 +173,74 @@
 ---
 
 - 결론적으로 **Schema 가 없어서, 특정 구조가 필요하지 않아 유연성이 향상**된다
+
+
+
+#### Install MongoDB Driver
+
+
+- [ MongoDB 아틀라스 ]( https://cloud.mongodb.com/ )
+  - 위 사이트에서 몽고디비를 사용할 수 있고, npm 으로 드라이버를 다운로드 받을 수 있다
+
+
+- MongoDB Atlas 에 권한을 설정할때, 사용자에게 읽기 쓰기 권한정도를 주는것이 현실적이긴하다
+  - ( NodeJS 로 데이터베이스관리를 하지 않기에... )
+
+
+- MongoDB 의 NetworkAccess 에 자기자신 LocalIP 주소를 넣어줘야 엑세스할 수 있다
+
+
+
+- npm 으로 mongodb 에 엑세스하기위한 driver 를 설치할 수 있다
+````shell
+npm install --save mongodb
+````
+
+#### NodeJS MongoDB 연결
+
+````javascript
+// utils.database.js
+
+const mongodb = require( 'mongodb' );
+
+const MongoClient = mongodb.MongoClient;
+
+/**
+ * - mongoDB 에 연결
+ *
+ * @param callback
+ */
+const mongoConnect = ( callback ) => {
+  /**
+   * --> https://cloud.mongodb.com/ 에서 사용한 사용자이름과 password 를 입력하면 된다
+   *
+   * --> mongodb+srv://<userID>:<password>@atlascluster.ebvlee7.mongodb.net/?retryWrites=true&w=majority
+   *
+   * --> 이 연결객체는 데이터베이스에 연결할 수 있는 client Promise 객체를 반환한다
+   */
+  MongoClient
+          .connect( 'mongodb+srv://hoon:hoonTest@atlascluster.ebvlee7.mongodb.net/?retryWrites=true&w=majority' )
+          .then( client => {
+            console.log( '<<Connected>> : ' , client );
+            callback( client );
+          } )
+          .catch( err => {
+            console.log( '<<DataBaseConnectErr>> :' , err );
+          } );
+}
+
+module.exports = mongoConnect;
+
+
+````
+
+````javascript
+/** mongoDB 연결 */
+const mongoConnect = require( './util/database' );
+
+mongoConnect( ( client ) => {
+  console.log( "<<StartApp>>" , client );
+  app.listen( 3000 );
+} );
+
+````
