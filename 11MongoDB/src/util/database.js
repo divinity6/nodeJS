@@ -2,6 +2,8 @@ const mongodb = require( 'mongodb' );
 
 const MongoClient = mongodb.MongoClient;
 
+let _db;
+
 /**
  * - mongoDB 에 연결
  *
@@ -16,15 +18,30 @@ const mongoConnect = ( callback ) => {
      * --> 이 연결객체는 데이터베이스에 연결할 수 있는 client Promise 객체를 반환한다
      */
     MongoClient
-        .connect( 'mongodb+srv://hoon:hoonTest@atlascluster.ebvlee7.mongodb.net/?retryWrites=true&w=majority' )
+        /** shop 데이터베이스에 접근 */
+        .connect( 'mongodb+srv://hoon:hoonTest@atlascluster.ebvlee7.mongodb.net/shop?retryWrites=true&w=majority' )
         .then( client => {
             console.log( '<<ConnectedMongoDB>>' );
-            callback( client );
+            _db = client.db();
+            callback();
         } )
         .catch( err => {
             console.log( '<<DataBaseConnectErr>> :' , err );
+            throw err;
         } );
 }
 
-module.exports = mongoConnect;
+/**
+ * - MongoDB 와 연결되어 해당 데이터베이스에 접근했으면 해당 DB 를 반환하는 함수
+ * @return {*}
+ */
+const getDb = () => {
+    if ( _db ){
+        return _db;
+    }
+    throw 'No database found!';
+}
 
+exports.mongoConnect = mongoConnect;
+
+exports.getDb = getDb;

@@ -222,6 +222,8 @@ const mongoConnect = ( callback ) => {
           .connect( 'mongodb+srv://hoon:hoonTest@atlascluster.ebvlee7.mongodb.net/?retryWrites=true&w=majority' )
           .then( client => {
             console.log( '<<Connected>> : ' , client );
+            /** mongoDB 접근 */
+            client.db();
             callback( client );
           } )
           .catch( err => {
@@ -233,6 +235,10 @@ module.exports = mongoConnect;
 
 
 ````
+
+- MongoDB 는 MySQL 과 다르게, 해당 이름의 Database 에 접근하면 즉석에서 자동으로 생성해준다
+  - ( 높은 유연성 )
+  - 해당 이름으로 접근하라고 알리면, MongoDB 에 해당 데이터베이스가 없으면 즉시 생성해준다
 
 ````javascript
 /** mongoDB 연결 */

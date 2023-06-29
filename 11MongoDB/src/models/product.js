@@ -1,6 +1,24 @@
-const Sequelize = require( 'sequelize' );
+/** 해당 함수를 이용하여 Database 와 연결할 수 있다 */
+const getDb = require( '../util/database' ).getDb;
 
-const sequelize = require( '../util/database' );
+class Product {
+
+    title;
+    price;
+    description;
+    imageUrl;
+
+    constructor( title , price , description , imageUrl ) {
+        this.title = title;
+        this.price = price;
+        this.description = description;
+        this.imageUrl = imageUrl;
+    }
+
+    save(){
+
+    }
+}
 
 /**
  * - 제품 단일 Model Table
