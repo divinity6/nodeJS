@@ -16,33 +16,27 @@ class Product {
     }
 
     save(){
-
+        const db = getDb();
+        /**
+         * @db.collection
+         *
+         * - MongoDB 에게 입력, 작업등을 진행할 컬렉션을 지정해줄 수 있다.
+         *
+         */
+        db.collection( 'products' )
+            /**
+             * - MongoDB 에 데이터하나 삽입
+             *
+             * --> MongoDB 에서 변환한다
+             *
+             * @return { Promise }
+             */
+            .insertOne( this )
+            .then( result => {
+                console.log(  '<<DataInsert> :' , result );
+            } )
+            .catch( err => console.log( '<<DataInsertErr>> :' , err ) );
     }
 }
-
-/**
- * - 제품 단일 Model Table
- */
-const Product = sequelize.define( 'product' , {
-    id : {
-        type : Sequelize.INTEGER,   // id 타입
-        autoIncrement : true,   // 자동증가
-        allowNull : false,      // null 을 허용함
-        primaryKey : true,      // id 를 테이블의 기본 키로 설정
-    },
-    title : Sequelize.STRING,   // 유형만 설정( 세부설정 안할경우 )
-    price : {
-        type : Sequelize.DOUBLE,
-        allowNull: false,
-    },
-    imageUrl : {
-        type : Sequelize.STRING,
-        allowNull : false,
-    },
-    description : {
-        type : Sequelize.STRING,
-        allowNull : false,
-    }
-} );
 
 module.exports = Product;

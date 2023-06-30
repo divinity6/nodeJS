@@ -39,19 +39,20 @@ app.use( bodyParser.urlencoded({ extended : false } ) );
 
 app.use( express.static( path.join( __dirname , 'public' ) ) );
 
-// app.use( ( req , res , next ) => {
-//     User.findByPk( 1 )
-//         .then( user => {
-//
-//             /**
-//              * - 요청 객체에 사용자 정보 sequelize 객체 저장하여
-//              *   어디서든 접근하여 쓸 수 있도록 수정
-//              */
-//             req.user = user;
-//             next();
-//         } )
-//         .catch( err => console.log( '<<findUserErr>>' , err ) );
-// } );
+app.use( ( req , res , next ) => {
+    // User.findByPk( 1 )
+    //     .then( user => {
+    //
+    //         /**
+    //          * - 요청 객체에 사용자 정보 sequelize 객체 저장하여
+    //          *   어디서든 접근하여 쓸 수 있도록 수정
+    //          */
+    //         req.user = user;
+    //         next();
+    //     } )
+    //     .catch( err => console.log( '<<findUserErr>>' , err ) );
+    next();
+} );
 
 // app.use( shopRoutes );
 //
@@ -60,6 +61,6 @@ app.use( '/admin' , adminRoutes );
 app.use( errorController.get404 );
 
 mongoConnect( () => {
-    console.log( "<<StartApp>>" , client );
+    console.log( "<<StartApp>>" );
     app.listen( 3000 );
 } );

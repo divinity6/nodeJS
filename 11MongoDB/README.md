@@ -246,7 +246,44 @@ const mongoConnect = require( './util/database' );
 
 mongoConnect( ( client ) => {
   console.log( "<<StartApp>>" , client );
+  /**
+   * - client 의 Database 생성
+   */
+  client.db();
   app.listen( 3000 );
 } );
+
+/**
+ * - MongoDB 와 연결되어 해당 데이터베이스에 접근했으면 해당 DB 를 반환하는 함수
+ * @return {*}
+ */
+const getDb = () => {
+  if ( _db ){
+    return _db;
+  }
+  throw 'No database found!';
+}
+
+````
+
+- MongoDB 에 insert Data
+
+````javascript
+const db = getDb();
+/**
+ * @db.collection
+ *
+ * - MongoDB 에게 입력, 작업등을 진행할 컬렉션을 지정해줄 수 있다.
+ *
+ */
+db.collection( 'products' )
+        /**
+         * - MongoDB 에 데이터하나 삽입
+         *
+         * --> MongoDB 에서 변환한다
+         *
+         * @return { Promise }
+         */
+        .insertOne( this );
 
 ````
