@@ -39,7 +39,7 @@ exports.getProduct = ( req , res , next ) =>{
     /**
      * - id 를 이용한 단건 제품 조회
      */
-    Product.findByPk( prodId )
+    Product.findById( prodId )
         .then( ( product ) => {
             res.render( 'shop/product-detail' , {
                 pageTitle : product.title ,
@@ -137,7 +137,7 @@ exports.postCart = ( req , res , next ) => {
             /**
              * - 장바구니에 제품이 없을 경우, 해당 제품을 Product 에서 조회
              * */
-            return Product.findByPk( prodId );
+            return Product.findById( prodId );
         } )
         /**
          * - 해당 제품을 저장

@@ -306,4 +306,19 @@ db.collection( 'products' )
         /** 찾은 요소를 Array 형태로 반환 */
         .toArray();
 
+/** _id 와 매치되는 ID prodcut 반환 */
+db.collection( 'products' )
+        /** mongoDB 는 id 가 아닌 _id 형태로 저장 */
+        .find( { _id : new mongodb.ObjectId( 'SomeFIndID' ) } )
+        /** 요소하나를 찾고 끝냄 */
+        .next()
+
 ````
+
+- ID 를 통해 MongoDB 의 테이블에 접근할때, 
+
+
+- MongoDB 는 ID 를 BSON 형식으로 저장하는데, 내부적으로 ObjectId 객체로 생성해 저장한다
+
+
+- 따라서, ObjectId 형식으로 만들어서 접근해야한다

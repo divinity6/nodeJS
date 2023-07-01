@@ -1,8 +1,12 @@
+const mongodb = require( 'mongodb' );
 /** 해당 함수를 이용하여 Database 와 연결할 수 있다 */
 const getDb = require( '../util/database' ).getDb;
 
 class Product {
 
+    /**
+     * - 모든 데이터를 가져옴
+     */
     static fetchAll(){
         const db = getDb();
         /**
@@ -15,8 +19,22 @@ class Product {
             .find()
             .toArray()
             .then( products => {
-                console.log( "<<FindProducts>>" , products );
+                console.log( "<<fetchAll FindProducts>>" , products );
                 return products;
+            } )
+            .catch( err => console.log( '<<DataFindErr>> :' , err ) );
+    }
+
+    static findById( prodId ){
+        const db = getDb();
+
+        /** _id 와 매치되는 ID prodcut 반환 */
+        return db.collection( 'products' )
+            .find( { _id : new mongodb.ObjectId( prodId ) } )
+            .next()
+            .then( product => {
+                console.log( "<<findById FindProducts>>" , product , prodId );
+                return product;
             } )
             .catch( err => console.log( '<<DataFindErr>> :' , err ) );
     }

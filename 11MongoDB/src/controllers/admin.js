@@ -76,7 +76,7 @@ exports.postAddProduct = ( req , res , next ) => {
 //     /**
 //      * - id 가 prodId 인 Product 반환
 //      */
-//     // Product.findByPk( prodId )
+//     // Product.findById( prodId )
 //     req.user.getProducts( { where : { id : prodId } } )
 //         .then( ([ product ]) => {
 //             if ( !product ){
@@ -111,7 +111,7 @@ exports.postAddProduct = ( req , res , next ) => {
 //     const updatedImageUrl = req.body.imageUrl;
 //     const updatedDesc = req.body.description;
 //
-//     Product.findByPk( prodId )
+//     Product.findById( prodId )
 //         .then( product => {
 //             product.title = updatedTitle;
 //             product.price = updatedPrice;
@@ -144,7 +144,7 @@ exports.postAddProduct = ( req , res , next ) => {
 // exports.postDeleteProduct = (  req , res , next ) => {
 //     const prodId = req.body.productId;
 //
-//     Product.findByPk( prodId )
+//     Product.findById( prodId )
 //         .then( product => {
 //             /**
 //              * - 해당 제품을 삭제하고 Promise 객체를 반환한다
