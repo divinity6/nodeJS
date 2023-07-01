@@ -15,6 +15,10 @@ class Product {
         this.imageUrl = imageUrl;
     }
 
+    /**
+     *
+     * @return {Promise<undefined | void>}
+     */
     save(){
         const db = getDb();
         /**
@@ -23,11 +27,13 @@ class Product {
          * - MongoDB 에게 입력, 작업등을 진행할 컬렉션을 지정해줄 수 있다.
          *
          */
-        db.collection( 'products' )
+        return db.collection( 'products' )
             /**
              * - MongoDB 에 데이터하나 삽입
              *
              * --> MongoDB 에서 변환한다
+             *
+             * --> MongoDB 에서 자동으로 ID 를 삽입한다
              *
              * @return { Promise }
              */
