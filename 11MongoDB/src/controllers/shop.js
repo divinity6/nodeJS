@@ -13,7 +13,7 @@ exports.getProducts = ( req , res , next )=> {
      *
      *  --> where 문을 이용해 원하는 조건을 필터링할 수 있다
      */
-    Product.findAll()
+    Product.fetchAll()
         .then( products => {
             res.render( 'shop/product-list' , {
                 prods : products ,
@@ -58,7 +58,7 @@ exports.getProduct = ( req , res , next ) =>{
  */
 exports.getIndex = ( req , res , next ) => {
 
-    Product.findAll()
+    Product.fetchAll()
         .then( products => {
             console.log( "<<products>>" , products[ 0 ] )
             res.render( 'shop/index' , {

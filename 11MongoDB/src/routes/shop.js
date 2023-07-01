@@ -17,17 +17,17 @@ router.get( '/' , shopController.getIndex );
 router.get( '/products' , shopController.getProducts );
 
 /** DynamicRoute */
-router.get( '/products/:productId' , shopController.getProduct );
-
-router.get( '/cart' , shopController.getCart );
-
-router.post( '/cart' , shopController.postCart );
-
-router.post( '/cart-delete-item' , shopController.postCartDeleteProduct );
-
-router.post( '/create-order' , shopController.postOrder );
-
-router.get( '/orders' , shopController.getOrders );
+// router.get( '/products/:productId' , shopController.getProduct );
+//
+// router.get( '/cart' , shopController.getCart );
+//
+// router.post( '/cart' , shopController.postCart );
+//
+// router.post( '/cart-delete-item' , shopController.postCartDeleteProduct );
+//
+// router.post( '/create-order' , shopController.postOrder );
+//
+// router.get( '/orders' , shopController.getOrders );
 
 /** checkout 기능 잠시 주석처리 */
 // router.get( '/checkout' , shopController.getCheckout );

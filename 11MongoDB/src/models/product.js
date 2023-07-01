@@ -3,6 +3,24 @@ const getDb = require( '../util/database' ).getDb;
 
 class Product {
 
+    static fetchAll(){
+        const db = getDb();
+        /**
+         * - db collection 중 products 를 선택후, find 메서드로
+         *
+         * 단계별로 mongoDB 요소들과 문서를 탐색
+         */
+        return db
+            .collection( 'products' )
+            .find()
+            .toArray()
+            .then( products => {
+                console.log( "<<FindProducts>>" , products );
+                return products;
+            } )
+            .catch( err => console.log( '<<DataFindErr>> :' , err ) );
+    }
+
     title;
     price;
     description;

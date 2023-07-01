@@ -287,3 +287,23 @@ db.collection( 'products' )
         .insertOne( this );
 
 ````
+
+#### MongoDB find
+
+- MongoDB 의 데이터 탐색
+
+````javascript
+const db = getDb();
+/**
+ * - db collection 중 products 를 선택후, find 메서드로
+ *
+ * 단계별로 mongoDB 요소들과 문서를 탐색
+ * 
+ * @return { Promise<Array<any>> } - Promise 객체를 반환한다 
+ */
+db.collection( 'products' )
+        .find()
+        /** 찾은 요소를 Array 형태로 반환 */
+        .toArray();
+
+````

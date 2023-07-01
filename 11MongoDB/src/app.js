@@ -25,8 +25,8 @@ app.set('views', './views');
  * - 내보낸 router 파일을 import
  */
 const adminRoutes = require( './routes/admin.js' );
-//
-// const shopRoutes = require( './routes/shop.js' );
+
+const shopRoutes = require( './routes/shop.js' );
 
 /**
  * - 본문 해석 미들웨어
@@ -54,9 +54,9 @@ app.use( ( req , res , next ) => {
     next();
 } );
 
-// app.use( shopRoutes );
-//
 app.use( '/admin' , adminRoutes );
+
+app.use( shopRoutes );
 
 app.use( errorController.get404 );
 
