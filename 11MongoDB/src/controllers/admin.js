@@ -9,7 +9,7 @@ const Product = require( "../models/product" );
 exports.getProducts = ( req , res , next )=> {
 
     // Product.findAll()
-    req.user.getProducts()
+    Product.fetchAll()
         .then( products => {
             res.render( 'admin/products' , {
                 prods : products ,
