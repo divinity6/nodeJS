@@ -266,6 +266,8 @@ const getDb = () => {
 
 ````
 
+#### MongoDB insert
+
 - MongoDB 에 insert Data
 
 ````javascript
@@ -322,3 +324,34 @@ db.collection( 'products' )
 
 
 - 따라서, ObjectId 형식으로 만들어서 접근해야한다
+
+
+---
+
+#### MongoDB update
+
+- MongoDB 에 update Data
+
+````javascript
+const db = getDb();
+/**
+ * @db.collection
+ *
+ * - MongoDB 에게 업데이트, 작업등을 진행할 컬렉션을 지정해줄 수 있다.
+ *
+ */
+db.collection( 'products' )
+        /**
+         * - MongoDB 에 데이터하나 업데이트
+         *
+         * --> MongoDB 의 mongodb.ObjectId 객체를 만들어야 mongodb 의 id 를 찾을 수 있다
+         *
+         * --> 그 후 $set 으로 mongodb 의 데이터베이스에 set( update ) 한다
+         *
+         * @return { Promise }
+         */
+        .updateOne(
+        { _id : new mongodb.ObjectId( this._id ) } ,
+        { $set : this } );
+
+````

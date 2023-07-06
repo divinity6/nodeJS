@@ -43,12 +43,14 @@ class Product {
     price;
     description;
     imageUrl;
+    _id;
 
-    constructor( title , price , description , imageUrl ) {
+    constructor( title , price , description , imageUrl , id ) {
         this.title = title;
         this.price = price;
         this.description = description;
         this.imageUrl = imageUrl;
+        this._id = id;
     }
 
     /**
@@ -56,14 +58,26 @@ class Product {
      * @return {Promise<undefined | void>}
      */
     save(){
+
         const db = getDb();
-        /**
-         * @db.collection
-         *
-         * - MongoDB 에게 입력, 작업등을 진행할 컬렉션을 지정해줄 수 있다.
-         *
-         */
-        return db.collection( 'products' )
+        let dbOp;
+
+        if ( this._id ){
+            /**
+             * - MongoDB 에 데이터하나 업데이트
+             *
+             * --> MongoDB 의 mongodb.ObjectId 객체를 만들어야 mongodb 의 id 를 찾을 수 있다
+             *
+             * --> 그 후 $set 으로 mongodb 의 데이터베이스에 set( update ) 한다
+             *
+             * @return { Promise }
+             */
+            dbOp = db.collection( 'products' ).updateOne(
+                { _id : new mongodb.ObjectId( this._id ) } ,
+                { $set : this }
+            );
+        }
+        else {
             /**
              * - MongoDB 에 데이터하나 삽입
              *
@@ -73,7 +87,17 @@ class Product {
              *
              * @return { Promise }
              */
-            .insertOne( this )
+            dbOp = db.collection( 'products' ).insertOne( this )
+        }
+
+
+        /**
+         * @db.collection
+         *
+         * - MongoDB 에게 입력, 작업등을 진행할 컬렉션을 지정해줄 수 있다.
+         *
+         */
+        return dbOp
             .then( result => {
                 console.log(  '<<DataInsert> :' , result );
             } )
