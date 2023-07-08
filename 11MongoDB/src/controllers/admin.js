@@ -110,23 +110,15 @@ exports.postEditProduct = ( req , res , next ) => {
     const updatedImageUrl = req.body.imageUrl;
     const updatedDesc = req.body.description;
 
-    Product.findById( prodId )
-        .then( product => {
-            product.title = updatedTitle;
-            product.price = updatedPrice;
-            product.description = updatedDesc;
-            product.imageUrl = updatedImageUrl;
+    const product = new Product(
+        updatedTitle ,
+        updatedPrice ,
+        updatedDesc ,
+        updatedImageUrl ,
+        prodId
+    );
 
-            console.log( "rpoduct" , product )
-
-            /**
-             * - 만약, product 가 존재하지 않는다면 새로 생성하지만,
-             *   존재한다면 업데이트해준다
-             *
-             * - Promise 객체를 반환해 then 에 매핑한다
-             */
-            return product.save();
-        } )
+    product.save()
         .then( result => {
             console.log( '<<updatedData>> :' , result );
             res.redirect( "/admin/products" );
