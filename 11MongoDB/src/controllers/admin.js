@@ -137,13 +137,9 @@ exports.postEditProduct = ( req , res , next ) => {
 exports.postDeleteProduct = (  req , res , next ) => {
     const prodId = req.body.productId;
 
-    Product.findById( prodId )
-        .then( product => {
-            /**
-             * - 해당 제품을 삭제하고 Promise 객체를 반환한다
-             */
-            return product.destroy();
-        } )
+    console.log( 'prodId' , prodId );
+
+    Product.deleteById( prodId )
         .then( result => {
             console.log( '<<destroyProduct>> :' , result );
             res.redirect( "/admin/products" );

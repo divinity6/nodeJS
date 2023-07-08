@@ -355,3 +355,33 @@ db.collection( 'products' )
         { $set : this } );
 
 ````
+
+
+---
+
+#### MongoDB delete
+
+- MongoDB 에 delete Data
+
+````javascript
+const db = getDb();
+/**
+ * @db.collection
+ *
+ * - MongoDB 에게 업데이트, 작업등을 진행할 컬렉션을 지정해줄 수 있다.
+ *
+ */
+db.collection( 'products' )
+        /**
+         * - MongoDB 에 데이터하나 제거
+         *
+         * --> MongoDB 의 mongodb.ObjectId 객체를 만들어야 mongodb 의 id 를 찾을 수 있다
+         *
+         * --> 찾은 데이터를 제거한다
+         *
+         * @return { Promise }
+         */
+        .deleteOne( { _id : new mongodb.ObjectId( prodId ) } )
+
+````
+

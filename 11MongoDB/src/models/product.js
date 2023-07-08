@@ -9,6 +9,7 @@ class Product {
      */
     static fetchAll(){
         const db = getDb();
+
         /**
          * - db collection 중 products 를 선택후, find 메서드로
          *
@@ -39,6 +40,27 @@ class Product {
             .catch( err => console.log( '<<DataFindErr>> :' , err ) );
     }
 
+    /** 제품 삭제 */
+    static deleteById( prodId ){
+        const db = getDb();
+
+        return db.collection( 'products' )
+            /**
+             * - MongoDB 에 데이터하나 제거
+             *
+             * --> MongoDB 의 mongodb.ObjectId 객체를 만들어야 mongodb 의 id 를 찾을 수 있다
+             *
+             * --> 찾은 데이터를 제거한다
+             *
+             * @return { Promise }
+             */
+            .deleteOne( { _id : new mongodb.ObjectId( prodId ) } )
+            .then( result => {
+                console.log(  '<<DataDelete> :' , result );
+            } )
+            .catch( err => console.log( '<<DataDeleteErr>> :' , err ) );
+    }
+
     title;
     price;
     description;
@@ -50,7 +72,7 @@ class Product {
         this.price = price;
         this.description = description;
         this.imageUrl = imageUrl;
-        this._id = new mongodb.ObjectId( id );
+        this._id = id ? new mongodb.ObjectId( id ) : null;
     }
 
     /**
