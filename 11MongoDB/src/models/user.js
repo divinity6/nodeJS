@@ -37,7 +37,8 @@ class User {
     }
 
     /**
-     * - MongoDB 에서는 사용자가 cart 의 ID 를 들고있게 관계설정을 하여 편하게 설정할 수 있다
+     * - 장바구니 추가
+     * MongoDB 에서는 사용자가 cart 의 ID 를 들고있게 관계설정을 하여 편하게 설정할 수 있다
      */
     addToCart( product ){
         const cartProductIndex = this.cart.items.findIndex( cp => {
@@ -61,6 +62,29 @@ class User {
             { _id : new ObjectId( this._id ) },
             { $set : { cart : updatedCart } }
         );
+    }
+
+    /** 사용자가 가진 cart 데이터들로 DB products collection 을 조회하여 product 들 반환 */
+    getCart(){
+        const db = getDb();
+        const productIds = this.cart.items.map( i => i.productId );
+        return db.collection( 'products' )
+            /** productIds 중 하나라도 일치하는 제품들 전부 반환 */
+            .find( { _id : { $in : productIds } } )
+            .toArray()
+            /** 받은 제품중 제품 수량에 대한 정보를 포함하여 반환 */
+            .then( products => {
+                return products.map( p => {
+                    return {
+                        ...p ,
+                        /** 자기카트 ID 와 product 의 id 가 맞는 product.quantity 반환 */
+                        quantity : this.cart.items.find( cp => {
+                            return cp.productId.toString() === p._id.toString();
+                        } ).quantity,
+                    }
+                } )
+            } )
+            .catch( err => console.log( '<<UserGetCartErr>> :' , err ) );
     }
 }
 

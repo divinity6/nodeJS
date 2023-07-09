@@ -308,12 +308,19 @@ db.collection( 'products' )
         /** 찾은 요소를 Array 형태로 반환 */
         .toArray();
 
-/** _id 와 매치되는 ID prodcut 반환 */
+/** _id 와 매치되는 prodcut 단건 반환 */
 db.collection( 'products' )
         /** mongoDB 는 id 가 아닌 _id 형태로 저장 */
         .find( { _id : new mongodb.ObjectId( 'SomeFIndID' ) } )
         /** 요소하나를 찾고 끝냄 */
         .next()
+
+/** _id 와 매치되는 prodcut 여러 반환 */
+db.collection( 'products' )
+        /** 배열안의 id 중 하나라도 해당되는 product 전부 반환 */
+        .find( { _id : { $in : [ 'SomeFIndID1' , 'SomeFIndID2' ] } } )
+        /** 찾은 요소를 Array 형태로 반환 */
+        .toArray();
 
 ````
 
@@ -395,6 +402,9 @@ db.collection( 'products' )
 
 
 - 즉, 상황에 따라 저장하는데이터를 유동적으로 처리하면 된다
+
+
+- MongoDB 는 관계를 설정하는 table 이 필요없기 때문에, 불러올때, 직접 통합해줘야 한다
 
 ---
 
