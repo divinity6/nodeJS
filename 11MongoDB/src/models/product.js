@@ -75,10 +75,7 @@ class Product {
         this._id = id ? new mongodb.ObjectId( id ) : null;
     }
 
-    /**
-     *
-     * @return {Promise<undefined | void>}
-     */
+    /** @return {Promise<undefined | void>} */
     save(){
 
         const db = getDb();
