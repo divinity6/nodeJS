@@ -445,3 +445,48 @@ db.collection( 'products' )
         .toArray();
 
 ````
+
+---
+
+- CRUD 를 진행하다보면, products DB 와 users.cart DB 데이터의 정합성이 맞지 않는일이 발생한다
+
+
+- 이럴 경우, 2가지 방법을 사용할 수 있다
+
+
+1. worker 프로세스를 추가하는 것이다
+   - 즉, 서버에 실행되는 스크립트로 24시간등 일정 주기로 데이터베이스를 체크하는데 사용자의 cart 를 스캔해서,
+   - **products 컬렉션에서 찾을 수 없는 제품을 찾은 후 장바구니를 정리하는 과정**을 server app 에서 진행할 수 있다
+
+
+2. getCart 로 장바구니의 데이터를 업데이트 할때, 
+   - DB user.cart 의 데이터와 서버의 UserModel 데이터를 대조해, 
+   - UserModel 데이터를 업데이트하는 방식을 사용할 수 있다
+
+---
+
+### Module Summary
+
+- MongoDB 는 단지 SQL 데이터베이스의 대안으로 전혀 다른 철학을 따른다
+  - ( SQL 만큼 엄격한 스키마도 없고, 관계도 적어서 수많은 테이블에 데이터를 나누지 않아도 된다 )
+
+
+- 대신 데이터를 내장하거나, 참조를 사용하고, 두가지를 섞어서 사용할 수도 있다
+  - ( 즉, 더 유연하고 비교적 간단한 쿼리등을 작성할 수 있다 )
+
+
+- MongoDB 를 사용할때는 공식 MongoDB 드라이버를 사용해야, 
+  - insertOn(), find(), updateOne(), deleteOn() 등의 유용한 명령어들을 사용할 수 있다
+
+
+- 모든 연산이 비동기 Promise 기반이라, 복잡한 로직들을 가독성있게 만들기 쉽다
+
+---
+
+- MongoDB 공식 참고자료: https://docs.mongodb.com/manual/core/security-encryption-at-rest/https://docs.mongodb.com/manual/
+
+
+- SQL vs NoSQL : https://academind.com/learn/web-dev/sql-vs-nosql/
+
+
+- MongoDB에 대해 더 알아보기 : https://academind.com/learn/mongodb
