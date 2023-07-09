@@ -66,13 +66,15 @@ class Product {
     description;
     imageUrl;
     _id;
+    userId;
 
-    constructor( title , price , description , imageUrl , id ) {
+    constructor( title , price , description , imageUrl , id , userId ) {
         this.title = title;
         this.price = price;
         this.description = description;
         this.imageUrl = imageUrl;
         this._id = id ? new mongodb.ObjectId( id ) : null;
+        this.userId = userId;
     }
 
     /** @return {Promise<undefined | void>} */
@@ -105,7 +107,6 @@ class Product {
              */
             dbOp = db.collection( 'products' ).insertOne( this )
         }
-
 
         /**
          * @db.collection

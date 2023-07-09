@@ -47,7 +47,6 @@ app.use( ( req , res , next ) => {
             next();
         } )
         .catch( err => console.log( '<<findUserErr>>' , err ) );
-    next();
 } );
 
 app.use( '/admin' , adminRoutes );

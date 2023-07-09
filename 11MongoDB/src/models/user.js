@@ -12,7 +12,12 @@ class User {
         /** _id 와 매치되는 ID prodcut 반환 */
         return db.collection( 'users' )
             /** 1 개의 요소만 찾는것이라면 findOne 메서드를 이용할 수 있다 */
-            .findOne( { _id : new ObjectId( userId ) } );
+            .findOne( { _id : new ObjectId( userId ) } )
+            .then( user => {
+                console.log( "<<findById FindUser>>" , user );
+                return user;
+            } )
+            .catch( err => console.log( '<<UserFindErr>> :' , err ) );
     }
 
     name;
