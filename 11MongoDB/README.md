@@ -422,3 +422,26 @@ const id = new ObjectId( '123' );
 
 console.log( id.toString() === '123' );
 ````
+
+#### MongoDB nested-find
+
+- MongoDB 에는 경로를 지정하여 객체내부에 중첩된 속성을 확인할 수 있다
+
+````javascript
+const mongodb = require( 'mongodb' );
+const db = getDb();
+const ObjectId = mongodb.ObjectId;
+/**
+ * - db collection 중 products 를 선택후, find 메서드로
+ *
+ * 단계별로 mongoDB 요소들과 문서를 탐색
+ * 
+ * @return { Promise<Array<any>> } - Promise 객체를 반환한다 
+ */
+db.collection( 'products' )
+        /** find 메서드시 path 를 key 로 입력하여 내부 중첩된 user._id 에 매핑되는 값들을 가져올 수 있다 */
+        .find( { 'user._id' : new ObjectId( this._id ) } )
+        /** 찾은 요소를 Array 형태로 반환 */
+        .toArray();
+
+````

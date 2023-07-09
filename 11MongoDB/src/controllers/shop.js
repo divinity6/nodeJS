@@ -153,7 +153,7 @@ exports.getOrders = ( req , res , next ) => {
      * --> app.js 의 관계설정을 Order.belongsToMany( Product , { through : OrderItem } );
      *     로 했기 때문에 product 가 아닌 products 로 include 를 설정해야한다
      * */
-    req.user.getOrders( { include : [ 'products' ] } )
+    req.user.getOrders()
         .then( orders => {
             res.render( 'shop/orders' , {
                 pageTitle : 'Your Orders' ,

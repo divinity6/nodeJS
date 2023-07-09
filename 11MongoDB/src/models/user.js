@@ -1,7 +1,6 @@
 const mongodb = require( 'mongodb' );
 /** 해당 함수를 이용하여 Database 와 연결할 수 있다 */
 const getDb = require( '../util/database' ).getDb;
-
 const ObjectId = mongodb.ObjectId;
 
 class User {
@@ -146,7 +145,10 @@ class User {
     /** 주문정보들을 불러오기 */
     getOrders(){
         const db = getDb();
-        // return db.collection( 'orders' )
+        return db.collection( 'orders' )
+            /** find 메서드시 path 를 key 로 입력하여 내부 중첩된 user._id 에 매핑되는 값들을 가져올 수 있다 */
+            .find( { 'user._id' : new ObjectId( this._id ) } )
+            .toArray()
     }
 }
 
