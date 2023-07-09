@@ -86,6 +86,21 @@ class User {
             } )
             .catch( err => console.log( '<<UserGetCartErr>> :' , err ) );
     }
+
+    /** cart 에서 item 제거 */
+    deleteItemFromCart( productId ){
+        const updatedCartItems = this.cart.items.filter( item => {
+            return item.productId.toString() !== productId.toString();
+        } );
+
+        const db = getDb();
+        /** 기존 Cart 를 새로운 Cart 로 업데이트하여 반환 */
+        return db.collection( 'users' ).updateOne(
+            { _id : new ObjectId( this._id ) },
+            { $set : { cart : { items : updatedCartItems } } }
+        );
+
+    }
 }
 
 module.exports = User;

@@ -114,65 +114,21 @@ exports.postCart = ( req , res , next ) => {
             res.redirect( '/cart' );
         } )
         .catch( err => console.log( '<<postCartFetchErr>> :' , err ) );
-
-    // let fetchedCart;
-    // let newQuantity = 1;
-    //
-    // /**
-    //  * - 장바구니에 추가하고자 하는 제품이 존재하는지 확인 후,
-    //  *   없으면 만들어주고, 있으면 증가시키면 된다
-    //  */
-    // req.user.getCart()
-    //     .then( cart => {
-    //         fetchedCart = cart;
-    //         /** cart 와 관계된 Product 들... */
-    //         return cart.getProducts( { where : { id : prodId } } );
-    //     } )
-    //     .then( products => {
-    //         const [ product ] = products;
-    //
-    //         if ( product ){
-    //             /**
-    //              * - 장바구니에 저장된 제품의 수량을 얻게된다
-    //              */
-    //             const oldQuantity = product.cartItem.quantity;
-    //             newQuantity += oldQuantity;
-    //
-    //             return Promise.resolve( product );
-    //         }
-    //
-    //         /**
-    //          * - 장바구니에 제품이 없을 경우, 해당 제품을 Product 에서 조회
-    //          * */
-    //         return Product.findById( prodId );
-    //     } )
-    //     /**
-    //      * - 해당 제품을 저장
-    //      *
-    //      * - 업데이트할때, quantity 는 newQuantity 로 업데이트해서 저장
-    //      */
-    //     .then( product => {
-    //         return fetchedCart.addProduct( product , { through : { quantity : newQuantity } } );
-    //     } )
-    //     .then( () => {
-    //         res.redirect( '/cart' );
-    //     } )
-    //     .catch( err => console.log( '<<postCartFetchErr>> :' , err ) );
 }
 
+/**
+ * - Cart Delete Controller
+ *
+ * --> Cart 에 해당 제품제거
+ *
+ * @param req
+ * @param res
+ * @param next
+ */
 exports.postCartDeleteProduct = ( req , res , next ) => {
     const prodId = req.body.productId;
 
-    req.user.getCart()
-        /** 해당 cart 의 제품들중 id 가 prodId 인 제품찾기 */
-        .then( cart => {
-            return cart.getProducts( { where : { id : prodId } } )
-        } )
-        /** 해당 제품의 cartItem( Cart 와 Product 의 연결 테이블 )에서 제거 */
-        .then( products => {
-            const [ product ] = products;
-            return product.cartItem.destroy();
-        } )
+    req.user.deleteItemFromCart( prodId )
         .then( () => {
             res.redirect( 'cart' );
         } )
