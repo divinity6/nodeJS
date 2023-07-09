@@ -105,9 +105,31 @@ class User {
     /** 주문 추가하기 */
     addOrder(){
         const db = getDb();
-        return db.collection( 'orders' )
-            /** 현재 cart 를 주문에 추가 */
-            .insertOne( this.cart )
+        /**
+         *  - 주문시 product.price 등 다른 정보가 필요하기 때문에,
+         *    getCart() 로 product 의 모든정보를 먼저 가져온다
+         *
+         *  --> id 와 quantity 만 포함하는게 아니라, 제품 정보모두를 포함하여 반환
+         *
+         *  --> 해당 정보들은 snapshot 이기 때문에, 지난정보와 일치하지 않아도 괜찮다
+         */
+        return this.getCart()
+            .then( products => {
+                const order = {
+                    items : products,
+                    /**
+                     * - 사용자 정보를 담게 되면,
+                     *   사용자 정보가 바뀌었을 경우에는 해당 정보로 업데이트 해줘야한다
+                     */
+                    user : {
+                        _id : new ObjectId( this._id ),
+                        name : this.name,
+                    }
+                }
+
+                /** 현재 cart 를 주문에 추가 */
+                return db.collection( 'orders' ).insertOne( order );
+            } )
             /** 장바구니 비우기 */
             .then( result => {
                 this.cart = { items : [] };
@@ -119,6 +141,12 @@ class User {
                 );
             } )
             .catch( err => console.log( '<<AddOrderErr>> :' , err ) );
+    }
+
+    /** 주문정보들을 불러오기 */
+    getOrders(){
+        const db = getDb();
+        // return db.collection( 'orders' )
     }
 }
 
