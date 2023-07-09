@@ -176,30 +176,7 @@ exports.getOrders = ( req , res , next ) => {
  * @param next
  */
 exports.postOrder = ( req , res , next ) => {
-
-    let fetchedCart;
-
-    req.user.getCart()
-        .then( cart => {
-            fetchedCart = cart;
-            return cart.getProducts();
-        } )
-        /** cart 의 제품들을 order 에 등록 */
-        .then( products => {
-            return req.user.createOrder()
-                .then( order => {
-                    /** cartItem 들에 저장된 수량들을 order 의 orderItem 에 복사하여 전달 */
-                    return order.addProduct( products.map( product => {
-                        product.orderItem = { quantity : product.cartItem.quantity };
-                        return product;
-                    } ) );
-                } )
-                .catch( err => console.log( '<<postOrderCreateOrderErr>> :' , err ) );
-        } )
-        /** 그 후, cart 의 제품들을 모두 제거( 장바구니 비우기 ) */
-        .then( () => {
-            return fetchedCart.setProducts( null );
-        } )
+    req.user.addOrder()
         .then( () => {
             res.redirect( '/orders' );
         } )

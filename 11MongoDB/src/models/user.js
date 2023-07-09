@@ -101,6 +101,25 @@ class User {
         );
 
     }
+
+    /** 주문 추가하기 */
+    addOrder(){
+        const db = getDb();
+        return db.collection( 'orders' )
+            /** 현재 cart 를 주문에 추가 */
+            .insertOne( this.cart )
+            /** 장바구니 비우기 */
+            .then( result => {
+                this.cart = { items : [] };
+
+                /** 데이터베이스 업데이트 */
+                return db.collection( 'users' ).updateOne(
+                    { _id : new ObjectId( this._id ) },
+                    { $set : { cart : this.cart } }
+                );
+            } )
+            .catch( err => console.log( '<<AddOrderErr>> :' , err ) );
+    }
 }
 
 module.exports = User;
