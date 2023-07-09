@@ -395,3 +395,20 @@ db.collection( 'products' )
 
 
 - 즉, 상황에 따라 저장하는데이터를 유동적으로 처리하면 된다
+
+---
+
+#### MongoDB ObjectId
+
+- js 내장객체인 toString() 메서드를 가지고 있어, 이를 이용하여 id 문자열만 비교할 수 있다
+
+````javascript
+
+const mongodb = require( 'mongodb' );
+
+const ObjectId = mongodb.ObjectId;
+
+const id = new ObjectId( '123' );
+
+console.log( id.toString() === '123' );
+````

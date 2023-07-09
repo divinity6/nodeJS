@@ -40,13 +40,21 @@ class User {
      * - MongoDB 에서는 사용자가 cart 의 ID 를 들고있게 관계설정을 하여 편하게 설정할 수 있다
      */
     addToCart( product ){
-        // const cartProduct = this.cart.items.findIndex( cp => cp._id === product._id );
-        const updatedCart = {
-            items : [
-                { productId : new ObjectId( product._id ) , quantity : 1 }
-            ]
-        };
+        const cartProductIndex = this.cart.items.findIndex( cp => {
+            /** toString 메서드로 ObjectId 의 문자열만 추출하여 사용할 수 있다 */
+            return cp.productId.toString() === product._id.toString();
+        } );
+        let newQuantity = 1;
+        const updatedCartItems = [ ...this.cart.items ];
 
+        if ( 0 <= cartProductIndex ){
+            newQuantity = this.cart.items[ cartProductIndex ].quantity + 1;
+            updatedCartItems[ cartProductIndex ].quantity = newQuantity;
+        }
+        else {
+            updatedCartItems.push( { productId : new ObjectId( product._id ) , quantity : newQuantity } )
+        }
+        const updatedCart = { items : updatedCartItems };
         const db = getDb();
         /** 기존 Cart 를 새로운 Cart 로 업데이트하여 반환 */
         return db.collection( 'users' ).updateOne(
