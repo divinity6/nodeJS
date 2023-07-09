@@ -42,8 +42,8 @@ app.use( express.static( path.join( __dirname , 'public' ) ) );
 app.use( ( req , res , next ) => {
     User.findById( '64aa83bbf935942387ace470' )
         .then( user => {
-            /** 요청 객체에 User 를 저장하여 어디서든 접근하여 쓸 수 있도록 수정 */
-            req.user = user;
+            /** 요청 객체에 User 를 저장하여 어디서든 접근하여 쓸 수 있도록 저장 */
+            req.user = new User( user.name , user.email , user.cart , user._id );
             next();
         } )
         .catch( err => console.log( '<<findUserErr>>' , err ) );
