@@ -1,0 +1,6 @@
+<!-- Cart 로 이동 -->
+<form action="/cart" method="POST">
+    <button class="btn" type="submit">Add to Cart</button>
+    <!-- 실제 페이지에는 표시되지 않더라도 전송되는 요청에 인코딩되도록 하기 위하여... -->
+    <input type="hidden" name="productId" value="<%= product._id %>" />
+</form>
