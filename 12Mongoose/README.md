@@ -75,7 +75,7 @@ const user = Usesr.create( { name : 'Max', age : 28, password : 'dsdg312' } );
 
 ---
 
-### import mongoose
+### Mongoose import
 
 ````javascript
 /** ===== app.js ===== */
@@ -84,7 +84,8 @@ const mongoose = require( 'mongoose' );
 
 /** mongoose 가 mongoDB 와의 연결을 관리한다 */
 mongoose
-        .connect( 'mongodb+srv://hoon:hoonTest@cluster0.ipnka4b.mongodb.net/' )
+        /** shop 데이터베이스에 연결 */
+        .connect( 'mongodb+srv://hoon:hoonTest@cluster0.ipnka4b.mongodb.net/shop?retryWrites=true' )
         .then( result => {
           console.log( "<<StartApp>>" );
           app.listen( 3000 );
@@ -130,4 +131,109 @@ const productSchema = new Schema( {
   }
 } );
 
+/**
+ * - mongoose Schema 를 Product 모델에 설정하고 내보냄
+ *
+ * --> 이렇게 설정하면 Mongoose 가 소문자 및 복수형 이름으로
+ *     데이터베이스 collection 을 만들어 사용한다
+ */
+module.exports = mongoose.model( 'Product' , productSchema );
+````
+
+### Mongoose find
+
+- find 메서드를 이용해 해당 collection 의 모든 데이터를 가져올 수 있다
+
+````javascript
+const Product = require( '../models/product' );
+
+/**
+ *  - find 로 모든 제품을 가져올 수 있다
+ */
+Product.find()
+        .then( products => {
+          res.render( 'shop/product-list' , {
+            prods : products ,
+            pageTitle : 'All Products' ,
+            path : '/products' ,
+          } );
+        } )
+        .catch( err => console.log( '<<getProductsFetchErr>> :' , err ) );
+````
+
+
+### Mongoose findById
+
+- findById 메서드를 통해 id 에 맞는 데이터를 가져올 수 있다
+
+````javascript
+const Product = require( '../models/product' );
+
+/**
+ * - id 를 이용한 단건 제품 조회
+ * 
+ * --> 파라미터로 string 을 전달하면 Mongoose 에서 ObjectId 로 변환해준다
+ */
+Product.findById( prodId )
+        .then( ( product ) => {
+          res.render( 'shop/product-detail' , {
+            pageTitle : product.title ,
+            path : '/products',
+            product :product,
+          } )
+        } )
+        .catch( err => console.log( '<<getProductFetchErr>> :' , err ) );
+````
+
+### Mongoose Update
+
+- Mongoose Doc 데이터 업데이트
+
+
+- findById 로 id 에 맞는 데이터를 찾고, 해당 데이터 모델의 save 메서드를 호출하여 업데이트!
+
+````javascript
+const Product = require( '../models/product' );
+
+/**
+ * - id 를 이용한 단건 제품 조회
+ * 
+ * --> 파라미터로 string 을 전달하면 Mongoose 에서 ObjectId 로 변환해준다
+ */
+Product
+        .findById( prodId )
+        /**
+         * - product 가 mongoose 객체이기 때문에,
+         *   해당 model 객체의 프로퍼티를 수정해주고,
+         *   저장해주면 업데이트가 된다
+         */
+        .then( product => {
+          product.title = title;
+          product.price = price;
+          product.imageUrl = imageUrl;
+          product.description = description;
+
+          return product.save();
+        } )
+        .then( result => {
+          console.log( '<<updatedData>> :' , result );
+          res.redirect( "/admin/products" );
+        } )
+        .catch( err =>  console.log( '<<findDataFetchErr>> :' , err ) );
+````
+
+### Mongoose Delete
+
+- Mongoose Doc 제거
+
+- Mongoose 에서 제공하는 findByIdAndRemove 메서드만 사용하면 Doc 을 제거할 수 있다
+
+````javascript
+const Product = require( '../models/product' );
+
+Product.findByIdAndRemove( prodId )
+        .then( result => {
+          res.redirect( "/admin/products" );
+        } )
+        .catch( err => console.log( '<<findDataFetchErr>> :' , err ) );
 ````

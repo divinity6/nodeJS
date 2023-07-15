@@ -9,11 +9,9 @@ const Product = require( '../models/product' );
 exports.getProducts = ( req , res , next )=> {
 
     /**
-     *  - 전체 제품 조회
-     *
-     *  --> where 문을 이용해 원하는 조건을 필터링할 수 있다
+     *  - find 로 모든 제품을 가져올 수 있다
      */
-    Product.fetchAll()
+    Product.find()
         .then( products => {
             res.render( 'shop/product-list' , {
                 prods : products ,
@@ -38,6 +36,8 @@ exports.getProduct = ( req , res , next ) =>{
 
     /**
      * - id 를 이용한 단건 제품 조회
+     *
+     * --> 파라미터로 string 을 전달하면 Mongoose 에서 ObjectId 로 변환해준다
      */
     Product.findById( prodId )
         .then( ( product ) => {
@@ -58,9 +58,8 @@ exports.getProduct = ( req , res , next ) =>{
  */
 exports.getIndex = ( req , res , next ) => {
 
-    Product.fetchAll()
+    Product.find()
         .then( products => {
-            console.log( "<<products>>" , products[ 0 ] )
             res.render( 'shop/index' , {
                 pageTitle : 'Shop' ,
                 path : '/' ,

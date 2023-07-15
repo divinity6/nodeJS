@@ -6,7 +6,7 @@ const bodyParser = require( 'body-parser' );
 const mongoose = require( 'mongoose' );
 
 const errorController = require( './controllers/error' );
-const User = require( './models/user' );
+// const User = require( './models/user' );
 
 const app = express();
 
@@ -40,13 +40,14 @@ app.use( bodyParser.urlencoded({ extended : false } ) );
 app.use( express.static( path.join( __dirname , 'public' ) ) );
 
 app.use( ( req , res , next ) => {
-    User.findById( '64aa83bbf935942387ace470' )
-        .then( user => {
-            /** 요청 객체에 User 를 저장하여 어디서든 접근하여 쓸 수 있도록 저장 */
-            req.user = new User( user.name , user.email , user.cart , user._id );
-            next();
-        } )
-        .catch( err => console.log( '<<findUserErr>>' , err ) );
+    next();
+    // User.findById( '64aa83bbf935942387ace470' )
+    //     .then( user => {
+    //         /** 요청 객체에 User 를 저장하여 어디서든 접근하여 쓸 수 있도록 저장 */
+    //         req.user = new User( user.name , user.email , user.cart , user._id );
+    //         next();
+    //     } )
+    //     .catch( err => console.log( '<<findUserErr>>' , err ) );
 } );
 
 app.use( '/admin' , adminRoutes );
@@ -57,7 +58,8 @@ app.use( errorController.get404 );
 
 /** mongoose 가 mongoDB 와의 연결을 관리한다 */
 mongoose
-    .connect( 'mongodb+srv://hoon:hoonTest@cluster0.ipnka4b.mongodb.net/' )
+    /** shop 데이터베이스에 연결 */
+    .connect( 'mongodb+srv://hoon:hoonTest@cluster0.ipnka4b.mongodb.net/shop?retryWrites=true' )
     .then( result => {
         console.log( "<<StartApp>>" );
         app.listen( 3000 );

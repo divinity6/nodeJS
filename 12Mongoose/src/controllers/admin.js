@@ -8,8 +8,7 @@ const Product = require( "../models/product" );
  */
 exports.getProducts = ( req , res , next )=> {
 
-    // Product.findAll()
-    Product.fetchAll()
+    Product.find()
         .then( products => {
             res.render( 'admin/products' , {
                 prods : products ,
@@ -27,6 +26,7 @@ exports.getProducts = ( req , res , next )=> {
  * @param next
  */
 exports.getAddProduct = ( req , res , next )=> {
+    console.log( 'addProduct!' )
     res.render( 'admin/edit-product' , {
         pageTitle : 'Add Product' ,
         path : "/admin/add-product",
@@ -44,15 +44,9 @@ exports.postAddProduct = ( req , res , next ) => {
 
     const { title , imageUrl , description , price } = req.body;
 
-    const product = new Product(
-        title ,
-        price ,
-        description ,
-        imageUrl ,
-        null ,
-        req.user._id
-    );
+    const product = new Product( { title , price , description , imageUrl } );
 
+    /** mongoose 에서 save 메서드를 제공해준다 */
     product.save()
         .then( result => {
             console.log( '<<Created Product by Database>> :' , result );
@@ -75,22 +69,20 @@ exports.getEditProduct = ( req , res , next )=> {
     const editMode = req.query.edit;
 
     if ( !editMode ){
-        console.log( "dd" )
         return res.redirect( '/' );
     }
     const prodId = req.params.productId;
 
     /**
      * - id 가 prodId 인 Product 반환
+     *
+     * --> 파라미터로 string 을 전달하면 Mongoose 에서 ObjectId 로 변환해준다
      */
     Product.findById( prodId )
         .then( ( product ) => {
             if ( !product ){
-                console.log( "p" )
                 return res.redirect( '/' );
             }
-
-            console.log( "product" , product );
 
             res.render( 'admin/edit-product' , {
                 pageTitle : 'Edit Product' ,
@@ -111,27 +103,29 @@ exports.getEditProduct = ( req , res , next )=> {
  * @param next
  */
 exports.postEditProduct = ( req , res , next ) => {
+    const { title , price , imageUrl , description } = req.body;
     const prodId = req.body.productId;
-    const updatedTitle = req.body.title;
-    const updatedPrice = req.body.price;
-    const updatedImageUrl = req.body.imageUrl;
-    const updatedDesc = req.body.description;
 
-    const product = new Product(
-        updatedTitle ,
-        updatedPrice ,
-        updatedDesc ,
-        updatedImageUrl ,
-        prodId
-    );
+    Product
+        .findById( prodId )
+        /**
+         * - product 가 mongoose 객체이기 때문에,
+         *   해당 model 객체의 프로퍼티를 수정해주고,
+         *   저장해주면 업데이트가 된다
+         */
+        .then( product => {
+            product.title = title;
+            product.price = price;
+            product.imageUrl = imageUrl;
+            product.description = description;
 
-    product.save()
+            return product.save();
+        } )
         .then( result => {
             console.log( '<<updatedData>> :' , result );
             res.redirect( "/admin/products" );
         } )
         .catch( err =>  console.log( '<<findDataFetchErr>> :' , err ) );
-
 
 }
 
@@ -146,7 +140,7 @@ exports.postDeleteProduct = (  req , res , next ) => {
 
     console.log( 'prodId' , prodId );
 
-    Product.deleteById( prodId )
+    Product.findByIdAndRemove( prodId )
         .then( result => {
             console.log( '<<destroyProduct>> :' , result );
             res.redirect( "/admin/products" );
