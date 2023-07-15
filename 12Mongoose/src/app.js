@@ -57,7 +57,7 @@ app.use( errorController.get404 );
 
 /** mongoose 가 mongoDB 와의 연결을 관리한다 */
 mongoose
-    .connect( 'mongodb+srv://hoon:hoonTest@atlascluster.ebvlee7.mongodb.net/shop?retryWrites=true&w=majority' )
+    .connect( 'mongodb+srv://hoon:hoonTest@cluster0.ipnka4b.mongodb.net/' )
     .then( result => {
         console.log( "<<StartApp>>" );
         app.listen( 3000 );

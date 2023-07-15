@@ -1,3 +1,27 @@
+const mongoose = require( 'mongoose' );
+/** mongoose Schema constructor */
+const Schema = mongoose.Schema;
+/** 제품의 스키마( 청사진 ) 정의 */
+const productSchema = new Schema( {
+    title : {
+        type : String,
+        required : true,
+    },
+    price : {
+        type : Number,
+        required : true,
+    },
+    description : {
+        type : String,
+        required : true,
+    },
+    imageUrl : {
+        type : String,
+        required : true,
+    }
+} );
+
+
 // const mongodb = require( 'mongodb' );
 // /** 해당 함수를 이용하여 Database 와 연결할 수 있다 */
 // const getDb = require( '../util/database' ).getDb;

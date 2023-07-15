@@ -72,3 +72,62 @@ const user = Usesr.create( { name : 'Max', age : 28, password : 'dsdg312' } );
 - 기존에 작성한, util/database.js 를 사용할수도 있지만, 
   - **Mongoose 자체가 배후에서 데이터베이스와의 연결을 관리**하기 때문에
   - database 파일을 제거하고 Mongoose 를 불러오게 설정하면 된다
+
+---
+
+### import mongoose
+
+````javascript
+/** ===== app.js ===== */
+/** mongoose 연결 */
+const mongoose = require( 'mongoose' );
+
+/** mongoose 가 mongoDB 와의 연결을 관리한다 */
+mongoose
+        .connect( 'mongodb+srv://hoon:hoonTest@cluster0.ipnka4b.mongodb.net/' )
+        .then( result => {
+          console.log( "<<StartApp>>" );
+          app.listen( 3000 );
+        } )
+        .catch( err => {
+          console.log("<<StartApp Err>>", err);
+        } );
+
+````
+
+
+- mongoose 는 Schema less 하지만,
+
+
+- 데이터 타입이 중요할 경우에는, Schema 를 정의하여 사용할 수 있다
+
+
+- id 는 정의하지 않으면 ObjectId 로 자동 정의되고 추가되기 때문에, 정의하지 않아도 된다
+
+````javascript
+/** ===== models/product.js ===== */
+/** Mongoose */
+const mongoose = require( 'mongoose' );
+/** mongoose Schema constructor */
+const Schema = mongoose.Schema;
+/** 제품의 스키마( 청사진 ) 정의 */
+const productSchema = new Schema( {
+  title : {
+    type : String,
+    required : true,
+  },
+  price : {
+    type : Number,
+    required : true,
+  },
+  description : {
+    type : String,
+    required : true,
+  },
+  imageUrl : {
+    type : String,
+    required : true,
+  }
+} );
+
+````
