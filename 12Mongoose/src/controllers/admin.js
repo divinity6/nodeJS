@@ -44,7 +44,14 @@ exports.postAddProduct = ( req , res , next ) => {
 
     const { title , imageUrl , description , price } = req.body;
 
-    const product = new Product( { title , price , description , imageUrl } );
+    const product = new Product( {
+        title ,
+        price ,
+        description ,
+        imageUrl ,
+        /** Mongoose 에서는 user 전체를 넣어도 user._id 를 찾아서 할당해준다... */
+        userId : req.user
+    } );
 
     /** mongoose 에서 save 메서드를 제공해준다 */
     product.save()

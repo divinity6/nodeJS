@@ -1,3 +1,41 @@
+const mongoose = require( 'mongoose' );
+const Schema = mongoose.Schema;
+/** 사용자의 스키마( 청사진 ) 정의 */
+const userSchema = new Schema( {
+    name : {
+        type : String,
+        required : true,
+    },
+    email : {
+        type : String,
+        required : true,
+    },
+    cart : {
+        /** Nested 데이터 구조일 경우에는 아래처럼 선언한다 */
+        items : [
+            {
+                productId : {
+                    /** ObjectId 타입으로 정의 */
+                    type : Schema.Types.ObjectId,
+                    /**
+                     * 해당 데이터가 어떤 Collection 의 데이터인지 관계를 설정( reference )할 수 있다
+                     *
+                     * --> 참조할 model 의 이름을 사용하면 된다
+                     */
+                    ref : 'Product',
+                    required : true,
+                },
+                quantity : {
+                    type : Number,
+                    required : true,
+                }
+            }
+        ]
+    }
+} );
+
+module.exports = mongoose.model( 'User' , userSchema );
+
 // const mongodb = require( 'mongodb' );
 // /** 해당 함수를 이용하여 Database 와 연결할 수 있다 */
 // const getDb = require( '../util/database' ).getDb;

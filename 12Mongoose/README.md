@@ -128,6 +128,17 @@ const productSchema = new Schema( {
   imageUrl : {
     type : String,
     required : true,
+  },
+  userId : {
+    /** ObjectId 타입으로 정의 */
+    type : Schema.Types.ObjectId,
+    /**
+     * 해당 데이터가 어떤 Collection 의 데이터인지 관계를 설정( reference )할 수 있다
+     *
+     * --> 참조할 model 의 이름을 사용하면 된다
+     */
+    ref : 'User',
+    required : true
   }
 } );
 
@@ -139,6 +150,79 @@ const productSchema = new Schema( {
  */
 module.exports = mongoose.model( 'Product' , productSchema );
 ````
+
+### Mongoose Nested Schema
+
+- 중첩된 데이터구조의 Schema 를 정의할때는 primitive 값이 나올때까지 내부 값을 설정해서 선언할 수 있다
+
+````javascript
+/** ===== models/user.js ===== */
+const userSchema = new Schema( {
+          name : {
+            type : String,
+            required : true,
+          },
+          email : {
+            type : String,
+            required : true,
+          },
+          cart : {
+            /** Nested 데이터 구조일 경우에는 아래처럼 선언한다 */
+            items : [
+              {
+                productId : {
+                  /** ObjectId 타입으로 정의 */
+                  type : Schema.Types.ObjectId,
+                  /**
+                   * 해당 데이터가 어떤 Collection 의 데이터인지 관계를 설정( reference )할 수 있다
+                   *
+                   * --> 참조할 model 의 이름을 사용하면 된다
+                   */
+                  ref : 'Product',
+                  required : true,
+                },
+                quantity : {
+                  type : Number,
+                  required : true,
+                }
+              }
+            ]
+          }
+        } );
+
+module.exports = mongoose.model( 'User' , userSchema );
+````
+
+### Mongoose create
+
+- new Model 을 이용하여 Mongoose 로 생성한 모델의 인스턴스를 생성한 후,
+
+
+- 인스턴스의 save 메서드를 호출하여 새로운 Doc 을 생성할 수 있다
+
+````javascript
+const Product = require( '../models/product' );
+
+const product = new Product( {
+  title ,
+  price ,
+  description ,
+  imageUrl ,
+  /** Mongoose 에서는 user 전체를 넣어도 user._id 를 찾아서 할당해준다... */
+  userId : req.user
+} );
+
+/** mongoose 에서 save 메서드를 제공해준다 */
+product.save()
+        .then( result => {
+          console.log( '<<Created Product by Database>> :' , result );
+          res.redirect( '/admin/products' );
+        } )
+        .catch( err => {
+          console.log( '<<AddDataFetchErr>> :' , err )
+        } );
+````
+
 
 ### Mongoose find
 
@@ -237,3 +321,7 @@ Product.findByIdAndRemove( prodId )
         } )
         .catch( err => console.log( '<<findDataFetchErr>> :' , err ) );
 ````
+
+### Mongoose findOne
+
+- 해당 collection 에서 발견하는 첫 Doc 을 반환한다

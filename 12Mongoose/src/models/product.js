@@ -18,6 +18,17 @@ const productSchema = new Schema( {
     imageUrl : {
         type : String,
         required : true,
+    },
+    userId : {
+        /** ObjectId 타입으로 정의 */
+        type : Schema.Types.ObjectId,
+        /**
+         * 해당 데이터가 어떤 Collection 의 데이터인지 관계를 설정( reference )할 수 있다
+         *
+         * --> 참조할 model 의 이름을 사용하면 된다
+         */
+        ref : 'User',
+        required : true,
     }
 } );
 
