@@ -1,4 +1,5 @@
 const Product = require( '../models/product' );
+const Order = require( '../models/order' );
 
 /**
  * - 제품 리스트 페이지 반환 Controller
@@ -129,7 +130,8 @@ exports.postCart = ( req , res , next ) => {
 exports.postCartDeleteProduct = ( req , res , next ) => {
     const prodId = req.body.productId;
 
-    req.user.deleteItemFromCart( prodId )
+    req.user
+        .removeFromCart( prodId )
         .then( () => {
             res.redirect( 'cart' );
         } )
@@ -148,13 +150,9 @@ exports.postCartDeleteProduct = ( req , res , next ) => {
  * @param next
  */
 exports.getOrders = ( req , res , next ) => {
-    /**
-     * - 사용자의 주문의 제품을 모두 가져옴
-     *
-     * --> app.js 의 관계설정을 Order.belongsToMany( Product , { through : OrderItem } );
-     *     로 했기 때문에 product 가 아닌 products 로 include 를 설정해야한다
-     * */
-    req.user.getOrders()
+
+    /** 해당 사용자에 속한 모든 주문을 가져온다 */
+    Order.find( { 'user.userId' : req.user._id } )
         .then( orders => {
             res.render( 'shop/orders' , {
                 pageTitle : 'Your Orders' ,
@@ -163,8 +161,6 @@ exports.getOrders = ( req , res , next ) => {
             } );
         } )
         .catch( err => console.log( '<<getOrdersFetchErr>> :' , err ) );
-
-
 }
 
 /**
@@ -177,7 +173,35 @@ exports.getOrders = ( req , res , next ) => {
  * @param next
  */
 exports.postOrder = ( req , res , next ) => {
-    req.user.addOrder()
+    /** productId 에 해당하는 필드값들을 채워오는 명령 */
+    req.user
+        .populate( 'cart.items.productId' )
+        .then( user => {
+            console.log( 'userId' , user.cart.items );
+            /** 가져온 제품들중 필요한 값들만 추출 */
+            const products = user.cart.items.map( item => {
+                return {
+                    quantity : item.quantity,
+                    /**
+                     * - item.productId 이렇게만하면 mongoose 가 자동으로 해당 데이터중 id 를 찾아할당하므로,
+                     *   _doc 를 이용하여 해당 데이터에 접근할 수 있다
+                     * */
+                    product : {...item.productId._doc },
+                }
+            } );
+            const order = new Order( {
+                user : {
+                    name : req.user.name,
+                    /** mongoose 가 자체적으로 userId 를 선택할 것이다 */
+                    userId : req.user
+                },
+                products
+            } );
+            return order.save();
+        } )
+        .then( result => {
+            return req.user.clearCart();
+        } )
         .then( () => {
             res.redirect( '/orders' );
         } )

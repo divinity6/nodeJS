@@ -200,6 +200,12 @@ module.exports = mongoose.model( 'User' , userSchema );
 
 - 인스턴스의 save 메서드를 호출하여 새로운 Doc 을 생성할 수 있다
 
+
+- id 참조시 Mongoose 모델 객체를 넣게되면, Mongoose 에서 해당 Model 객체에서 자동으로 ObjectId 를 추출해서 넣어준다
+
+
+- 만약, Mongoose 객체자체를 넣고싶다면, MongooseModel._doc 으로 접근해서 넣어 줄 수 있다
+
 ````javascript
 const Product = require( '../models/product' );
 
@@ -208,7 +214,12 @@ const product = new Product( {
   price ,
   description ,
   imageUrl ,
-  /** Mongoose 에서는 user 전체를 넣어도 user._id 를 찾아서 할당해준다... */
+  /** 
+   * - Mongoose 에서는 user 전체를 넣어도 user._id 를 찾아서 할당해준다... 
+   * 
+   * --> 만약 user 모델 자체 값을 가져오고 싶다면, req.user._doc 으로 해당 Doc 데이터 전체를
+   *     가져올 수 있다
+   */
   userId : req.user
 } );
 
@@ -234,7 +245,16 @@ const Product = require( '../models/product' );
 /**
  *  - find 로 모든 제품을 가져올 수 있다
  */
-Product.find()
+Product
+        .find()
+        /** 
+         * 만약 userId 와 맞는 값들을 가져와야 할 경우
+         * 가져와야할 경우 아래처럼 작성할 수 있다
+         * 
+         * ( nested 데이터인 경우에는 아래처럼 가능하다 )
+         * .find( { { 'user.userId' : req.user._id } )
+         */
+        // .find( { { userId : req.user._id } )
         .then( products => {
           res.render( 'shop/product-list' , {
             prods : products ,
