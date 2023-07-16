@@ -79,9 +79,11 @@ exports.getIndex = ( req , res , next ) => {
  * @param next
  */
 exports.getCart = ( req , res , next ) => {
-
-    req.user.getCart()
-        .then( products => {
+    /** productId 에 해당하는 필드값들을 채워오는 명령 */
+    req.user
+        .populate( 'cart.items.productId' )
+        .then( user => {
+            const products = user.cart.items;
             res.render( 'shop/cart' , {
                 pageTitle : 'Your Cart' ,
                 path : '/cart' ,

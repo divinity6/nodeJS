@@ -34,6 +34,37 @@ const userSchema = new Schema( {
     }
 } );
 
+/**
+ * - 장바구니 추가 메서드
+ *
+ * - 해당 Schema 에 메서드를 추가할때는 .methods 에 해당 메서드를 추가하면 된다
+ *
+ * --> 이때 내부 this 가 model 객체를 참조할 수 있도록 function 키워드를 사용해야 한다
+ */
+userSchema.methods.addToCart = function ( product ){
+    const cartProductIndex = this.cart.items.findIndex( cp => {
+        /** toString 메서드로 ObjectId 의 문자열만 추출하여 사용할 수 있다 */
+        return cp.productId.toString() === product._id.toString();
+    } );
+    let newQuantity = 1;
+    const updatedCartItems = [ ...this.cart.items ];
+
+    if ( 0 <= cartProductIndex ){
+        newQuantity = this.cart.items[ cartProductIndex ].quantity + 1;
+        updatedCartItems[ cartProductIndex ].quantity = newQuantity;
+    }
+    else {
+        updatedCartItems.push( {
+            productId : product._id ,
+            quantity : newQuantity
+        } )
+    }
+    this.cart = { items : updatedCartItems };
+
+    /** 자기자신의 save 메서드를 호출하여 업데이트 */
+    return this.save();
+}
+
 module.exports = mongoose.model( 'User' , userSchema );
 
 // const mongodb = require( 'mongodb' );
@@ -71,34 +102,6 @@ module.exports = mongoose.model( 'User' , userSchema );
 //     save(){
 //         const db = getDb();
 //         return db.collection( 'users' ).insertOne( this );
-//     }
-//
-//     /**
-//      * - 장바구니 추가
-//      * MongoDB 에서는 사용자가 cart 의 ID 를 들고있게 관계설정을 하여 편하게 설정할 수 있다
-//      */
-//     addToCart( product ){
-//         const cartProductIndex = this.cart.items.findIndex( cp => {
-//             /** toString 메서드로 ObjectId 의 문자열만 추출하여 사용할 수 있다 */
-//             return cp.productId.toString() === product._id.toString();
-//         } );
-//         let newQuantity = 1;
-//         const updatedCartItems = [ ...this.cart.items ];
-//
-//         if ( 0 <= cartProductIndex ){
-//             newQuantity = this.cart.items[ cartProductIndex ].quantity + 1;
-//             updatedCartItems[ cartProductIndex ].quantity = newQuantity;
-//         }
-//         else {
-//             updatedCartItems.push( { productId : new ObjectId( product._id ) , quantity : newQuantity } )
-//         }
-//         const updatedCart = { items : updatedCartItems };
-//         const db = getDb();
-//         /** 기존 Cart 를 새로운 Cart 로 업데이트하여 반환 */
-//         return db.collection( 'users' ).updateOne(
-//             { _id : new ObjectId( this._id ) },
-//             { $set : { cart : updatedCart } }
-//         );
 //     }
 //
 //     /** 사용자가 가진 cart 데이터들로 DB products collection 을 조회하여 product 들 반환 */
