@@ -18,6 +18,7 @@ exports.getProducts = ( req , res , next )=> {
                 prods : products ,
                 pageTitle : 'All Products' ,
                 path : '/products' ,
+                isAuthenticated : req.isLoggedIn
             } );
         } )
         .catch( err => console.log( '<<getProductsFetchErr>> :' , err ) );
@@ -46,6 +47,7 @@ exports.getProduct = ( req , res , next ) =>{
                 pageTitle : product.title ,
                 path : '/products',
                 product :product,
+                isAuthenticated : req.isLoggedIn
             } )
         } )
         .catch( err => console.log( '<<getProductFetchErr>> :' , err ) );
@@ -65,6 +67,7 @@ exports.getIndex = ( req , res , next ) => {
                 pageTitle : 'Shop' ,
                 path : '/' ,
                 prods : products ,
+                isAuthenticated : req.isLoggedIn
             } );
         } )
         .catch( err => console.log( '<<getIndexFetchErr>> :' , err ) );
@@ -89,6 +92,7 @@ exports.getCart = ( req , res , next ) => {
                 pageTitle : 'Your Cart' ,
                 path : '/cart' ,
                 products : products,
+                isAuthenticated : req.isLoggedIn
             } );
         } )
         .catch( err => console.log( '<<getCartProductsFetchErr>> :' , err ) );
@@ -157,7 +161,8 @@ exports.getOrders = ( req , res , next ) => {
             res.render( 'shop/orders' , {
                 pageTitle : 'Your Orders' ,
                 path : '/orders' ,
-                orders : orders
+                orders : orders,
+                isAuthenticated : req.isLoggedIn
             } );
         } )
         .catch( err => console.log( '<<getOrdersFetchErr>> :' , err ) );
