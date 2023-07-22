@@ -35,6 +35,14 @@
 - Nodejs 에서 MongoDB 사용
 
 
+### [ 8. Mongoose ]( https://github.com/divinity6/nodejs-study/tree/master/12Mongoose )
+- Mongoose 를 이용하여 MongoDB 접근 및 사용
+
+
+### [ 9. SessionAndCookie ]( https://github.com/divinity6/nodejs-study/tree/master/13SessionAndCookie )
+- 세션 및 쿠키
+
+
 ---
 
 - 출처 : https://www.udemy.com/course/nodejs-mvc-rest-apis-graphql-deno/
