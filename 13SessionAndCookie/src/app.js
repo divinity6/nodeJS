@@ -5,21 +5,28 @@ const bodyParser = require( 'body-parser' );
 /** mongoose 연결 */
 const mongoose = require( 'mongoose' );
 const session = require( 'express-session' );
+/** MongoDB 에 세션데이터 저장 및 전달 */
+const MongoDBStore = require( 'connect-mongodb-session' )( session );
 
 const errorController = require( './controllers/error' );
 const User = require( './models/user' );
 
+const MONGODB_URI = 'mongodb+srv://hoon:hoonTest@cluster0.ipnka4b.mongodb.net/shop?retryWrites=true';
+
 const app = express();
-
 /**
- * - ejs 라이브러리를 view engine 으로 사용
+ * - MongoDBStore 에 데이터 저장
+ * @param { string } uri - 데이터를 저장할 데이터베이스 경로( 현재는 shop )
+ * @param { string } collection - 데이터를 저장할 데이터베이스 컬렉션이름
  */
+const store = new MongoDBStore( {
+    uri : MONGODB_URI,
+    collection : 'sessions'
+} );
+
+/** ejs 라이브러리를 view engine 으로 사용 */
 app.set('view engine', 'ejs');
-
-/**
- *  - 서버에서 렌더링 할 뷰가 위치한 디렉토리 경로를 설정하는 역할.
- *
- */
+/** 서버에서 렌더링 할 뷰가 위치한 디렉토리 경로를 설정하는 역할 */
 app.set('views', './views');
 
 /**
@@ -44,20 +51,30 @@ app.use( express.static( path.join( __dirname , 'public' ) ) );
  * @param { boolean } resave - 모든 요청마다 session 에 저장하는것이 아니라, session 이 변경되었을 경우에만,
  *                             저장하도록 한다 ( 성능 개선 )
  * @param { boolean } saveUninitialized - 저장할 필요가 없는 요청의 경우, 어떤 세션도 저장되지 않게 한다
+ * @param { any } store? - 저장할 Store 객체 지정가능
  * @param { { [ key : string ] : any } } cookie? - 세션 쿠키를 설정할 수 있다
  */
 app.use( session( {
     secret : 'my secret',
     resave : false,
     saveUninitialized : false,
+    store
 } ) );
 
 app.use( ( req , res , next ) => {
-    User.findById( '64b28d5af6522c01b9d0884d' )
+    /** 세션에 user 가 저장되어 있지 않다면 request 에 user 를 저장하지 않음 */
+    if (!req.session.user) {
+        return next();
+    }
+    /**
+     * - 모든 요청마다 session 에 저장된 user 를 이용해,
+     *   user._id 를 이용하여 해당 사용자 데이터를 찾아 request 객체에 할당
+     */
+    User.findById( req.session.user._id )
         .then( user => {
             /** 요청 객체에 User 를 저장하여 어디서든 접근하여 쓸 수 있도록 저장 */
             req.user = user;
-            console.log( '<<saveUserInfo success>>' )
+            console.log( '<<saveUserInfo Request success>>' )
             next();
         } )
         .catch( err => console.log( '<<saveUserInfo Err>>' , err ) );
@@ -72,7 +89,7 @@ app.use( errorController.get404 );
 /** mongoose 가 mongoDB 와의 연결을 관리한다 */
 mongoose
     /** shop 데이터베이스에 연결 */
-    .connect( 'mongodb+srv://hoon:hoonTest@cluster0.ipnka4b.mongodb.net/shop?retryWrites=true' )
+    .connect( MONGODB_URI )
     .then( result => {
         User.findOne().then( user => {
             if ( !user ){

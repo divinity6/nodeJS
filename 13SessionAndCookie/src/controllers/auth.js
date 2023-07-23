@@ -1,3 +1,5 @@
+const User = require( '../models/user' );
+
 /**
  * - get Login
  *
@@ -8,16 +10,10 @@
  * @param next
  */
 exports.getLogin = ( req , res , next ) => {
-    const cookie = req.get( 'Cookie' );
-    let isLoggedIn = false;
-    if ( cookie ){
-        console.log( 'cookie.trim().split( \'=\' )' , cookie.trim().split( '=' ) )
-        isLoggedIn = cookie.trim().split( '=' )[ 1 ] === 'true';
-    }
     res.render( 'auth/login' , {
         pageTitle : 'Login' ,
         path : '/login' ,
-        isAuthenticated : isLoggedIn
+        isAuthenticated : req.session.isLoggedIn,
     } );
 }
 
@@ -31,19 +27,45 @@ exports.getLogin = ( req , res , next ) => {
  * @param next
  */
 exports.postLogin = ( req , res , next ) => {
-    /**
-     * - response header 에 설정
-     *
-     * --> Set-Cookie : cookie 에 값을 설정한다는 예약어
-     * --> 데이터는 key=value 페어를 사용한다
-     *
-     * --> 다른값을 추가로 입력하고 싶을 경우에는 ;후 작성한다
-     * --> Expires= , Max-Age= 등은 Http 에서 지원하는 값들이므로, 해당형식을 따라야한다
-     *
-     * --> Secure --> HTTPS 를 통해 페이지를 접근 및 제공할때만 cookie 가 설정된다
-     * --> HttpOnly --> 클라이언트, 즉, JS 로 Cookie 에 접근할 수 없도록 설정
-     */
-    res.setHeader( 'Set-Cookie' , 'loggedIn=true; HttpOnly');
-    res.redirect( '/' );
+    User.findById( '64b28d5af6522c01b9d0884d' )
+        .then( user =>{
+            /**
+             * - 세션에 값 설정( 자동으로 cookie 에 설정된다 )
+             * --> 기본 HttpOnly 속성이 부여된다
+             *
+             * --> 브라우저 cookie 에 sessionId 를 뜻하는 connect.sid 가 설정된다
+             * --> 기본적으로 세션쿠키이므로 브라우저를 닫으면 만료된다
+             *
+             * --> 사용자, 즉 해당 브라우저 세션인스턴스를 식별한다
+             *     즉, 해당 브라우저를 닫으면( 해당 브라우저와 연결이 종료되면 ) 죽는다
+             * */
+            req.session.isLoggedIn = true;
+            req.session.user = user;
+            req.session.save( ( err ) =>{
+                console.log( '<<saveUserInfo Session success>>' , err );
+                res.redirect( '/' );
+            } );
+        } )
+        .catch( err => console.log( '<<postLoginErr>>' , err ) );
+}
 
+/**
+ * - post Logout
+ *
+ * --> 로그아웃 controller
+ *
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.postLogout = ( req , res , next ) => {
+    /**
+     * 해당 세션 제거
+     * --> 파라미터로 세션이 제거된 후 실행할 callback 을 넘길 수 있다
+     * --> 이 시점에서 session 은 파괴되어 있다
+     */
+    req.session.destroy( err => {
+        console.log( '<<logout redirect>>' , err );
+        res.redirect( '/' );
+    } );
 }
