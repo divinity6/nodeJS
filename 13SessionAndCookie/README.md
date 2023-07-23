@@ -540,3 +540,48 @@ User.findById( '64b28d5af6522c01b9d0884d' )
     } )
     .catch( err => console.log( '<<postLoginErr>>' , err ) );
 ````
+
+---
+
+### Module Summary
+
+- **Cookies**
+  - 클라이언트 측 브라우저에 데이터를 저장하는 용도이다
+  - 하지만, 브라우저에 저장해서, 사용자가 민감한 정보를 볼 수 있기 때문에 민감한 데이터를 저장하면 안된다
+    - ( 쿠키는 조작될 수 있다 )
+
+
+- **Session Cookie( 세션 쿠키 )**
+  - 쿠키는 expire( 만료 )를 설정할 수 있다
+  - 기본값은 브라우저가 종료되면 만료되는데, 해당쿠키를 **세션 쿠키** 라고 부른다
+    - 즉, Session 을 식별하기 위한 Cookie 가 아니고, **브라우저가 살아있는동안 유지되는 Cookie 를 Session Cookie** 라고 부른다
+
+
+- **Persistent , Permanent Cookie( 지속 쿠키 )**
+  - 만료 날짜나, Cookie 가 무효화되는 수명을 설정하는 Cookie 를 **지속 쿠키** 라고 부른다
+  - 브라우저를 닫을때 사라지지않는다는 의미...
+  - 즉, 유효기간이 만료되어야만 삭제된다
+
+
+- **Sessions**
+  - 서버 측에 데이터를 저장하는 용도이다
+  - 사용자가 보거나 조작할 수 없어, 민감한 데이터를 저장하는데 유용하다
+    - 일반적인 데이터는 요청마다 저장할 수가없지만, 세션을 이용하여 요청마다의 데이터를 저장한다
+    - 다양한 용도로 사용할 수 있지만, 사용자 인증에 사용된다
+  - Session 에서는 **Cookie 를 식별해, 알맞은 정보를 가져오는게 주요한 역할**다
+    - ( 세션쿠키와는 다른개념이다. 세션쿠키든, 지속쿠키든 식별이 가능하면 된다 )
+  - Session 은 서버에 저장하기 때문에, 다양한 Storage 중에서 고를 수 있다
+    - ( MySQL , MongoDB , Memory )
+
+
+- 즉, 세션과 쿠키는 직접 다루는경우는 드물지만, 라이브러리등을 이용해 간접적으로 많이 이용하기 때문에 매우 중요한 개념이다
+
+---
+
+- 세션에 대한 자세한 정보:  https://www.quora.com/What-is-a-session-in-a-Web-Application
+
+
+- 쿠키에 대한 자세한 정보: https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies
+
+
+- Express-session 공식 참고자료: https://github.com/expressjs/session
