@@ -69,3 +69,27 @@ exports.postLogout = ( req , res , next ) => {
         res.redirect( '/' );
     } );
 }
+
+/**
+ * - 회원가입 페이지 반환 controller
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.getSignup = (req, res, next) => {
+    res.render('auth/signup', {
+        path: '/signup',
+        pageTitle: 'Signup',
+        isAuthenticated: false
+    });
+};
+
+/**
+ * - 회원가입 요청 controller
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.postSignup = (req, res, next) => {
+    console.log( 'sign up' )
+};
