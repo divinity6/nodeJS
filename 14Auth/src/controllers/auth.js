@@ -1,3 +1,5 @@
+const bcript = require( 'bcryptjs' );
+
 const User = require( '../models/user' );
 
 /**
@@ -27,24 +29,44 @@ exports.getLogin = ( req , res , next ) => {
  * @param next
  */
 exports.postLogin = ( req , res , next ) => {
-    User.findById( '64b28d5af6522c01b9d0884d' )
+
+    const { email , password } = req.body;
+
+    /** 로그인시 사용한 email 과 매치되는 유저를 찾음 */
+    User.findOne( { email } )
         .then( user =>{
+            /** 해당하는 user 를 찾지못했다면 login 페이지로 보낸다 */
+            if ( !user ){
+                return res.redirect( '/login' );
+            }
+
             /**
-             * - 세션에 값 설정( 자동으로 cookie 에 설정된다 )
-             * --> 기본 HttpOnly 속성이 부여된다
+             * - 첫 번째 파라미터로 암호화되지 않은 string 을 사용하고,
              *
-             * --> 브라우저 cookie 에 sessionId 를 뜻하는 connect.sid 가 설정된다
-             * --> 기본적으로 세션쿠키이므로 브라우저를 닫으면 만료된다
+             * - 두 번째 파라미터로 암호화된 string 을 사용한다
              *
-             * --> 사용자, 즉 해당 브라우저 세션인스턴스를 식별한다
-             *     즉, 해당 브라우저를 닫으면( 해당 브라우저와 연결이 종료되면 ) 죽는다
-             * */
-            req.session.isLoggedIn = true;
-            req.session.user = user;
-            req.session.save( ( err ) =>{
-                console.log( '<<saveUserInfo Session success>>' , err );
-                res.redirect( '/' );
-            } );
+             * @return { Promise<boolean> } - 같은 값인지 체크 여부를 반환한다
+             */
+            bcript
+                .compare( password , user.password )
+                .then( doMatch => {
+                    /** password 가 일치할 경우에만 세션에 login 데이터 설정 및 / 로 리다이렉트 */
+                    if ( doMatch ){
+                        req.session.isLoggedIn = true;
+                        req.session.user = user;
+                        /** 더이상 아래코드가 실행되지 못하도록 return! */
+                        return req.session.save( ( err ) =>{
+                            console.log( '<<saveUserInfo Session success>>' , err );
+                            return res.redirect( '/' );
+                        } );
+
+                    }
+                    res.redirect( '/login' );
+                } )
+                .catch( err => {
+                    console.log( '<<postLoginCompareErr>>' , err );
+                    res.redirect( '/login' );
+                } )
         } )
         .catch( err => console.log( '<<postLoginErr>>' , err ) );
 }
@@ -91,5 +113,43 @@ exports.getSignup = (req, res, next) => {
  * @param next
  */
 exports.postSignup = (req, res, next) => {
-    console.log( 'sign up' )
+    const { email , password , confirmPassword } = req.body;
+
+    User.findOne( { email } )
+        .then( userDoc => {
+            /**
+             * - 해당 email 을 가진 사용자가 있다면,
+             *   해당 사용자를 생성하지 말아야 한다
+             */
+            if ( userDoc ){
+                return res.redirect( '/signup' );
+            }
+            /**
+             * - hash 화 하고싶은 문자열을 첫 번째 인자로 넘겨준다
+             *
+             * - 두 번째는 몇 차례의 해싱을 적용할 것인지 지정한다
+             *   ( 솔트 값이 높을수록 오래걸리지만, 더 안전하다 )
+             *
+             * - 12 정도면 높은 보안성능으로 간주된다
+             *
+             * @return { Promise<string> } - 비동기 해쉬 string 값을 반환한다
+             */
+            return bcript
+                .hash( password , 12 )
+                .then( ( hashedPassword ) => {
+                    /** 그외의 경우 사용자를 생성하여 저장 */
+                    const user = new User( {
+                        email ,
+                        password : hashedPassword,
+                        cart : { items : [] }
+                    } );
+                    return user.save();
+                } )
+                .then( () => {
+                    console.log( '<<signup success>>' );
+                    /** 사용자가 로그인 */
+                    return res.redirect( '/login' );
+                } )
+        } )
+        .catch( err => console.log( '<<postSignupErr>>' , err ) );
 };

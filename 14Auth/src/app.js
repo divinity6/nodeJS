@@ -90,20 +90,7 @@ app.use( errorController.get404 );
 mongoose
     /** shop 데이터베이스에 연결 */
     .connect( MONGODB_URI )
-    .then( result => {
-        User.findOne().then( user => {
-            if ( !user ){
-                const user = new User( {
-                    name : 'Max',
-                    email : 'max@test.com',
-                    cart : {
-                        items : []
-                    }
-                } );
-                user.save();
-            }
-        } )
-
+    .then( () => {
         console.log( "<<StartApp>>" );
         app.listen( 3000 );
     } )

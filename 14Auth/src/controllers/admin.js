@@ -27,7 +27,6 @@ exports.getProducts = ( req , res , next )=> {
  * @param next
  */
 exports.getAddProduct = ( req , res , next )=> {
-    console.log( 'addProduct!' )
     res.render( 'admin/edit-product' , {
         pageTitle : 'Add Product' ,
         path : "/admin/add-product",

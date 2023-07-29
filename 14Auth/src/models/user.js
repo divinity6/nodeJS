@@ -2,11 +2,11 @@ const mongoose = require( 'mongoose' );
 const Schema = mongoose.Schema;
 /** 사용자의 스키마( 청사진 ) 정의 */
 const userSchema = new Schema( {
-    name : {
+    email : {
         type : String,
         required : true,
     },
-    email : {
+    password : {
         type : String,
         required : true,
     },
