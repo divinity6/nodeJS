@@ -12,10 +12,15 @@ const User = require( '../models/user' );
  * @param next
  */
 exports.getLogin = ( req , res , next ) => {
+    let [ message ] = req.flash('error');
+    if ( !message ){
+        message = null;
+    }
     res.render( 'auth/login' , {
         pageTitle : 'Login' ,
         path : '/login' ,
-        isAuthenticated : req.session.isLoggedIn,
+        /** 이렇게 사용하면, 일회성 데이터는 더이상 세션에 존재하지 않게된다 */
+        errorMessage : message
     } );
 }
 
@@ -37,6 +42,8 @@ exports.postLogin = ( req , res , next ) => {
         .then( user =>{
             /** 해당하는 user 를 찾지못했다면 login 페이지로 보낸다 */
             if ( !user ){
+                /** flash 에 key , value 형태로 등록 */
+                req.flash( 'error' , 'Invalid email or password.' );
                 return res.redirect( '/login' );
             }
 
@@ -59,8 +66,8 @@ exports.postLogin = ( req , res , next ) => {
                             console.log( '<<saveUserInfo Session success>>' , err );
                             return res.redirect( '/' );
                         } );
-
                     }
+                    req.flash( 'error' , 'Invalid email or password.' );
                     res.redirect( '/login' );
                 } )
                 .catch( err => {
@@ -99,10 +106,14 @@ exports.postLogout = ( req , res , next ) => {
  * @param next
  */
 exports.getSignup = (req, res, next) => {
+    let [ message ] = req.flash('error');
+    if ( !message ){
+        message = null;
+    }
     res.render('auth/signup', {
         path: '/signup',
         pageTitle: 'Signup',
-        isAuthenticated: false
+        errorMessage : message,
     });
 };
 
@@ -122,6 +133,7 @@ exports.postSignup = (req, res, next) => {
              *   해당 사용자를 생성하지 말아야 한다
              */
             if ( userDoc ){
+                req.flash( 'error' , 'E-Mail exists already, please pick a different one.' );
                 return res.redirect( '/signup' );
             }
             /**

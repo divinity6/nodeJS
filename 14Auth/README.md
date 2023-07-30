@@ -265,7 +265,7 @@ const csrf = require( 'csurf' );
 /** 세션에 CSRF 토큰 값을 설정하는 미들웨어 생성 */
 const csrfProtection = csrf();
 
-/** CSRF 가 session 을 이용하기 때문에 session 다음에 등록 */
+/** CSRF 가 session 을 이용하기 때문에 session 다음에 미들웨어 등록 */
 app.use( csrfProtection )
 ````
 
@@ -320,3 +320,110 @@ app.use( ( req , res , next ) => {
 
 - CSRF 방어는 출시할 애플리케이션의 필수 요소다
   - 없다면 보안 취약점이 발생하기 때문에, 반드시 추가해서 세션을 가로채지 못하게 해야한다
+
+
+- 또한, 해당 CSRF 토큰은 현재 session 에 등록하기 때문에, 
+
+
+- 세션의 token 정보와, 요청간의 token 정보가 일치하지 않으면 화면을 띄지 않아버린다 
+
+---
+
+### Improvement UX
+
+- 리다이렉트시에는 새로운 요청이 생성된다
+
+
+- 따라서, 로그인 실패시, 다시 login 페이지로 리다이렉트를 시켜버리면, 이전 요청은 종료되고,( return 때리니까 )
+
+
+- 새로운 요청이 생성된다
+
+
+- 그런데, 새로운 요청이 생성되었을 경우, 사용자에게 로그인 되지 않았다는 오류메시지를 보여줘야 한다
+
+
+- 로그인페이지에서 메시지를 보여주려면, 요청간 데이터 공유가 되지않는 상태이기 때문에, **세션을 사용하여 공유**할 수 있다 
+
+
+- 세션에 잠깐 해당 데이터를 추가해 놨다가, 사용후 바로지워버리도록..
+  - ( 다음 요청부터는 사용하지 않도록 )
+
+
+- 이를 사용하는 패키지가 connect-flash 라는 라이브러리다
+
+````shell
+npm i connect-flash
+````
+
+- 아래처럼 app.js 에서 flash 라이브러리를 등록해준다
+
+````javascript
+/** ===== app.js ===== */
+const flash = require( 'connect-flash' );
+
+/** flash 미들웨어를 등록하여, request 객체에서 사용가능 */
+app.use( flash() );
+````
+
+- 그 후, 사용할 곳에서 라이브러리 미들웨어에서 request 객체에 할당한 flash 메서드를 이용하여,
+
+
+- 일회성 세션을 생성할 수 있다.( 사용할때까지, 세션이 존재하게 된다 )
+
+````javascript
+/** ===== controller/auth.js ===== */
+exports.postLogin = ( req , res , next ) => {
+  /** flash 에 key , value 형태로 등록 */
+  req.flash( 'error' , 'Invalid email or password.' );
+}
+````
+
+- 아래처럼 사용하게 되면, 세션에서 더이상 존재하지 않게되고 제거된다
+  - ( 즉, 해당 데이터를 사용할때까지만 세션에 존재하게 된다 )
+
+````javascript
+/** ===== controller/auth.js ===== */
+exports.getLogin = ( req , res , next ) => {
+  res.render( 'auth/login' , {
+    pageTitle : 'Login' ,
+    path : '/login' ,
+    /** 이렇게 사용하면, 일회성 데이터는 더이상 세션에 존재하지 않게된다 */
+    errorMessage : req.flash('error')
+  } );
+}
+````
+
+---
+
+### Module Summary
+
+- 사용자의 인증여부를 속일 수 없도록 서버에서 진행되어야 한다
+  - 인증상태를 저장하는데 세션을 사용해야 한다
+
+
+- request 가 controller 에 도달하기전에 **middleware 에서 cookie 값을 검사해서 인증 상태를 보호**할 수 있다
+
+
+- 인증은 사용자 경험과 관련있기 때문에 반드시 password 는 hashing 처리를 해서 저장해야 한다
+  - ( 일반적인 방식으로 저장하게 되면, 데이터베이스가 노출되었을 경우, 공격자가 모든 사용자 계정에 엑세스할 수 있다 )
+
+
+- CSRF 공격( Cross-Site-Request-Forgery )은 세션을 가로챌 수 있는 심각한 문제이기 때문에,
+
+
+- **모든 요청에 CSRF 인증 토큰을 사용하는등 CSRF 방어를 구축**해야 한다
+
+
+- 또한, 더 나은 사용자 경험을 위해, **flash 데이터 or 알림을 session 에 저장**할 수도 있다
+  - flash 데이터는 한번사용하고 나면 데이터가 세션에서 자동으로 제거된다
+
+
+- **요청 간 데이터를 공유하는 방법으로는 세션을 사용한다**
+
+---
+
+- Bcrypt 공식 참고자료:https://github.com/dcodeIO/bcrypt.js
+
+
+- CSRF 공격에 대한 자세한 정보:  https://www.acunetix.com/websitesecurity/csrf-attacks/

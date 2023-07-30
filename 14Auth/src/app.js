@@ -8,6 +8,7 @@ const session = require( 'express-session' );
 /** MongoDB 에 세션데이터 저장 및 전달 */
 const MongoDBStore = require( 'connect-mongodb-session' )( session );
 const csrf = require( 'csurf' );
+const flash = require( 'connect-flash' );
 
 const errorController = require( './controllers/error' );
 const User = require( './models/user' );
@@ -63,11 +64,10 @@ app.use( session( {
     saveUninitialized : false,
     store
 } ) );
-/**
- * - CSRF 가 session 을 이용하기 때문에 session 다음에 등록
- */
+/** CSRF 가 session 을 이용하기 때문에 session 다음에 미들웨어 등록 */
 app.use( csrfProtection )
-
+/** flash 미들웨어를 등록하여, request 객체에서 사용가능 */
+app.use( flash() );
 
 app.use( ( req , res , next ) => {
     /** 세션에 user 가 저장되어 있지 않다면 request 에 user 를 저장하지 않음 */
