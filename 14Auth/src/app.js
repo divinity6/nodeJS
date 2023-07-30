@@ -7,6 +7,7 @@ const mongoose = require( 'mongoose' );
 const session = require( 'express-session' );
 /** MongoDB 에 세션데이터 저장 및 전달 */
 const MongoDBStore = require( 'connect-mongodb-session' )( session );
+const csrf = require( 'csurf' );
 
 const errorController = require( './controllers/error' );
 const User = require( './models/user' );
@@ -23,6 +24,8 @@ const store = new MongoDBStore( {
     uri : MONGODB_URI,
     collection : 'sessions'
 } );
+/** 세션에 CSRF 토큰 값을 설정하는 미들웨어 생성 */
+const csrfProtection = csrf();
 
 /** ejs 라이브러리를 view engine 으로 사용 */
 app.set('view engine', 'ejs');
@@ -60,6 +63,11 @@ app.use( session( {
     saveUninitialized : false,
     store
 } ) );
+/**
+ * - CSRF 가 session 을 이용하기 때문에 session 다음에 등록
+ */
+app.use( csrfProtection )
+
 
 app.use( ( req , res , next ) => {
     /** 세션에 user 가 저장되어 있지 않다면 request 에 user 를 저장하지 않음 */
@@ -78,6 +86,13 @@ app.use( ( req , res , next ) => {
             next();
         } )
         .catch( err => console.log( '<<saveUserInfo Err>>' , err ) );
+} );
+/** 실행되는 모든 요청에 대해 view 에 아래 필드를 추가해주는 미들웨어 */
+app.use( ( req , res , next ) => {
+    /** locals : express.js 에서 제공하는 렌더링할 view 에만 제공해주는 variable */
+    res.locals.isAuthenticated = req.session.isLoggedIn;
+    res.locals.csrfToken = req.csrfToken();
+    next();
 } );
 
 app.use( '/admin' , adminRoutes );

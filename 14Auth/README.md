@@ -199,3 +199,124 @@ router.get( '/add-product' , isAuth , adminController.getAddProduct );
 ````
 
 - 위의 방식으로 인증되지 않은 라우트 접근을 보호할 수 있다
+
+---
+
+### CSRF Attacks
+
+- **C**ross-**S**ite-**R**equest-**F**orgery
+
+
+- CSRF 는 사이트간 요청 위조를 뜻한다
+  - 세션을 악용하고, 애플리케이션 사용자를 속여서, 악성코드를 실행하게 하는 공격방법, 접근법이다
+
+
+- 해당 원리 : 
+  - 인증된 어플리케이션 사용자
+    - 사용자에게 FakeSite( 가짜 사이트 ) 로 가도록 유도( Email link 등 )한다
+    - 해당 FakeSite 에는 원본 Server 로 요청을 보내도록 한다
+    - 예를 들어, 
+      - 사용자가 B 에게 돈을 송금하려 할때, 
+      - FakeSite 에서 원본 Server 에 C 에게 송금하는 요청으로 바꿔보낸다
+      - ( 사용자는 즉시 원본 페이지로 이동하는 링크를 클릭했기 때문에 알아채기 어렵다 )
+
+  - 이런 일이 발생하는 이유는, **해당 사용자에 대한 유효한 세션이 생성**되었기 때문에,
+  - 서버에 데이터를 보내게 되면( cookie 값이 담기므로 ), 해당 데이터가 인증을 통과하여 실행된다
+
+
+- 사용자의 세션을 훔치는 공격방법으로, 사용자가 로그인 되어있다는 사실을 악용해서, 알아채지 못하는 요청을 보내도록 하는 것이다 
+  - ( 즉, 백그라운드에서 session 에 인증되어있다는 점을 악용해, http 요청을 보내는 것이다 )
+  - 이렇게 되면, 서버에서는 session 에 인증되어있다고 생각할 수 밖에 없다...
+
+
+- 기본 개념은, 원본 뷰, **즉 애플리케이션이 렌더링한 뷰로 작업할때만 세션을 사용할 수 있도록 하는 것**이다
+  - ( 우리 도메인에서만 세션을 사용하게 한다는 이야기 )
+
+
+- 이러한 기능을 추가하기 위해 **CSRF 토큰을 사용**한다
+
+---
+
+### CSRF 토큰 사용
+
+- CSRF 토큰을 생성해주는 express.js 라이브러리
+
+
+- 사용자의 상태를 변경하는 모든 요청에 대해, view 와 server 에 토큰을 검사한다
+
+
+- 공격자가 다른곳에서 요청을 보내면 서버에서 토큰을 체크해 해당 view 에서 보낸 요청인지 체크한다
+  - 페이지가 렌더링될 때마다, 새로운 토큰이 생성되므로 가로챌 수 없다
+  
+
+````shell
+npm i csurf
+````
+
+- csrf 미들웨어를 등록하게 되면, **get 요청 이외에 데이터를 변경하는 다른 요청들의 토큰을 검사**하게 된다
+
+
+- 즉, view 에 CSRF 토큰이 있는지 확인하게 된다
+
+````javascript
+/** ===== app.js ===== */
+const csrf = require( 'csurf' );
+
+/** 세션에 CSRF 토큰 값을 설정하는 미들웨어 생성 */
+const csrfProtection = csrf();
+
+/** CSRF 가 session 을 이용하기 때문에 session 다음에 등록 */
+app.use( csrfProtection )
+````
+
+- 그러려면, 먼저 view 에 토큰을 등록해줘야하는데, 처음 view 를 화면에 뿌릴때 해당 token 을 등록하게 된다
+  - ( 예를 들어 페이지의 진입점인 index 페이지에 등록해줄 수 있다 )
+
+
+````javascript
+/** ===== controller/shop.js ===== */
+exports.getIndex = ( req , res , next ) => {
+  res.render( 'shop/index' , {
+    /** csrf 미들웨어에 의해 제공된다 */
+    csrfToken : req.csrfToken(),
+  } );
+}
+````
+
+- view 에 CSRF 토큰을 등록해서 사용할때, 
+
+
+- 이름을 _csrf 로 사용해야 해당 라이브러리에서 해당 요청의 csrf 토큰을 참조하여 사용할 수 있다
+
+````ejs
+<!-- ===== views/includes/navigation.ejs ===== -->
+<form action="/logout" method="post">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>"/>
+    <button type="submit">Logout</button>
+</form>
+````
+
+
+- 그런데, 모든 페이지에 이 작업을 일일히 추가하려면 매우 오래걸린다
+
+
+- 따라서, express.js 에 렌더링할 모든 view 에 해당 정보를 포함시키라고 명령하면 된다
+
+
+- app.js 에 해당 미들웨어를 추가하면 모든 요청에, 해당 local variable( view 에서만 사용하는 variable )을 추가해준다
+````javascript
+/** ===== app.js ===== */
+/** 실행되는 모든 요청에 대해 view 에 아래 필드를 추가해주는 미들웨어 */
+app.use( ( req , res , next ) => {
+  /** locals : express.js 에서 제공하는 렌더링할 view 에만 제공해주는 variable */
+  res.locals.isAuthenticated = req.session.isLoggedIn;
+  res.locals.csrfToken = req.csrfToken();
+  next();
+} );
+````
+
+- 또한, view 의 모든 get 이외의 요청에 csrf 토큰을 추가하여 사용해야 한다
+
+
+- CSRF 방어는 출시할 애플리케이션의 필수 요소다
+  - 없다면 보안 취약점이 발생하기 때문에, 반드시 추가해서 세션을 가로채지 못하게 해야한다

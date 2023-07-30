@@ -67,7 +67,6 @@ exports.getIndex = ( req , res , next ) => {
                 pageTitle : 'Shop' ,
                 path : '/' ,
                 prods : products ,
-                isAuthenticated : req.session.isLoggedIn
             } );
         } )
         .catch( err => console.log( '<<getIndexFetchErr>> :' , err ) );
@@ -196,7 +195,7 @@ exports.postOrder = ( req , res , next ) => {
             } );
             const order = new Order( {
                 user : {
-                    name : req.user.name,
+                    email : req.user.email,
                     /** mongoose 가 자체적으로 userId 를 선택할 것이다 */
                     userId : req.user
                 },
