@@ -43,6 +43,14 @@
 - 세션 및 쿠키
 
 
+### [ 10. Auth ]( https://github.com/divinity6/nodejs-study/tree/master/14Auth )
+- 인증 및 CSRF 공격
+
+
+### [ 11. Email ]( https://github.com/divinity6/nodejs-study/tree/master/15Email )
+- Email 전송
+
+
 ---
 
 - 출처 : https://www.udemy.com/course/nodejs-mvc-rest-apis-graphql-deno/
