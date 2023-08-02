@@ -1,6 +1,23 @@
 const bcript = require( 'bcryptjs' );
+const nodemailer = require( 'nodemailer' );
+const sendgridTransport = require( 'nodemailer-sendgrid-transport' );
 
 const User = require( '../models/user' );
+
+/**
+ * - createTransport 에 sendgridTransport 의 환경값을 설정한다
+ *
+ * --> 즉, createTransport 에서 sendgridTransport 패키지를 이용해 메일을 보낸다
+ *
+ * --> transporter 객체를 생성할때, auth 의 api_user , api_key 가 필요한데 Send_Grid 계정 에서 확인할 수 있다
+ *
+ * @see ( https://sendgrid.com/ )
+ */
+const transporter = nodemailer.createTransport( sendgridTransport( {
+    auth : {
+        api_key :'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'
+    }
+} ) );
 
 /**
  * - get Login
@@ -158,10 +175,16 @@ exports.postSignup = (req, res, next) => {
                     return user.save();
                 } )
                 .then( () => {
-                    console.log( '<<signup success>>' );
                     /** 사용자가 로그인 */
-                    return res.redirect( '/login' );
+                    res.redirect( '/login' );
+                    return transporter.sendMail( {
+                        to : email,
+                        from : 'shop@hoon-node-complete.com',
+                        subject : 'Signup succeeded!',
+                        html : '<h1>You successfully signed up!</h1>'
+                    } );
                 } )
+                .catch( err => console.log( '<<sendEmailErr>>' , err ) );
         } )
         .catch( err => console.log( '<<postSignupErr>>' , err ) );
 };
