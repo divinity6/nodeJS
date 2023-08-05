@@ -51,6 +51,9 @@
 - Email 전송
 
 
+### [ 12. AuthAdvanced ]( https://github.com/divinity6/nodejs-study/tree/master/16AuthAdvanced )
+- 고급 인증
+
 ---
 
 - 출처 : https://www.udemy.com/course/nodejs-mvc-rest-apis-graphql-deno/
