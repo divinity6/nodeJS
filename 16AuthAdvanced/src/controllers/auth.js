@@ -1,3 +1,5 @@
+const crypto = require( 'crypto' );
+
 const bcript = require( 'bcryptjs' );
 const nodemailer = require( 'nodemailer' );
 const sendgridTransport = require( 'nodemailer-sendgrid-transport' );
@@ -206,5 +208,61 @@ exports.getReset = ( req , res , next ) => {
         path: '/reset',
         pageTitle: 'Reset Password',
         errorMessage : message,
+    });
+}
+
+/**
+ * - 비밀번호 재설정 post controller
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.postReset = ( req , res , next ) => {
+    /**
+     * - 32 개의 무작위 바이트 생성
+     *
+     * - 생성 후 2번째 콜백을 실행하게 된다
+     */
+    crypto.randomBytes( 32 , ( err , buffer ) => {
+        /** error 발생시 다시 리다이렉트 */
+        if ( err ){
+            console.log( '<< postReset error >>' , err );
+            return res.redirect( './reset' );
+        }
+        /** 16 진법을 이용하여 buffer token 생성 */
+        const token = buffer.toString( 'hex' );
+
+        /** 일치하는 Email 로 DB 의 사용자 조회 */
+        User.findOne( { email : req.body.email } )
+            .then( user => {
+                if ( !user ){
+                    /** error flash 등록 */
+                    req.flash( 'error' , 'No account with that email found.' );
+                    return res.redirect( '/reset' );
+                }
+                /**
+                 * - 찾은 사용자 데이터에 resetToken 설정
+                 *   ( 한시간동안 토큰 만료시간 설정 )
+                 */
+                user.resetToken = token;
+                user.resetTokenExpiration = Date.now() + 3600000;
+                return user.save();
+            } )
+            .then( result => {
+                res.redirect( '/' );
+                /** 비밀번호 재설정 이메일 발신 */
+                transporter.sendMail( {
+                    to : req.body.email,
+                    from : 'divinity666@naver.com',
+                    subject : 'Password reset',
+                    html : `
+                        <p>You requested a password reset</p>
+                        <p>Click this <a href="http://localhost:3000/reset/${ token }">link</a> to set a new password.</p>
+                    `
+                } );
+            } )
+            .catch( err => {
+                console.log( '<<postReset err>>' , err );
+            } );
     });
 }

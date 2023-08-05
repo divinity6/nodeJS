@@ -10,6 +10,18 @@ const userSchema = new Schema( {
         type : String,
         required : true,
     },
+    /**
+     * - 리셋토큰 설정
+     *
+     * --> 재사용을 요청한 경우에만 토큰이 존재하기 때문에 필수값이 아니다
+     * */
+    resetToken: String,
+    /**
+     * - 리셋토큰 만료시간 설정
+     *
+     * -> 재사용을 요청한 경우에만 토큰이 존재하기 때문에 필수값이 아니다
+     */
+    resetTokenExpiration : Date,
     cart : {
         /** Nested 데이터 구조일 경우에는 아래처럼 선언한다 */
         items : [
