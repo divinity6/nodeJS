@@ -1,6 +1,8 @@
 const bcript = require( 'bcryptjs' );
 const nodemailer = require( 'nodemailer' );
 const sendgridTransport = require( 'nodemailer-sendgrid-transport' );
+const Constants = require( '../constants/private.ts' );
+
 
 const User = require( '../models/user' );
 
@@ -15,7 +17,7 @@ const User = require( '../models/user' );
  */
 const transporter = nodemailer.createTransport( sendgridTransport( {
     auth : {
-        api_key :'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'
+        api_key :Constants.EMAIL_API_KEY,
     }
 } ) );
 
@@ -179,7 +181,7 @@ exports.postSignup = (req, res, next) => {
                     res.redirect( '/login' );
                     return transporter.sendMail( {
                         to : email,
-                        from : 'shop@hoon-node-complete.com',
+                        from : 'divinity666@naver.com',
                         subject : 'Signup succeeded!',
                         html : '<h1>You successfully signed up!</h1>'
                     } );

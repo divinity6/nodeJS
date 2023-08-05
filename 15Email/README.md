@@ -108,4 +108,63 @@ exports.postSignup = (req, res, next) => {
 - 현재 메일을 보내려면 도메인이나, 발신자 신원을 인증해야함
 
 
-- [ see ]( https://docs.sendgrid.com/ui/sending-email/sender-verification )
+- 즉, 신원 인증을 확인할만한 메일주소가 따로 존재해야한다.
+  - ( 현재 나는 naver 메일 주소로 인증한 상태 )
+
+
+- 또한, 메일발송하는 API_KEY 는 웹상에 노출하면 안된다
+
+---
+
+- 아래의 코드는 앱에서 발송하기 적합한 방식이다
+
+
+- 요청이 많은 애플리케이션의 경우, 리다이렉트 되기전에 이메일 발송을 기다리게 되므로,
+
+
+- 리다이렉트를 막지 않고 동시에 이메일을 보내는 것이 좋다
+
+#### 이메일을 발송하고 리다이렉트 시킬 시
+
+- 이메일 발송을 기다려야하므로 사용자 경험이 좋지 않음
+
+````javascript
+
+transporter.sendMail( {
+  to : email,
+  from : 'divinity666@naver.com',
+  subject : 'Signup succeeded!',
+  html : '<h1>You successfully signed up!</h1>'
+} )
+.then( () => {
+  res.redirect( '/login' );            
+} );
+````
+
+#### 리다이렉트 시키고 이메일을 발송
+
+- 리다이렉트 요청을 보낸 후, 메일을 발송하기 때문에, 백그라운드에서 실행됨
+  - ( 더 나은 사용자 경험 )
+
+````javascript
+
+res.redirect( '/login' );
+return transporter.sendMail( {
+  to : email,
+  from : 'divinity666@naver.com',
+  subject : 'Signup succeeded!',
+  html : '<h1>You successfully signed up!</h1>'
+} );
+````
+
+
+- 앱이 더 거대해진다면, 특정 시점마다 새로 가입된 사용자들을 체크해, 메일을 발신하는 방법등이 존재한다
+
+
+- [ Send-Grid ]( https://docs.sendgrid.com/ui/sending-email/sender-verification ) ( 발신인 검증 관련 )
+
+---
+
+- Nodemailer 공식 참고자료:  https://nodemailer.com/about/
+
+- SendGrid 공식 참고자료:  https://sendgrid.com/docs/
