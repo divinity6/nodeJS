@@ -7,6 +7,7 @@ const Constants = require( '../constants/private.ts' );
 
 
 const User = require( '../models/user' );
+const {logger} = require("sequelize/lib/utils/logger");
 
 /**
  * - createTransport 에 sendgridTransport 의 환경값을 설정한다
@@ -194,7 +195,7 @@ exports.postSignup = (req, res, next) => {
 };
 
 /**
- * - 비밀번호 재설정 get controller
+ * - 비밀번호 재설정 메일 요청 get controller
  * @param req
  * @param res
  * @param next
@@ -212,7 +213,7 @@ exports.getReset = ( req , res , next ) => {
 }
 
 /**
- * - 비밀번호 재설정 post controller
+ * - 비밀번호 재설정 메일 요청 post controller
  * @param req
  * @param res
  * @param next
@@ -265,4 +266,47 @@ exports.postReset = ( req , res , next ) => {
                 console.log( '<<postReset err>>' , err );
             } );
     });
+}
+
+/**
+ * - 비밀번호 실제 재설정 get controller
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.getNewPassword = ( req , res , next ) => {
+    const token = req.params.token;
+
+    /**
+     * - token 을 이용해 해당 token 과 일치하고,
+     *
+     *   token 만료일자가 지나지 않은 사용자를 찾는다
+     *
+     * @resetTokenExpiration :
+     *  - $gt : 보다 크다는 뜻,
+     *    즉, 현재시각( Date.now() ) 보다
+     *
+     *  - 토큰 만료일자가 더 큰 사용자를 찾는다는 뜻
+     */
+    User.findOne( {
+            resetToken : token ,
+            resetTokenExpiration : {
+                /** $gt 는 보다 크다는 뜻 */
+                $gt : Date.now()
+            }
+        } )
+        .then( user => {
+            let [ message ] = req.flash('error');
+            if ( !message ){
+                message = null;
+            }
+            res.render('auth/new-password', {
+                path: '/new-password',
+                pageTitle: 'New Password',
+                errorMessage : message,
+                /** ObjectId 에서 실제 string 으로 변경 */
+                userId : user._id.toString()
+            });
+        } )
+        .catch( err => console.log( '<<finUserErr>>' , err ) );
 }

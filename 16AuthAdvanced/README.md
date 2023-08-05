@@ -98,3 +98,66 @@ exports.postReset = ( req , res , next ) => {
   });
 }
 ````
+
+### Token
+
+- 메일로 발송한 token 값을 이용해, 사용자를 인증.
+
+
+- token 만료일자기 지나지 않고, token 이 일치하는 사용자를 검색하여,
+  - 해당 사용자를 화면에 뿌림
+
+````javascript
+/** ===== controller/auth.js ===== */
+/**
+ * - 비밀번호 실제 재설정 get controller
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.getNewPassword = ( req , res , next ) => {
+    const token = req.params.token;
+
+    /**
+     * - token 을 이용해 해당 token 과 일치하고,
+     *
+     *   token 만료일자가 지나지 않은 사용자를 찾는다
+     *
+     * @resetTokenExpiration :
+     *  - $gt : 보다 크다는 뜻,
+     *    즉, 현재시각( Date.now() ) 보다
+     *
+     *  - 토큰 만료일자가 더 큰 사용자를 찾는다는 뜻
+     */
+    User.findOne( {
+            resetToken : token ,
+            resetTokenExpiration : {
+                /** $gt 는 보다 크다는 뜻 */
+                $gt : Date.now()
+            }
+        } )
+        .then( user => {
+            let [ message ] = req.flash('error');
+            if ( !message ){
+                message = null;
+            }
+            res.render('auth/new-password', {
+                path: '/new-password',
+                pageTitle: 'New Password',
+                errorMessage : message,
+                /** ObjectId 에서 실제 string 으로 변경 */
+                userId : user._id.toString()
+            });
+        } )
+        .catch( err => console.log( '<<finUserErr>>' , err ) );
+}
+````
+
+- route 에서는 DynamicToken 을 이용하여 사용자 설정
+
+````javascript
+/** ===== routes/auth.js ===== */
+/** DynamicRoute 를 이용하여 라우트 매핑 */
+router.get( '/reset/:token' , authController.getNewPassword );
+
+````
