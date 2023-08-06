@@ -305,8 +305,55 @@ exports.getNewPassword = ( req , res , next ) => {
                 pageTitle: 'New Password',
                 errorMessage : message,
                 /** ObjectId 에서 실제 string 으로 변경 */
-                userId : user._id.toString()
+                userId : user._id.toString(),
+                passwordToken : token,
             });
         } )
         .catch( err => console.log( '<<finUserErr>>' , err ) );
+}
+
+/**
+ * - 비밀번호 업데이트 controller
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.postNewPassword = ( req , res , next ) => {
+    const { password , userId , passwordToken } = req.body;
+    let resetUser;
+
+    User.findOne( {
+        resetToken : passwordToken ,
+        resetTokenExpiration : {
+            $gt : Date.now()
+        },
+        _id : userId
+    } )
+        .then( user => {
+            resetUser = user;
+            /**
+             * - hash 화 하고싶은 문자열을 첫 번째 인자로 넘겨준다
+             *
+             * - 두 번째는 몇 차례의 해싱을 적용할 것인지 지정한다
+             *   ( 솔트 값이 높을수록 오래걸리지만, 더 안전하다 )
+             *
+             * - 12 정도면 높은 보안성능으로 간주된다
+             *
+             * @return { Promise<string> } - 비동기 해쉬 string 값을 반환한다
+             */
+            return bcript.hash( password , 12 );
+        } )
+        .then( hashedPassword => {
+            resetUser.password = hashedPassword;
+            /**
+             * - token 필드 제거( undefined )
+             */
+            resetUser.resetToken = undefined;
+            resetUser.resetTokenExpiration = undefined;
+            return resetUser.save();
+        } )
+        .then( result => {
+            res.redirect( '/login' );
+        } )
+        .catch( err => console.log( '<<finUserErr>>' , err ) )
 }

@@ -7,8 +7,10 @@ const Product = require( "../models/product" );
  * @param next
  */
 exports.getProducts = ( req , res , next )=> {
-
-    Product.find()
+    /** 해당 사용자가 생성한 제품만 가져오기 */
+    Product.find( {
+        userId : req.user._id
+    } )
         .then( products => {
             res.render( 'admin/products' , {
                 prods : products ,
@@ -120,17 +122,19 @@ exports.postEditProduct = ( req , res , next ) => {
          *   저장해주면 업데이트가 된다
          */
         .then( product => {
+            if( req.user._id.toString() !== product.userId.toString() ){
+                return res.redirect( '/' );
+            }
             product.title = title;
             product.price = price;
             product.imageUrl = imageUrl;
             product.description = description;
 
-            return product.save();
+            return product.save().then( () => {
+                res.redirect( "/admin/products" );
+            } )
         } )
-        .then( result => {
-            console.log( '<<updatedData>> :' , result );
-            res.redirect( "/admin/products" );
-        } )
+
         .catch( err =>  console.log( '<<findDataFetchErr>> :' , err ) );
 
 }
@@ -144,9 +148,13 @@ exports.postEditProduct = ( req , res , next ) => {
 exports.postDeleteProduct = (  req , res , next ) => {
     const prodId = req.body.productId;
 
-    console.log( 'prodId' , prodId );
-
-    Product.findByIdAndRemove( prodId )
+    /**
+     * - deleteOne 메서드를 사용하면 손쉽게 구현할 수 있다
+     *
+     * - _id 가 prodId 와 같은지 체크하면서,
+     *  userId 또한 req.user._id 와 같은지 체크하면 된다
+     */
+    Product.deleteOne( { _id : prodId , userId : req.user._id } )
         .then( result => {
             console.log( '<<destroyProduct>> :' , result );
             res.redirect( "/admin/products" );

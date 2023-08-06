@@ -82,7 +82,7 @@ app.use( ( req , res , next ) => {
         .then( user => {
             /** 요청 객체에 User 를 저장하여 어디서든 접근하여 쓸 수 있도록 저장 */
             req.user = user;
-            console.log( '<<saveUserInfo Request success>>' )
+            console.log( '<<Request : saveUserInfo success>>' )
             next();
         } )
         .catch( err => console.log( '<<saveUserInfo Err>>' , err ) );

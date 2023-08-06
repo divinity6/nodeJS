@@ -22,4 +22,6 @@ router.post( '/reset' , authController.postReset );
 /** DynamicRoute 를 이용하여 token 값 설정 */
 router.get( '/reset/:token' , authController.getNewPassword );
 
+router.post( '/new-password' , authController.postNewPassword );
+
 module.exports = router;
