@@ -54,6 +54,11 @@
 ### [ 12. AuthAdvanced ]( https://github.com/divinity6/nodejs-study/tree/master/16AuthAdvanced )
 - 고급 인증
 
+
+### [ 13. Validation ]( https://github.com/divinity6/nodejs-study/tree/master/17Validation )
+- 입력 검증 방법
+
+
 ---
 
 - 출처 : https://www.udemy.com/course/nodejs-mvc-rest-apis-graphql-deno/
