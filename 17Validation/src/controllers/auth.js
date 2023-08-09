@@ -3,8 +3,8 @@ const crypto = require( 'crypto' );
 const bcript = require( 'bcryptjs' );
 const nodemailer = require( 'nodemailer' );
 const sendgridTransport = require( 'nodemailer-sendgrid-transport' );
+const { validationResult } = require( 'express-validator' );
 const Constants = require( '../constants/private.ts' );
-
 
 const User = require( '../models/user' );
 const {logger} = require("sequelize/lib/utils/logger");
@@ -147,6 +147,20 @@ exports.getSignup = (req, res, next) => {
  */
 exports.postSignup = (req, res, next) => {
     const { email , password , confirmPassword } = req.body;
+    /**
+     * - express-validator 미들웨어에서 발생한 에러를 모아주어, errors 변수에저장
+     * */
+    const errors = validationResult( req );
+    /** 에러가 존재하는지 여부를 반환하는 메서드 - 에러가 존재할 시 에러코드 반환 */
+    if ( !errors.isEmpty() ){
+        /** 에러 코드를 반환하고, signup 페이지를 다시 렌더링한다 */
+        console.log( '<< postSignup validator errors.array() >> :' , errors.array() );
+        return res.status( 422 ).render('auth/signup', {
+            path: '/signup',
+            pageTitle: 'Signup',
+            errorMessage : errors.array(),
+        });
+    }
 
     User.findOne( { email } )
         .then( userDoc => {
