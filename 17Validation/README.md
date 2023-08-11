@@ -83,8 +83,10 @@ const { check } = require( 'express-validator' );
  *      body , query , header , cookie 에서 해당 필드 값( 첫 번째 파라미터 )을 찾음 )
  *      
  * --> check( 'email' ).isEmail() 미들웨어에서는 에러를 수집하여 다음 미들웨어의 req 에 담아 보낸다
+ * 
+ * --> withMessage() 를 통하여, email 이 실패할 경우 어떤 메시지를 담을지 설정할 수 있다
  */
-router.post('/signup', check( 'email' ).isEmail() , authController.postSignup );
+router.post('/signup', check( 'email' ).isEmail().withMessage( 'Please enter a valid email.' ) , authController.postSignup );
 ````
 
 - 만약, route 의 express-validator 미들웨어에서 에러가 발생했다면, 해당 에러를 모아 저장하는데, 
@@ -144,5 +146,293 @@ exports.postSignup = (req, res, next) => {
     location: 'body'
   }
 ]
+````
 
+### express-validator
+
+
+- [ validator.js ](https://github.com/validatorjs/validator.js)
+  - validator.js 라이브러리 너무 좋은데...?
+  - 모든 개발에 기본적으로 사용할 수 있을듯...?
+
+
+- 또한, 기본적으로 express-validator 에는 사용자지정 validator 를 추가할 수 있다
+
+
+- email 뿐만아니라, 사용자가 직접 검증자를 추가하여 원하는 에러메시지등을 자유롭게 커스텀할 수 있는 메서드를 제공한다
+
+````javascript
+/** ===== routes/auth.js ===== */
+const { check } = require( 'express-validator' );
+/**
+ *
+ * --> 파라미터 에 view 에서 전송하는 데이터 필드의 이름을 입력
+ *
+ * --> email 값 확인 , 유효성을 검사하려는 것을 알림
+ *    ( 들어오는 req 의 email 필드 검사,
+ *      body , query , header , cookie 에서 해당 필드 값( 첫 번째 파라미터 )을 찾음 )에
+ *
+ * --> check( 'email' ).isEmail() 미들웨어에서는 에러를 수집하여 다음 미들웨어의 req 에 담아 보낸다
+ *
+ * --> withMessage() 를 통하여, email 이 실패할 경우 어떤 메시지를 담을지 설정할 수 있다
+ * */
+router.post(
+        '/signup',
+        check( 'email' )
+                .isEmail()
+                .withMessage( 'Please enter a valid email.' )
+                /**
+                 * - 사용자지정 custom 에러 생성가능
+                 * --> 즉, email 뿐만 아니라, 특정 에러등도 커스텀해 추가할 수 있다
+                 *
+                 * - 즉, 사용자 검증자를 추가할 수 있다
+                 * */
+                .custom( ( value , { req } ) => {
+                  if ( 'test@test.com' === value ){
+                    throw new Error( 'This email address if forbidden.' )
+                  }
+                  return true;
+                } ) ,
+        authController.postSignup );
+
+````
+
+### password-validator
+
+- 또한, 배열을 이용해 다중으로 validator 를 등록할 수 있으며,
+
+
+- check 함수로 모든 요청을 검증하는것이 아니라, body , cookie , param , query 등
+
+
+- 요청의 특정 property 에 대해서만도 검증할 수 있다
+  - check 는 모든 요청의 header , body 등 전부 검사한다
+
+
+- 또한, 특정한 validation 마다 errorMessage 를 따로 줄 수 있다
+
+
+- 배열에 등록한 validator 순서대로 처음부터 순회하며 값들을 검증한다
+
+````javascript
+/**
+ * - check 로 모든 req 뿐 아니라, body , cookie , param ,query 등
+ *   들어오는 req 중에서 특정 기능들만도 확인할 수 있다
+ */
+const { check , body } = require( 'express-validator' );
+
+/**
+ *
+ * --> 파라미터 에 view 에서 전송하는 데이터 필드의 이름을 입력
+ *
+ * --> email 값 확인 , 유효성을 검사하려는 것을 알림
+ *    ( 들어오는 req 의 email 필드 검사,
+ *      body , query , header , cookie 에서 해당 필드 값( 첫 번째 파라미터 )을 찾음 )에
+ *
+ * --> check( 'email' ).isEmail() 미들웨어에서는 에러를 수집하여 다음 미들웨어의 req 에 담아 보낸다
+ *
+ * --> withMessage() 를 통하여, email 이 실패할 경우 어떤 메시지를 담을지 설정할 수 있다
+ * */
+router.post(
+        '/signup',
+        [
+          check( 'email' )
+                  .isEmail()
+                  .withMessage( 'Please enter a valid email.' )
+                  /**
+                   * - 사용자지정 custom 에러 생성가능
+                   * --> 즉, email 뿐만 아니라, 특정 에러등도 커스텀해 추가할 수 있다
+                   *
+                   * - 즉, 사용자 검증자를 추가할 수 있다
+                   * */
+                  .custom( ( value , { req } ) => {
+                    if ( 'test@test.com' === value ){
+                      throw new Error( 'This email address if forbidden.' )
+                    }
+                    return true;
+                  } ),
+          /**
+           * - 들어온 요청의 body 의 password 필드는,
+           *
+           * - 반드시 5 문자열 이상( isLength )이어야하고,
+           *   숫자와 일반문자( isAlphanumeric )들만 허용한다
+           *
+           * - 특정한 validation 마다 뒤에 withMessage 메서드를 추가하여,
+           *   해당 validation 의 검증에 대한 메시지를 보낼 수도 있지만,
+           *
+           *   일괄적으로 2번째 파라미터에 기본 메시지를 생성할 수도 있다
+           */
+          body( 'password' , 'Please enter a password with only numbers and text and least 5 characters.' )
+                  .isLength( { min : 5 } )
+                  .isAlphanumeric()
+        ] ,
+        authController.postSignup );
+
+````
+
+### confirm-password-validator
+
+- 동일한 비밀번호인지 체크할때는, 사용자 지정 custom 메서드를 이용하여 검증할 수 있다
+
+
+- 배열에 작성한 순서대로 검증하므로, password 에서 이미 길이, 숫자영문자 여부등을 검사하였기때문에,
+
+
+- confirmPassword validator 에서는 굳이 해당 검증을 수행할 필요가 없다
+  - ( 단지 같은지만 체크하면 된다 )
+
+````javascript
+/**
+ * - check 로 모든 req 뿐 아니라, body , cookie , param ,query 등
+ *   들어오는 req 중에서 특정 기능들만도 확인할 수 있다
+ */
+const { check , body } = require( 'express-validator' );
+
+/**
+ *
+ * --> 파라미터 에 view 에서 전송하는 데이터 필드의 이름을 입력
+ *
+ * --> email 값 확인 , 유효성을 검사하려는 것을 알림
+ *    ( 들어오는 req 의 email 필드 검사,
+ *      body , query , header , cookie 에서 해당 필드 값( 첫 번째 파라미터 )을 찾음 )에
+ *
+ * --> check( 'email' ).isEmail() 미들웨어에서는 에러를 수집하여 다음 미들웨어의 req 에 담아 보낸다
+ *
+ * --> withMessage() 를 통하여, email 이 실패할 경우 어떤 메시지를 담을지 설정할 수 있다
+ * */
+router.post(
+        '/signup',
+        [
+          check( 'email' )
+                  .isEmail()
+                  .withMessage( 'Please enter a valid email.' )
+                  /**
+                   * - 사용자지정 custom 에러 생성가능
+                   * --> 즉, email 뿐만 아니라, 특정 에러등도 커스텀해 추가할 수 있다
+                   *
+                   * - 즉, 사용자 검증자를 추가할 수 있다
+                   * */
+                  .custom( ( value , { req } ) => {
+                    if ( 'test@test.com' === value ){
+                      throw new Error( 'This email address if forbidden.' )
+                    }
+                    return true;
+                  } ),
+          /**
+           * - 들어온 요청의 body 의 password 필드는,
+           *
+           * - 반드시 5 문자열 이상( isLength )이어야하고,
+           *   숫자와 일반문자( isAlphanumeric )들만 허용한다
+           *
+           * - 특정한 validation 마다 뒤에 withMessage 메서드를 추가하여,
+           *   해당 validation 의 검증에 대한 메시지를 보낼 수도 있지만,
+           *
+           *   일괄적으로 2번째 파라미터에 기본 메시지를 생성할 수도 있다
+           */
+          body( 'password' , 'Please enter a password with only numbers and text and least 5 characters.' )
+                  .isLength( { min : 5 } )
+                  .isAlphanumeric(),
+          /** 해당 password 가 동일한지 검증하는 메서드 */
+          body( 'confirmPassword' ).custom( ( value , { req } ) => {
+            if ( value !== req.body.password ){
+              throw new Error( 'Passwords have to match!' );
+            }
+            return true;
+          } )
+        ] ,
+        authController.postSignup );
+
+````
+
+---
+
+### duplicated-email-validator
+
+- 현재까지는 email 중복 검증을 auth controller 에서 처리하고 있었다
+  - ( 논리적으로는 유효성 검증의 일부로 반드시 체크해야한다 )
+
+
+- 이 검증을 routes 의 express-validator 에서 처리도록 변경한다, email 을 검증하려면, 
+
+
+- DB 에서 user 를 조회해야 하기 때문에 비동기 처리를 하게 된다
+
+
+- express-validator 에서 사용자지정 custom 메서드는 true , false , error , promise 객체들을 반환할 수 있는데,
+
+
+- false , error , Promise.reject 가 발생한경우 해당 validate 검증이 실패한 것으로 처리한다
+
+
+- 또한, Promise 를 반환할경우, express-validator 는 해당 Promise 를 await 한 후 뒤의 validator 를 처리한다
+
+````javascript
+/**
+ * - check 로 모든 req 뿐 아니라, body , cookie , param ,query 등
+ *   들어오는 req 중에서 특정 기능들만도 확인할 수 있다
+ */
+const { check , body } = require( 'express-validator' );
+
+/**
+ *
+ * --> 파라미터 에 view 에서 전송하는 데이터 필드의 이름을 입력
+ *
+ * --> email 값 확인 , 유효성을 검사하려는 것을 알림
+ *    ( 들어오는 req 의 email 필드 검사,
+ *      body , query , header , cookie 에서 해당 필드 값( 첫 번째 파라미터 )을 찾음 )에
+ *
+ * --> check( 'email' ).isEmail() 미들웨어에서는 에러를 수집하여 다음 미들웨어의 req 에 담아 보낸다
+ *
+ * --> withMessage() 를 통하여, email 이 실패할 경우 어떤 메시지를 담을지 설정할 수 있다
+ * */
+router.post(
+        '/signup',
+        [
+          check( 'email' )
+                  .isEmail()
+                  .withMessage( '다Please enter a valid email.' )
+                  /**
+                   * - 사용자지정 custom 에러 생성가능
+                   * --> 즉, email 뿐만 아니라, 특정 에러등도 커스텀해 추가할 수 있다
+                   *
+                   * - 즉, 사용자 검증자를 추가할 수 있다
+                   *
+                   * - custom validator 는 true , false ,error ,promise 객체를 반환할 수 있다
+                   */
+                  .custom( ( value , { req } ) => {
+
+                    return User.findOne( { email } )
+                            .then( userDoc => {
+                              /**
+                               * - 해당 email 을 가진 사용자가 있다면,
+                               *   해당 사용자를 생성하지 말아야 한다
+                               */
+                              if (userDoc) {
+                                return Promise.reject( 'E-Mail exists already, please pick a different one.' );
+                              }
+                            } );
+                  } ),
+          /**
+           * - 들어온 요청의 body 의 password 필드는,
+           *
+           * - 반드시 5 문자열 이상( isLength )이어야하고,
+           *   숫자와 일반문자( isAlphanumeric )들만 허용한다
+           *
+           * - 특정한 validation 마다 뒤에 withMessage 메서드를 추가하여,
+           *   해당 validation 의 검증에 대한 메시지를 보낼 수도 있지만,
+           *
+           *   일괄적으로 2번째 파라미터에 기본 메시지를 생성할 수도 있다
+           */
+          body( 'password' , 'Please enter a password with only numbers and text and least 5 characters.' )
+                  .isLength( { min : 5 } )
+                  .isAlphanumeric(),
+          /** 해당 password 가 동일한지 검증하는 메서드 */
+          body( 'confirmPassword' ).custom( ( value , { req } ) => {
+            if ( value !== req.body.password ){
+              throw new Error( 'Passwords have to match!' );
+            }
+            return true;
+          } )
+        ] ,
+        authController.postSignup );
 ````

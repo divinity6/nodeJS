@@ -146,7 +146,7 @@ exports.getSignup = (req, res, next) => {
  * @param next
  */
 exports.postSignup = (req, res, next) => {
-    const { email , password , confirmPassword } = req.body;
+    const { email , password } = req.body;
     /**
      * - express-validator 미들웨어에서 발생한 에러를 모아주어, errors 변수에저장
      * */
@@ -154,58 +154,47 @@ exports.postSignup = (req, res, next) => {
     /** 에러가 존재하는지 여부를 반환하는 메서드 - 에러가 존재할 시 에러코드 반환 */
     if ( !errors.isEmpty() ){
         /** 에러 코드를 반환하고, signup 페이지를 다시 렌더링한다 */
-        console.log( '<< postSignup validator errors.array() >> :' , errors.array() );
         return res.status( 422 ).render('auth/signup', {
             path: '/signup',
             pageTitle: 'Signup',
-            errorMessage : errors.array(),
+            errorMessage : errors.array()[ 0 ].msg,
         });
     }
 
-    User.findOne( { email } )
-        .then( userDoc => {
-            /**
-             * - 해당 email 을 가진 사용자가 있다면,
-             *   해당 사용자를 생성하지 말아야 한다
-             */
-            if ( userDoc ){
-                req.flash( 'error' , 'E-Mail exists already, please pick a different one.' );
-                return res.redirect( '/signup' );
-            }
-            /**
-             * - hash 화 하고싶은 문자열을 첫 번째 인자로 넘겨준다
-             *
-             * - 두 번째는 몇 차례의 해싱을 적용할 것인지 지정한다
-             *   ( 솔트 값이 높을수록 오래걸리지만, 더 안전하다 )
-             *
-             * - 12 정도면 높은 보안성능으로 간주된다
-             *
-             * @return { Promise<string> } - 비동기 해쉬 string 값을 반환한다
-             */
-            return bcript
-                .hash( password , 12 )
-                .then( ( hashedPassword ) => {
-                    /** 그외의 경우 사용자를 생성하여 저장 */
-                    const user = new User( {
-                        email ,
-                        password : hashedPassword,
-                        cart : { items : [] }
-                    } );
-                    return user.save();
-                } )
-                .then( () => {
-                    /** 사용자가 로그인 */
-                    res.redirect( '/login' );
-                    return transporter.sendMail( {
-                        to : email,
-                        from : 'divinity666@naver.com',
-                        subject : 'Signup succeeded!',
-                        html : '<h1>You successfully signed up!</h1>'
-                    } );
-                } )
-                .catch( err => console.log( '<<sendEmailErr>>' , err ) );
+    /**
+     * - 더이상 이곳에서 email validator 를 처리하지 않는다
+     *
+     * - hash 화 하고싶은 문자열을 첫 번째 인자로 넘겨준다
+     *
+     * - 두 번째는 몇 차례의 해싱을 적용할 것인지 지정한다
+     *   ( 솔트 값이 높을수록 오래걸리지만, 더 안전하다 )
+     *
+     * - 12 정도면 높은 보안성능으로 간주된다
+     *
+     * @return { Promise<string> } - 비동기 해쉬 string 값을 반환한다
+     */
+    bcript
+        .hash( password , 12 )
+        .then( ( hashedPassword ) => {
+            /** 그외의 경우 사용자를 생성하여 저장 */
+            const user = new User( {
+                email ,
+                password : hashedPassword,
+                cart : { items : [] }
+            } );
+            return user.save();
         } )
-        .catch( err => console.log( '<<postSignupErr>>' , err ) );
+        .then( () => {
+            /** 사용자가 로그인 */
+            res.redirect( '/login' );
+            return transporter.sendMail( {
+                to : email,
+                from : 'divinity666@naver.com',
+                subject : 'Signup succeeded!',
+                html : '<h1>You successfully signed up!</h1>'
+            } );
+        } )
+        .catch( err => console.log( '<<sendEmailErr>>' , err ) );
 };
 
 /**
