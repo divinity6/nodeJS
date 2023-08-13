@@ -35,7 +35,7 @@ router.post(
     [
         check( 'email' )
         .isEmail()
-        .withMessage( '다Please enter a valid email.' )
+        .withMessage( 'Please enter a valid email.' )
         /**
          * - 사용자지정 custom 에러 생성가능
          * --> 즉, email 뿐만 아니라, 특정 에러등도 커스텀해 추가할 수 있다

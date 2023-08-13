@@ -136,6 +136,13 @@ exports.getSignup = (req, res, next) => {
         path: '/signup',
         pageTitle: 'Signup',
         errorMessage : message,
+        /** 사용자 경험을 향상시키기 위하여 이 값들도 서버에서 설정해 반환해준다 */
+        oldInput : {
+            email : '',
+            password : '',
+            confirmPassword : ''
+        },
+        validationErrors : [],
     });
 };
 
@@ -146,18 +153,27 @@ exports.getSignup = (req, res, next) => {
  * @param next
  */
 exports.postSignup = (req, res, next) => {
-    const { email , password } = req.body;
+    const { email , password , confirmPassword } = req.body;
     /**
      * - express-validator 미들웨어에서 발생한 에러를 모아주어, errors 변수에저장
      * */
     const errors = validationResult( req );
     /** 에러가 존재하는지 여부를 반환하는 메서드 - 에러가 존재할 시 에러코드 반환 */
     if ( !errors.isEmpty() ){
+        console.log( '<< errors.array() >>' , errors.array() );
         /** 에러 코드를 반환하고, signup 페이지를 다시 렌더링한다 */
         return res.status( 422 ).render('auth/signup', {
             path: '/signup',
             pageTitle: 'Signup',
             errorMessage : errors.array()[ 0 ].msg,
+            /** 실패할 경우, 들어온 데이터를 그대로 반환한다( 다시 초기 input 에 할당하기 위함 ) */
+            oldInput : {
+                email ,
+                password ,
+                confirmPassword
+            },
+            /** 전체 error 들을 반환 */
+            validationErrors : errors.array(),
         });
     }
 

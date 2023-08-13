@@ -436,3 +436,64 @@ router.post(
         ] ,
         authController.postSignup );
 ````
+
+### Improve UX
+
+- 사용자 경험을 개선시키는 방법으로, 에러가 발생했다면, 
+
+
+- 기존 데이터를 반환시켜 Input 에 넣어준다
+
+
+- 또한, 유효하지 않은 데이터 항목들을 배열로 반환시켜, 해당 데이터 타입들을 이용해 사용자 경험을 향상시킬 수 있다
+
+````javascript
+/** ===== controllers/auth.js ===== */
+const errors = validationResult( req );
+    /** 에러가 존재하는지 여부를 반환하는 메서드 - 에러가 존재할 시 에러코드 반환 */
+    if ( !errors.isEmpty() ){
+        /** 에러 코드를 반환하고, signup 페이지를 다시 렌더링한다 */
+        return res.status( 422 ).render('auth/signup', {
+            path: '/signup',
+            pageTitle: 'Signup',
+            errorMessage : errors.array()[ 0 ].msg,
+            /** 실패할 경우, 들어온 데이터를 그대로 반환한다( 다시 초기 input 에 할당하기 위함 ) */
+            oldInput : {
+                email ,
+                password ,
+                confirmPassword
+            },
+            /** 전체 error 들을 반환 */
+            validationErrors : errors.array(),
+        });
+    }
+````
+
+````javascript
+/** 에러 항목 데이터 예시 */
+errors = [
+  {
+    type: 'field',
+    value: 'test2@test.com',
+    msg: 'E-Mail exists already, please pick a different one.',
+    path: 'email',
+    location: 'body'
+  },
+  {
+    type: 'field',
+    value: '123',
+    msg: 'Please enter a password with only numbers and text and least 5 characters.',
+    path: 'password',
+    location: 'body'
+  },
+  {
+    type: 'field',
+    value: '1234',
+    msg: 'Passwords have to match!',
+    path: 'confirmPassword',
+    location: 'body'
+  }
+]
+````
+
+- 즉, 서버측 유효성 패키지 정보를 어떻게 활용하고, 프론트엔드에서 어떻게 활용할지에 따라, UI/UX 를 향상시킬 수 있다
