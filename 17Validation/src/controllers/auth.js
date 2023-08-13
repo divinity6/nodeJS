@@ -7,7 +7,6 @@ const { validationResult } = require( 'express-validator' );
 const Constants = require( '../constants/private.ts' );
 
 const User = require( '../models/user' );
-const {logger} = require("sequelize/lib/utils/logger");
 
 /**
  * - createTransport 에 sendgridTransport 의 환경값을 설정한다
@@ -42,7 +41,13 @@ exports.getLogin = ( req , res , next ) => {
         pageTitle : 'Login' ,
         path : '/login' ,
         /** 이렇게 사용하면, 일회성 데이터는 더이상 세션에 존재하지 않게된다 */
-        errorMessage : message
+        errorMessage : message,
+        oldInput : {
+            email : '',
+            password : '' ,
+        },
+        /** 전체 error 들을 반환 */
+        validationErrors : [],
     } );
 }
 
@@ -58,15 +63,39 @@ exports.getLogin = ( req , res , next ) => {
 exports.postLogin = ( req , res , next ) => {
 
     const { email , password } = req.body;
+    /** express-validator 미들웨어에서 발생한 에러를 모아주어, errors 변수에저장 */
+    const errors = validationResult( req );
+    /** 에러가 존재하는지 여부를 반환하는 메서드 - 에러가 존재할 시 에러코드 반환 */
+    if ( !errors.isEmpty() ){
+        /** 에러 코드를 반환하고, signup 페이지를 다시 렌더링한다 */
+        return res.status( 422 ).render('auth/login', {
+            pageTitle : 'Login' ,
+            path : '/login' ,
+            errorMessage : errors.array()[ 0 ].msg,
+            /** 실패할 경우, 들어온 데이터를 그대로 반환한다( 다시 초기 input 에 할당하기 위함 ) */
+            oldInput : {
+                email ,
+                password ,
+            },
+            /** 전체 error 들을 반환 */
+            validationErrors : errors.array(),
+        });
+    }
 
-    /** 로그인시 사용한 email 과 매치되는 유저를 찾음 */
     User.findOne( { email } )
-        .then( user =>{
-            /** 해당하는 user 를 찾지못했다면 login 페이지로 보낸다 */
-            if ( !user ){
-                /** flash 에 key , value 형태로 등록 */
-                req.flash( 'error' , 'Invalid email or password.' );
-                return res.redirect( '/login' );
+        .then( user => {
+            /** 해당 email 을 가진 사용자가 없다면, 로그인할 수 없다 */
+            if (!user) {
+                return res.status( 422 ).render('auth/login', {
+                    pageTitle : 'Login' ,
+                    path : '/login' ,
+                    errorMessage : 'Invalid email or password.',
+                    oldInput : {
+                        email ,
+                        password ,
+                    },
+                    validationErrors : [],
+                });
             }
 
             /**
@@ -89,15 +118,23 @@ exports.postLogin = ( req , res , next ) => {
                             return res.redirect( '/' );
                         } );
                     }
-                    req.flash( 'error' , 'Invalid email or password.' );
-                    res.redirect( '/login' );
+                    return res.status( 422 ).render('auth/login', {
+                        pageTitle : 'Login' ,
+                        path : '/login' ,
+                        errorMessage : 'Invalid email or password.',
+                        oldInput : {
+                            email ,
+                            password ,
+                        },
+                        validationErrors : [],
+                    });
                 } )
                 .catch( err => {
                     console.log( '<<postLoginCompareErr>>' , err );
                     res.redirect( '/login' );
-                } )
+                } );
         } )
-        .catch( err => console.log( '<<postLoginErr>>' , err ) );
+        .catch( e => console.log( '<<postLogin err >>' , e ) );
 }
 
 /**
@@ -154,13 +191,10 @@ exports.getSignup = (req, res, next) => {
  */
 exports.postSignup = (req, res, next) => {
     const { email , password , confirmPassword } = req.body;
-    /**
-     * - express-validator 미들웨어에서 발생한 에러를 모아주어, errors 변수에저장
-     * */
+    /** express-validator 미들웨어에서 발생한 에러를 모아주어, errors 변수에저장 */
     const errors = validationResult( req );
     /** 에러가 존재하는지 여부를 반환하는 메서드 - 에러가 존재할 시 에러코드 반환 */
     if ( !errors.isEmpty() ){
-        console.log( '<< errors.array() >>' , errors.array() );
         /** 에러 코드를 반환하고, signup 페이지를 다시 렌더링한다 */
         return res.status( 422 ).render('auth/signup', {
             path: '/signup',

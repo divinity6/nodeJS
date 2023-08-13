@@ -16,7 +16,15 @@ router.get( '/login' , authController.getLogin );
 
 router.get('/signup', authController.getSignup );
 
-router.post( '/login' , authController.postLogin );
+router.post(
+    '/login'  ,
+    [
+        body( 'password' , 'Please enter a password with only numbers and text and least 4 characters.' )
+            .isLength( { min : 4 } )
+            .isAlphanumeric(),
+    ],
+    authController.postLogin
+);
 
 /**
  *
