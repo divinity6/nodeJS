@@ -8,6 +8,8 @@ const path = require("path");
 
 const adminController = require( '../controllers/admin' );
 const isAuth = require( '../middleware/is-auth' );
+const { body } = require( 'express-validator' );
+const Product = require( '../models/product' );
 
 const router = express.Router();
 
@@ -18,11 +20,45 @@ router.get( '/add-product' , isAuth , adminController.getAddProduct );
 router.get( '/products' , isAuth , adminController.getProducts );
 
 // /admin/add-product => POST
-router.post( '/add-product' , isAuth , adminController.postAddProduct );
+router.post( '/add-product' ,
+    [
+        body( 'title' )
+            .isString()
+            .isLength( { min : 3 } )
+            .trim(),
+        body( 'imageUrl' )
+            /** 유효한 URL 형식인지 체크하는 validator */
+            .isURL(),
+        body( 'price' )
+            /** 소숫점이하를 가지고 있는지 체크하는 validator */
+            .isFloat(),
+        body( 'description' )
+            .isLength( { min : 5 , max : 400 } )
+    ],
+    isAuth ,
+    adminController.postAddProduct
+);
 
 router.get( '/edit-product/:productId' , isAuth , adminController.getEditProduct );
 
-router.post( '/edit-product' , isAuth , adminController.postEditProduct );
+router.post( '/edit-product' ,
+    [
+        body( 'title' )
+            .isString()
+            .isLength( { min : 3 } )
+            .trim(),
+        body( 'imageUrl' )
+            /** 유효한 URL 형식인지 체크하는 validator */
+            .isURL(),
+        body( 'price' )
+            /** 소숫점이하를 가지고 있는지 체크하는 validator */
+            .isFloat(),
+        body( 'description' )
+            .isLength( { min : 5 , max : 400 } )
+    ],
+    isAuth ,
+    adminController.postEditProduct
+);
 
 router.post( '/delete-product' , isAuth , adminController.postDeleteProduct );
 

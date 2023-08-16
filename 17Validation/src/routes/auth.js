@@ -19,9 +19,18 @@ router.get('/signup', authController.getSignup );
 router.post(
     '/login'  ,
     [
+        body( 'email' )
+            .isEmail()
+            .withMessage( 'Please enter a valid email address.' )
+            /** email 의 맨 앞을 소문자로 변경해주는 sanitizer */
+            .normalizeEmail()
+        ,
         body( 'password' , 'Please enter a password with only numbers and text and least 4 characters.' )
             .isLength( { min : 4 } )
-            .isAlphanumeric(),
+            .isAlphanumeric()
+            /** password 의 공백을 제거해주는 sanitizer */
+            .trim()
+        ,
     ],
     authController.postLogin
 );
@@ -42,29 +51,31 @@ router.post(
     '/signup',
     [
         check( 'email' )
-        .isEmail()
-        .withMessage( 'Please enter a valid email.' )
-        /**
-         * - 사용자지정 custom 에러 생성가능
-         * --> 즉, email 뿐만 아니라, 특정 에러등도 커스텀해 추가할 수 있다
-         *
-         * - 즉, 사용자 검증자를 추가할 수 있다
-         *
-         * - custom validator 는 true , false ,error ,promise 객체를 반환할 수 있다
-         */
-        .custom( ( value , { req } ) => {
+            .isEmail()
+            .withMessage( 'Please enter a valid email.' )
+            /**
+             * - 사용자지정 custom 에러 생성가능
+             * --> 즉, email 뿐만 아니라, 특정 에러등도 커스텀해 추가할 수 있다
+             *
+             * - 즉, 사용자 검증자를 추가할 수 있다
+             *
+             * - custom validator 는 true , false ,error ,promise 객체를 반환할 수 있다
+             */
+            .custom( ( value , { req } ) => {
 
-            return User.findOne( { email : value } )
-                .then( userDoc => {
-                    /**
-                     * - 해당 email 을 가진 사용자가 있다면,
-                     *   해당 사용자를 생성하지 말아야 한다
-                     */
-                    if (userDoc) {
-                        return Promise.reject( 'E-Mail exists already, please pick a different one.' );
-                    }
-                } );
-        } ),
+                return User.findOne( { email : value } )
+                    .then( userDoc => {
+                        /**
+                         * - 해당 email 을 가진 사용자가 있다면,
+                         *   해당 사용자를 생성하지 말아야 한다
+                         */
+                        if (userDoc) {
+                            return Promise.reject( 'E-Mail exists already, please pick a different one.' );
+                        }
+                    } );
+            } )
+            .normalizeEmail()
+        ,
         /**
          * - 들어온 요청의 body 의 password 필드는,
          *
@@ -78,14 +89,17 @@ router.post(
          */
         body( 'password' , 'Please enter a password with only numbers and text and least 5 characters.' )
             .isLength( { min : 5 } )
-            .isAlphanumeric(),
+            .isAlphanumeric()
+            .trim(),
         /** 해당 password 가 동일한지 검증하는 메서드 */
-        body( 'confirmPassword' ).custom( ( value , { req } ) => {
-            if ( value !== req.body.password ){
-                throw new Error( 'Passwords have to match!' );
-            }
-            return true;
-        } )
+        body( 'confirmPassword' )
+            .trim()
+            .custom( ( value , { req } ) => {
+                if ( value !== req.body.password ){
+                    throw new Error( 'Passwords have to match!' );
+                }
+                return true;
+            } )
     ] ,
     authController.postSignup );
 

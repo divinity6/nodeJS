@@ -1,3 +1,4 @@
+const { validationResult } = require( 'express-validator' );
 const Product = require( "../models/product" );
 
 /**
@@ -32,6 +33,9 @@ exports.getAddProduct = ( req , res , next )=> {
         pageTitle : 'Add Product' ,
         path : "/admin/add-product",
         editing : false,
+        hasError : false,
+        errorMessage : null,
+        validationErrors : [],
     } )
 }
 
@@ -44,6 +48,19 @@ exports.getAddProduct = ( req , res , next )=> {
 exports.postAddProduct = ( req , res , next ) => {
 
     const { title , imageUrl , description , price } = req.body;
+    const errors = validationResult( req );
+
+    if ( !errors.isEmpty() ){
+       return res.status( 422 ).render( 'admin/edit-product' , {
+           pageTitle : 'Add Product' ,
+           path : "/admin/edit-product",
+           editing : false,
+           hasError : true,
+           product : { title , imageUrl , description , price },
+           errorMessage : errors.array()[ 0 ].msg,
+           validationErrors : errors.array(),
+       } )
+    }
 
     const product = new Product( {
         title ,
@@ -96,7 +113,10 @@ exports.getEditProduct = ( req , res , next )=> {
                 pageTitle : 'Edit Product' ,
                 path : "/admin/edit-product",
                 editing : editMode,
+                hasError : false,
                 product,
+                errorMessage : null,
+                validationErrors : [],
             } )
 
         } )
@@ -113,6 +133,19 @@ exports.getEditProduct = ( req , res , next )=> {
 exports.postEditProduct = ( req , res , next ) => {
     const { title , price , imageUrl , description } = req.body;
     const prodId = req.body.productId;
+
+    const errors = validationResult( req );
+    if ( !errors.isEmpty() ){
+        return res.status( 422 ).render( 'admin/edit-product' , {
+            pageTitle : 'Edit Product' ,
+            path : "/admin/edit-product",
+            editing : true,
+            hasError : true,
+            product : { title , imageUrl , description , price , _id : prodId },
+            errorMessage : errors.array()[ 0 ].msg,
+            validationErrors : errors.array()
+        } )
+    }
 
     Product
         .findById( prodId )

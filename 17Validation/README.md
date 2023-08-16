@@ -497,3 +497,75 @@ errors = [
 ````
 
 - 즉, 서버측 유효성 패키지 정보를 어떻게 활용하고, 프론트엔드에서 어떻게 활용할지에 따라, UI/UX 를 향상시킬 수 있다
+
+
+
+- 또한, 렌더링할 view 에서 MongoDB 의 id 를 사용할때,  자동으로 MongoDB 의 id 를 넣어주게 해두었다면,
+
+
+- 유효성 검사 실패시 id 값을 가져올 수 없으므로 수동으로 추가해줘야한다
+
+
+- 직접 _id 값을 사용한다고 했을때,
+
+````ejs
+<!-- ===== views/edit-product.js ===== -->
+<input
+        type="hidden"
+        value="<%= product._id %>"
+        name="productId"
+/>
+````
+
+- 아래처럼 수동으로 _id 값을 넣어줘야한다
+
+````javascript
+/** ===== controllers/admin.js ===== */
+return res.status( 422 ).render( 'admin/edit-product' , {
+ ...,
+  product : { 
+    title , 
+    imageUrl , 
+    description , 
+    price ,
+    _id : prodId },
+} )
+````
+
+---
+
+### Sanitize
+
+- 사용자 입력값의 값의 유효성 뿐만아니라, 일관성 또한 유지하기 위해 sanitize( 살균 )처리를 한다
+
+
+- 입력값을 Sanitize 하게 되면 많은 이점이 존재한다
+  - ( XSS 공격 방어 , 일관성있는 데이터 등 )
+
+
+- 아래와 같은 기능들을 추가하여 Sanitize 를 등록할 수 있다
+````javascript
+const { check , body } = require( 'express-validator' );
+
+[
+  body( 'email' )
+          .isEmail()
+          .withMessage( 'Please enter a valid email address.' )
+          /** email 의 맨 앞을 소문자로 변경해주는 sanitizer */
+          .normalizeEmail()
+  ,
+  body( 'password' , 'Please enter a password with only numbers and text and least 4 characters.' )
+          .isLength( { min : 4 } )
+          .isAlphanumeric()
+          /** password 의 공백을 제거해주는 sanitizer */
+          .trim()
+  ,
+]
+````
+
+---
+
+- Express-Validator 참고자료: https://express-validator.github.io/docs/
+
+
+- Validator.js(백그라운드에서 사용됨) 참고자료: https://github.com/chriso/validator.js
