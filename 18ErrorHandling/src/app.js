@@ -110,6 +110,19 @@ app.get( '/500' , errorController.get500 );
 
 app.use( errorController.get404 );
 
+/**
+ * - error 처리 미들웨어( 4 개의 파라미터를 가진 미들웨어 )
+ *
+ * --> 제대로된 요청들은 전부 위에서 해결하기 때문에,
+ *     해당 미들웨어에 도달하는 요청들은 전부 error 요청들이다
+ *
+ * --> 이곳에서 에러페이지로 리다이렉트시킨다
+ */
+app.use( ( error , req , res , next ) => {
+    console.log( '<<Error redirect>>' , error );
+    res.redirect( '/500' );
+} );
+
 /** mongoose 가 mongoDB 와의 연결을 관리한다 */
 mongoose
     /** shop 데이터베이스에 연결 */

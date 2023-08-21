@@ -81,9 +81,9 @@ exports.postAddProduct = ( req , res , next ) => {
             res.redirect( '/admin/products' );
         } )
         .catch( err => {
-            console.log( '<<AddDataFetchErr Occurred!>> :' , err );
-            /** 에러 view 를 추가하여 해당 view 로 핸들링처리 */
-            res.redirect( '/500' );
+            const error = new Error( err );
+            error.httpStatusCode = 500;
+            return next( error );
         } );
 
 }
@@ -125,7 +125,11 @@ exports.getEditProduct = ( req , res , next )=> {
             } )
 
         } )
-        .catch( err => console.log( '<<findDataFetchErr>> :' , err ) )
+        .catch( err => {
+            const error = new Error( err );
+            error.httpStatusCode = 500;
+            return next( error );
+        } );
 
 }
 
