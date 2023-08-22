@@ -1,4 +1,3 @@
-const mongoose = require( 'mongoose' );
 const { validationResult } = require( 'express-validator' );
 const Product = require( "../models/product" );
 
@@ -20,7 +19,11 @@ exports.getProducts = ( req , res , next )=> {
                 path : '/admin/products' ,
             } );
         } )
-        .catch( err => console.log( '<<getDataFetchErr>> :' , err ) );
+        .catch( err => {
+            const error = new Error( err );
+            error.httpStatusCode = 500;
+            return next( error );
+        } );
 }
 
 /**
@@ -64,8 +67,6 @@ exports.postAddProduct = ( req , res , next ) => {
     }
 
     const product = new Product( {
-        /** 강제로 같은 아이디를 설정 하여 오류생성 */
-        _id : new mongoose.mongo.ObjectId( '64b29059a3630122e3e659d4' ),
         title ,
         price ,
         description ,
@@ -176,8 +177,11 @@ exports.postEditProduct = ( req , res , next ) => {
                 res.redirect( "/admin/products" );
             } )
         } )
-
-        .catch( err =>  console.log( '<<findDataFetchErr>> :' , err ) );
+        .catch( err => {
+            const error = new Error( err );
+            error.httpStatusCode = 500;
+            return next( error );
+        } );
 
 }
 
@@ -201,5 +205,9 @@ exports.postDeleteProduct = (  req , res , next ) => {
             console.log( '<<destroyProduct>> :' , result );
             res.redirect( "/admin/products" );
         } )
-        .catch( err => console.log( '<<findDataFetchErr>> :' , err ) );
+        .catch( err => {
+            const error = new Error( err );
+            error.httpStatusCode = 500;
+            return next( error );
+        } );
 }

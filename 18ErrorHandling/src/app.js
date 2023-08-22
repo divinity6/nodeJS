@@ -69,6 +69,14 @@ app.use( csrfProtection )
 /** flash 미들웨어를 등록하여, request 객체에서 사용가능 */
 app.use( flash() );
 
+/** 실행되는 모든 요청에 대해 view 에 아래 필드를 추가해주는 미들웨어 */
+app.use( ( req , res , next ) => {
+    /** locals : express.js 에서 제공하는 렌더링할 view 에만 제공해주는 variable */
+    res.locals.isAuthenticated = req.session.isLoggedIn;
+    res.locals.csrfToken = req.csrfToken();
+    next();
+} );
+
 app.use( ( req , res , next ) => {
     /** 세션에 user 가 저장되어 있지 않다면 request 에 user 를 저장하지 않음 */
     if (!req.session.user) {
@@ -91,15 +99,8 @@ app.use( ( req , res , next ) => {
         /** error 를 log 로 찍는것보단, Error 객체로 래핑하는것이 더 좋다 */
         .catch( err => {
             // console.log( '<<saveUserInfo Err>>' , err )
-            throw new Error( err );
+            next( new Error( err ) );
         } );
-} );
-/** 실행되는 모든 요청에 대해 view 에 아래 필드를 추가해주는 미들웨어 */
-app.use( ( req , res , next ) => {
-    /** locals : express.js 에서 제공하는 렌더링할 view 에만 제공해주는 variable */
-    res.locals.isAuthenticated = req.session.isLoggedIn;
-    res.locals.csrfToken = req.csrfToken();
-    next();
 } );
 
 app.use( '/admin' , adminRoutes );
@@ -120,7 +121,12 @@ app.use( errorController.get404 );
  */
 app.use( ( error , req , res , next ) => {
     console.log( '<<Error redirect>>' , error );
-    res.redirect( '/500' );
+    // res.redirect( '/500' );
+    res.status( 500 ).render( '500' , {
+        pageTitle : 'Error!',
+        path : '/500',
+        isAuthenticated :  req.session.isLoggedIn
+    } );
 } );
 
 /** mongoose 가 mongoDB 와의 연결을 관리한다 */

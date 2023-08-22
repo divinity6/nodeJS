@@ -194,3 +194,65 @@ app.use( ( error , req , res , next ) => {
     res.status( error.httpStatusCode ).render( ... )
 } );
 ````
+
+- 모든 에러처리시, 에러들을 에러처리 미들웨어로 던져서, 미들웨어에서 처리하도록하는것이 좋다
+
+
+- 해당 미들웨어에서는 각 에러들을 받고 view 화면을 던져주게 하는 방법이 간단하고 직관적이다
+
+---
+
+- 주의해야할점은 비동기 환경에서 error 객체를 next 의 파라미터로 전달하지 않고 그냥 던지면 프로그람이 죽는다( expressJS 가 캐치하지 못한다 )
+  - 그러나 동기환경에서는 catch 할 수 있다.
+  - 그러나, next 의 파라미터로 넘기지 않고 throw 등으로 던지면, 에러 처리하는 미들웨어에서 res.redirect 등의 메서드를 사용하지 못한다는 단점이 있다
+
+
+````javascript
+/** ===== app.js ===== */
+/**
+ * - error 처리 미들웨어에서 redirect 를 사용하지 못하기 때문에, 직접 렌더링 시켜줘야 한다
+ */
+app.use( ( error , req , res , next ) => {
+    console.log( '<<Error redirect>>' , error );
+    res.status( 500 ).render( '500' , {
+        pageTitle : 'Error!',
+        path : '/500',
+        isAuthenticated :  req.session.isLoggedIn
+    } );
+} );
+````
+
+
+- 즉, 아래 코드 처럼 비동기 환경에서는 throw new Error 로 에러를 던져도 되고,
+
+
+- 동기환경에서는 next( new Error( err ) ) 로 에러를 던져야 한다
+
+````javascript
+/** ===== app.js ===== */
+app.use( ( req , res , next ) => {
+    throw new Error( 'Sync Dummy' );
+    /**
+     * - 모든 요청마다 session 에 저장된 user 를 이용해,
+     *   user._id 를 이용하여 해당 사용자 데이터를 찾아 request 객체에 할당
+     */
+    User.findById( req.session.user._id )
+        .then( user => {
+            /** 더미 에러 생성 */
+            throw new Error( 'Dummy' );
+
+            if ( !user ){
+                return next();
+            }
+            /** 요청 객체에 User 를 저장하여 어디서든 접근하여 쓸 수 있도록 저장 */
+            req.user = user;
+            console.log( '<<Request : saveUserInfo success>>' )
+            next();
+        } )
+        /** error 를 log 로 찍는것보단, Error 객체로 래핑하는것이 더 좋다 */
+        .catch( err => {
+            // console.log( '<<saveUserInfo Err>>' , err )
+            next( new Error( err ) );
+        } );
+} );
+````
