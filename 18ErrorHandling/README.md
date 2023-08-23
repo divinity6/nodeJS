@@ -256,3 +256,173 @@ app.use( ( req , res , next ) => {
         } );
 } );
 ````
+
+---
+
+### Errors & Http Response Codes
+
+- 상태코드를 통해 어떤 종류의 오류가 발생했는지 이해를 돕는다
+
+
+- 200 , 20x 코드들은 항상 성공 상태코드이다
+  - 200 : 일반적 성공
+  - 201 : 서버에 성공적으로 리소스를 생성한 경우
+
+
+- 3xx 상태코드는 리다이렉션,
+  - 300 : 잠시 해당 소스가 리다이렉션
+  - 301 : 영구적으로 해당 소스가 리다이렉션
+
+
+- 4xx 상태코드는 클라이언트 오류관련 코드,
+  - 401 : 인증되지 않음
+  - 403 : 권한이 없음
+  - 404 : 존재하지 않는 페이지
+  - 422 : 유호하지 않은 입력
+
+  
+- 로그인 정보가 없을 경우, 401 로 인증되지 않는 코드를 발생시키고, 
+
+
+- redirect 메서드가 호출되면 자동으로 300 코드로 status 가 덮어씌워진다
+
+````javascript
+/** ===== middleware/is-auth.js ===== */
+module.exports = ( req , res , next ) => {
+    /** 세션에 사용자가 로그인 했는지 정보 체크 */
+    if ( !req.session.isLoggedIn ){
+        /**
+         * - 사용자가 로그인하지 않았으면 login 페이지로 리다이렉트 시킨다
+         */
+        return res.status( 401 ).redirect( '/login' );
+    }
+    next();
+}
+````
+
+- 아래 코드를 통해 404 상태코드를 내보내게 되면, 크롬 브라우저 자체에서 존재하지 않는 페이지라고 인식할 수 있다
+````javascript
+/** ===== controllers/error.js ===== */
+exports.get404 = ( req , res , next ) => {
+  res.status( 404 ).render( '404' , {
+    pageTitle : 'Page Not Found',
+    path : '/404',
+    isAuthenticated :  req.session.isLoggedIn
+  } );
+}
+````
+
+
+- 5xx 상태코드는 서버 측 오류 관련 코드,
+  - 500 : 일반적인 서버에러
+
+
+
+- 즉, 상태코드가 반드시 요청 실패나 앱의 충돌을 의미하지 않는다
+  - ( 현재 문제가 있다는 정보를, 클라이언트에 문제정보를 보낼 뿐이다 )
+
+---
+
+### 사용가능한 상태 코드
+
+- 1×× 정보전달
+  - 100 Continue
+  - 101 Switching Protocols
+  - 102 Processing
+
+
+- 2×× 성공
+  - 200 OK
+  - 201 Created
+  - 202 Accepted
+  - 203 Non-authoritative Information
+  - 204 No Content
+  - 205 Reset Content
+  - 206 Partial Content
+  - 207 Multi-Status
+  - 208 Already Reported
+  - 226 IM Used
+
+
+- 3×× 리디렉션
+  - 300 Multiple Choices
+  - 301 Moved Permanently
+  - 302 Found
+  - 303 See Other
+  - 304 Not Modified
+  - 305 Use Proxy
+  - 307 Temporary Redirect
+  - 308 Permanent Redirect
+
+
+- 4×× 클라이언트 오류
+  - 400 Bad Request
+  - 401 Unauthorized
+  - 402 Payment Required
+  - 403 Forbidden
+  - 404 Not Found
+  - 405 Method Not Allowed
+  - 406 Not Acceptable
+  - 407 Proxy Authentication Required
+  - 408 Request Timeout
+  - 409 Conflict
+  - 410 Gone
+  - 411 Length Required
+  - 412 Precondition Failed
+  - 413 Payload Too Large
+  - 414 Request-URI Too Long
+  - 415 Unsupported Media Type
+  - 416 Requested Range Not Satisfiable
+  - 417 Expectation Failed
+  - 418 I'm a teapot
+  - 421 Misdirected Request
+  - 422 Unprocessable Entity
+  - 423 Locked
+  - 424 Failed Dependency
+  - 426 Upgrade Required
+  - 428 Precondition Required
+  - 429 Too Many Requests
+  - 431 Request Header Fields Too Large
+  - 444 Connection Closed Without Response
+  - 451 Unavailable For Legal Reasons
+  - 499 Client Closed Request
+
+
+- 5×× 서버 오류
+  - 500 Internal Server Error
+  - 501 Not Implemented
+  - 502 Bad Gateway
+  - 503 Service Unavailable
+  - 504 Gateway Timeout
+  - 505 HTTP Version Not Supported
+  - 506 Variant Also Negotiates
+  - 507 Insufficient Storage
+  - 508 Loop Detected
+  - 510 Not Extended
+  - 511 Network Authentication Required
+  - 599 Network Connect Timeout Error
+
+
+- 출처: https://httpstatuses.com/
+
+---
+
+### Module Summary
+
+- 어플리케이션에서 throw 키워드를 통해 직접 에러를 던질 수 있고,
+
+
+- expressJS 에서 해당 에러를 캐치할 수 도 있다
+  - ( try-catch , then-catch )
+
+
+- 또한, 에러를 던지고나서 전역 error 미들웨어에서 해당 에러를 처리할 수 있다
+
+
+- 반드시 적절한 상태코드를 반환하게되면, 브라우저에 구체적인 문제점을 알릴 수 있고, 앱이 더욱 견고해진 
+
+---
+
+### Express.js의 오류 처리법
+
+- 공식 참고자료: Docs: https://expressjs.com/en/guide/error-handling.html
