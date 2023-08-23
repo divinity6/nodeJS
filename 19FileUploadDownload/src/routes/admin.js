@@ -4,12 +4,10 @@
  * --> 실제 페이지 패스의 접근경로
  */
 const express = require( 'express' );
-const path = require("path");
 
 const adminController = require( '../controllers/admin' );
 const isAuth = require( '../middleware/is-auth' );
 const { body } = require( 'express-validator' );
-const Product = require( '../models/product' );
 
 const router = express.Router();
 
@@ -26,9 +24,6 @@ router.post( '/add-product' ,
             .isString()
             .isLength( { min : 3 } )
             .trim(),
-        body( 'imageUrl' )
-            /** 유효한 URL 형식인지 체크하는 validator */
-            .isURL(),
         body( 'price' )
             /** 소숫점이하를 가지고 있는지 체크하는 validator */
             .isFloat(),
