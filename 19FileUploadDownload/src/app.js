@@ -9,6 +9,7 @@ const session = require( 'express-session' );
 const MongoDBStore = require( 'connect-mongodb-session' )( session );
 const csrf = require( 'csurf' );
 const flash = require( 'connect-flash' );
+const multer = require( 'multer' );
 
 const errorController = require( './controllers/error' );
 const User = require( './models/user' );
@@ -27,6 +28,29 @@ const store = new MongoDBStore( {
 } );
 /** 세션에 CSRF 토큰 값을 설정하는 미들웨어 생성 */
 const csrfProtection = csrf();
+
+/** 파일을 저장할 장소 설정 */
+const fileStorage = multer.diskStorage( {
+    /** multer 에서 처리한 파일을 저장할 위치 */
+    destination : ( req , file , callback ) => {
+        /**
+         * - 첫번째 param - 에러 메시지( 존재하면, 에러가 있는것으로 판단 )
+         *
+         * - 두번째 param - 파일을 저장할 경로
+         *
+         */
+        callback( null , 'images' );
+    },
+    /** multer 에서 처리한 파일의 파일이름*/
+    filename : ( req , file , callback ) => {
+        /**
+         * - 첫번째 param - 에러 메시지( 존재하면, 에러가 있는것으로 판단 )
+         *
+         * - 두번째 param - 파일 이름
+         */
+        callback( null , file.fieldname + '-' + file.originalname );
+    }
+} );
 
 /** ejs 라이브러리를 view engine 으로 사용 */
 app.set('view engine', 'ejs');
@@ -48,6 +72,8 @@ const authRoutes = require( './routes/auth.js' );
  * - 다음 라우팅 미들웨어를 실행하도록 해준다
  */
 app.use( bodyParser.urlencoded({ extended : false } ) );
+/** image body 필드값을 가져온다 */
+app.use( multer( { storage : fileStorage } ).single( 'image' ) );
 app.use( express.static( path.join( __dirname , 'public' ) ) );
 /**
  * - 세션 설정
