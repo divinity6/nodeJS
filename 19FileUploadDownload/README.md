@@ -321,3 +321,80 @@ exports.postEditProduct = ( req , res , next ) => {
 ````
 
 ### invoice 방식으로 제공하는 방법( 인증으로 파일 다운로드 )
+
+- 항상 공개된 파일만 제공하지는 않기 때문에 당사자만 접근가능한 파일경로가 필요하다
+
+
+- 따라서, 제한된 파일일 경우, invoice 에 특정된 라우트를 설정해야 사용자 인증여부등을 체크할 수 있다
+
+
+- view 에서는 동적 라우트를 호출하고, route 에서 해당 요청을 받아 controller 로 전달한다
+
+````ejs
+<!-- ===== views/shop/orders.ejs ===== -->
+<li class="orders__products-item">
+  <%= p.product.title %> (<%= p.quantity %>)
+  - <a href="/orders/<%= order._id %>">Invoice</a>
+</li>
+````
+
+- 라우트에서 해당 동적라우트에 해당하는 컨트롤러 설정
+
+````javascript
+/** ===== routes/shop.js ===== */
+/** 로그인이 되어있어야만 접근가능 */
+router.get( '/orders/:orderId' , isAuth , shopController.getInvoice );
+````
+
+- 컨트롤러에서 설정된 invoice 경로에서 orderId 와 같은 파일을 찾아 반환
+
+````javascript
+/** ===== controller/shop.js ===== */
+const fs = require( 'fs' );
+const path = require("path");
+/**
+ * - Invoice Controller
+ *
+ * --> 인증 파일제공 컨트롤러
+ *
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.getInvoice = ( req , res , next ) => {
+  const orderId = req.params.orderId;
+  const invoiceName = `invoice-${ orderId }.pdf`;
+  /** 모든 OS 에서 동작하도록 path 모듈을 이용하여, 해당 파일 경로를 찾는다 */
+  const invoicePath = path.join( 'data' , 'invoices' , invoiceName );
+  fs.readFile( invoicePath , ( err , data ) => {
+    /**
+     * - error 가 존재할 경우, 기본 에러핸들러에서 처리하고,
+     *   error 가 존재하지 않을 경우에는 찾은 데이터( 파일 )를 전달함
+     */
+    if ( err ){
+      return next( err );
+    }
+    /** 브라우저에 pdf 라는 정보를 제공하면 브라우저 내부에서 해당 파일을 inline 으로 연다 */
+    res.setHeader( 'Content-Type' , 'application/pdf' );
+    /**
+     * - 클라이언트에게 콘텐츠가 어떻게 제공되는지 정의할 수 있다
+     *
+     * inline : 브라우저에서 열림
+     * attachment : 파일을 다운로드함
+     * */
+    res.setHeader( 'Content-Disposition' , `inline; filename="${ invoiceName }"` );
+    /** 해당 파일을 브라우저에 전달 */
+    res.send( data );
+  } );
+}
+````
+
+- 현재 인증된 사용자만 invoice 에 접근할 수 있다
+  - ( 라우트에 isAuth 콜백이 설정되어 있기 때문... )
+  - 그러나 해당 주문을 한 사용자가 아니어도, 다른사용자들도 볼 수 있다
+
+
+- 따라서, 해당 파일을 전달하기 전에, DB 에서 해당 주문을한 사용자를 찾고, 
+
+
+- 해당 사용자와 로그인한 사용자가 일치하는지 검증하면된

@@ -1,3 +1,6 @@
+const fs = require( 'fs' );
+const path = require("path");
+
 const Product = require( '../models/product' );
 const Order = require( '../models/order' );
 
@@ -241,17 +244,49 @@ exports.postOrder = ( req , res , next ) => {
 }
 
 /**
- * - Checkout Controller
+ * - Invoice Controller
  *
- * --> 사용하지 않아 잠시 주석처리
+ * --> 인증 파일제공 컨트롤러
+ *
  * @param req
  * @param res
  * @param next
  */
-// exports.getCheckout = ( req , res , next ) => {
-//
-//     res.render( 'shop/checkout' , {
-//         pageTitle : 'Checkout' ,
-//         path : '/checkout' ,
-//     } );
-// }
+exports.getInvoice = ( req , res , next ) => {
+    const orderId = req.params.orderId;
+
+    Order.findById( orderId )
+        .then( order => {
+            if ( !order ){
+                return next( new Error( 'No order found.' ) );
+            }
+            if ( order.user.userId.toString() !== req.user._id.toString() ) {
+                return next( new Error( 'Unauthorized.' ) );
+            }
+
+            const invoiceName = `invoice-${ orderId }.pdf`;
+            /** 모든 OS 에서 동작하도록 path 모듈을 이용하여, 해당 파일 경로를 찾는다 */
+            const invoicePath = path.join( 'data' , 'invoices' , invoiceName );
+            fs.readFile( invoicePath , ( err , data ) => {
+                /**
+                 * - error 가 존재할 경우, 기본 에러핸들러에서 처리하고,
+                 *   error 가 존재하지 않을 경우에는 찾은 데이터( 파일 )를 전달함
+                 */
+                if ( err ){
+                    return next( err );
+                }
+                /** 브라우저에 pdf 라는 정보를 제공하면 브라우저 내부에서 해당 파일을 inline 으로 연다 */
+                res.setHeader( 'Content-Type' , 'application/pdf' );
+                /**
+                 * - 클라이언트에게 콘텐츠가 어떻게 제공되는지 정의할 수 있다
+                 *
+                 * inline : 브라우저에서 열림
+                 * attachment : 파일을 다운로드함
+                 * */
+                res.setHeader( 'Content-Disposition' , `inline; filename="${ invoiceName }"` );
+                /** 해당 파일을 브라우저에 전달 */
+                res.send( data );
+            } );
+        } )
+        .catch( err => next( err ) );
+}

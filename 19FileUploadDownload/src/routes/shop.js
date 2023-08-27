@@ -30,6 +30,8 @@ router.post( '/create-order' , isAuth , shopController.postOrder );
 
 router.get( '/orders' , isAuth , shopController.getOrders );
 
+router.get( '/orders/:orderId' , isAuth , shopController.getInvoice );
+
 /** checkout 기능 잠시 주석처리 */
 // router.get( '/checkout' , shopController.getCheckout );
 
