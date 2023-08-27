@@ -37,7 +37,6 @@ const fileStorage = multer.diskStorage( {
          * - 첫번째 param - 에러 메시지( 존재하면, 에러가 있는것으로 판단 )
          *
          * - 두번째 param - 파일을 저장할 경로
-         *
          */
         callback( null , 'images' );
     },
@@ -48,9 +47,25 @@ const fileStorage = multer.diskStorage( {
          *
          * - 두번째 param - 파일 이름
          */
-        callback( null , file.fieldname + '-' + file.originalname );
+        callback( null ,`${file.fieldname}-${Date.now()}-${file.originalname}` );
     }
 } );
+
+const fileFilter = ( req , file , callback ) => {
+    /**
+     * - 첫번째 param - 에러 메시지( 존재하면, 에러가 있는것으로 판단 )
+     *
+     * - 두번째 param - 해당 파일을 저장할지 여부
+     */
+    if ( 'image/png' === file.mimetype ||
+        'image/jpg' === file.mimetype ||
+        'image/jpeg' === file.mimetype ){
+        callback( null , true );
+    }
+    else {
+        callback( null , false );
+    }
+}
 
 /** ejs 라이브러리를 view engine 으로 사용 */
 app.set('view engine', 'ejs');
@@ -73,8 +88,10 @@ const authRoutes = require( './routes/auth.js' );
  */
 app.use( bodyParser.urlencoded({ extended : false } ) );
 /** image body 필드값을 가져온다 */
-app.use( multer( { storage : fileStorage } ).single( 'image' ) );
+app.use( multer( { storage : fileStorage , fileFilter } ).single( 'image' ) );
+
 app.use( express.static( path.join( __dirname , 'public' ) ) );
+app.use( '/images' , express.static( path.join( __dirname , 'images' ) ) );
 /**
  * - 세션 설정
  * @param { string } secret - 식별 ID 를 Cookie 에 암호화( hash )해 등록할때 사용한다

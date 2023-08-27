@@ -51,9 +51,23 @@ exports.getAddProduct = ( req , res , next )=> {
  */
 exports.postAddProduct = ( req , res , next ) => {
 
-    const { title , image , description , price } = req.body;
-    const imageUrl = req.file;
-    console.log( '<< imageUrl >>' , imageUrl );
+    const { title , description , price } = req.body;
+    const image = req.file;
+
+    console.log( '<< file image info >>' , image );
+
+    if ( !image ){
+        return res.status( 422 ).render( 'admin/edit-product' , {
+            pageTitle : 'Add Product' ,
+            path : "/admin/add-product",
+            editing : false,
+            hasError : true,
+            product : { title , description , price },
+            errorMessage : 'Attached file is not an image.',
+            validationErrors : [],
+        } );
+    }
+
     const errors = validationResult( req );
 
     if ( !errors.isEmpty() ){
@@ -62,11 +76,14 @@ exports.postAddProduct = ( req , res , next ) => {
            path : "/admin/add-product",
            editing : false,
            hasError : true,
-           product : { title , imageUrl , description , price },
+           product : { title , description , price },
            errorMessage : errors.array()[ 0 ].msg,
            validationErrors : errors.array(),
        } );
     }
+
+    /** 자기자신 컴퓨터에 있는 이미지 경로를 가져와 경로 저장 */
+    const imageUrl = image.path;
 
     const product = new Product( {
         title ,
@@ -116,7 +133,6 @@ exports.getEditProduct = ( req , res , next )=> {
             if ( !product ){
                 return res.redirect( '/' );
             }
-
             res.render( 'admin/edit-product' , {
                 pageTitle : 'Edit Product' ,
                 path : "/admin/edit-product",
@@ -125,8 +141,7 @@ exports.getEditProduct = ( req , res , next )=> {
                 product,
                 errorMessage : null,
                 validationErrors : [],
-            } )
-
+            } );
         } )
         .catch( err => {
             const error = new Error( err );
@@ -143,8 +158,11 @@ exports.getEditProduct = ( req , res , next )=> {
  * @param next
  */
 exports.postEditProduct = ( req , res , next ) => {
-    const { title , price , imageUrl , description } = req.body;
-    const prodId = req.body.productId;
+    const { title , price , description , productId } = req.body;
+    const prodId = productId;
+    const image = req.file;
+
+    console.log( '<< file image info >>' , image );
 
     const errors = validationResult( req );
     if ( !errors.isEmpty() ){
@@ -153,7 +171,7 @@ exports.postEditProduct = ( req , res , next ) => {
             path : "/admin/edit-product",
             editing : true,
             hasError : true,
-            product : { title , imageUrl , description , price , _id : prodId },
+            product : { title , description , price , _id : prodId },
             errorMessage : errors.array()[ 0 ].msg,
             validationErrors : errors.array()
         } )
@@ -172,7 +190,10 @@ exports.postEditProduct = ( req , res , next ) => {
             }
             product.title = title;
             product.price = price;
-            product.imageUrl = imageUrl;
+            /** 제대로된 이미지 경로가 존재할 경우에만 이미지 경로 설정 */
+            if ( image ){
+                product.imageUrl = image.path;
+            }
             product.description = description;
 
             return product.save().then( () => {

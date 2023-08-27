@@ -187,3 +187,137 @@ app.use( multer( { storage : fileStorage } ).single( 'image' ) );
 ````
 
 - 이 저장소 설정값을가지고, 원하는 파일들만 걸러내거나, gif, pdf 는 지원하지 않는등의 유효성검사들도 진행할 수 있다
+
+
+- multer 는 특정종류의 파일만 저장할 수 있도록 파일종류를 명시할 수 있다
+
+````javascript
+const multer = require( 'multer' );
+/** ===== app.js ===== */
+/** 저장할 파일종류 설정 */
+const fileFilter = ( req , file , callback ) => {
+  /**
+   * - 첫번째 param - 에러 메시지( 존재하면, 에러가 있는것으로 판단 )
+   *
+   * - 두번째 param - 해당 파일을 저장할지 여부
+   */
+  if ( 'image/png' === file.mimetype ||
+          'image/jpg' === file.mimetype ||
+          'image/jpeg' === file.mimetype ){
+    callback( null , true );
+  }
+  else {
+    callback( null , false );
+  }
+}
+
+
+/** image body 필드값을 가져온다 */
+app.use( multer( { storage : fileStorage , fileFilter } ).single( 'image' ) );
+````
+
+- 파일같은경우는 파일 시스템( 서버 컴퓨터안 폴더등 )에 저장해야한다
+
+
+- DB 에 저장하기엔 파일은 크기가 너무 크기때문에, 
+
+
+- DB 에 저장하고, 쿼리하는것은 너무 비효율적이다
+
+
+- DB 에는 파일에 연결되는 경로를 저장해준다
+
+
+- 즉, 자기 컴퓨터의 파일이 저장되는 경로를 지정해준다
+  - ( 나중에, 해당 이미지를 가져올때, 경로에서 가져오면 되기 때문 )
+
+````javascript
+/** ===== controller/admin.js ===== */
+exports.postAddProduct = ( req , res , next ) => {
+  const image = req.file;
+
+  /** 자기자신 컴퓨터에 있는 이미지 경로를 가져와 경로 저장 */
+  const imageUrl = image.path;
+
+  const product = new Product( {
+    title ,
+    price ,
+    description ,
+    imageUrl ,
+    /** Mongoose 에서는 user 전체를 넣어도 user._id 를 찾아서 할당해준다... */
+    userId : req.user
+  } );
+}
+````
+
+- 제품을 편집 및 업데이트할때도 마찬가지로, 이미지경로를 불러오는데, 
+
+
+- 편집시 경로가 유효하지 않다면, 경로를 저장하지않으면 된다
+
+````javascript
+/** ===== controller/admin.js ===== */
+exports.postEditProduct = ( req , res , next ) => {
+
+  const { title , price , description , productId } = req.body;
+  const prodId = productId;
+  const image = req.file;  
+    
+  Product
+          .findById( prodId )
+          .then( product => {
+            product.title = title;
+            product.price = price;
+            /** 제대로된 이미지 경로가 존재할 경우에만 이미지 경로 설정 */
+            if ( image ){
+              product.imageUrl = image.path;
+            }
+            product.description = description;
+          
+            product.save();
+  } )
+}
+````
+
+- 이미지 경로를 저장 및 수정까지는 했지만, 저장한 이미지경로에서 이미지를 가져와야하는데
+
+
+- 이방법은 크게 2가지가 있다
+
+
+### static 방식으로 images 폴더 제공하는 방법
+
+
+- app.js 에서 이미 express.static 미들웨어를 통해 정적 폴더를 제공하고 있다
+
+
+````javascript
+  /** ===== app.js ===== */
+  app.use( express.static( path.join( __dirname , 'images' ) ) );
+````
+
+
+- 정적으로 폴더를 제공한다는 것은, 해당 폴더에 대한 파일의 요청이 자동으로 처리되어, 파일이 반환된다는 뜻이다
+  - ( express.js 가 배후에서 무거운 작업을 전부 진행한다는 뜻 )
+
+
+- 또한 해당방법으로 파일을 제공하게 될경우, express.js 가 static 폴더에 있는 내용들을 자동으로 root 폴더에서 제공하도록 변경한다
+  - 즉, 아래와 같은 url 로 파일을 요청하는것이 아니라,
+  
+  ````text
+   http://localhost:3000/images/image-1693123287537-raiden.png
+  ````
+
+  - 아래와 같은 url 로 요청해야 제공해준다
+  ````text
+   http://localhost:3000/image-1693123287537-raiden.png
+  ````
+  
+
+- 따라서, static 방식으로 파일을 제공해야할 경우에는, 아래와 같이 root 경로를 지정해줘야 한다
+````javascript
+  /** ===== app.js ===== */
+  app.use( '/images' , express.static( path.join( __dirname , 'images' ) ) );
+````
+
+### invoice 방식으로 제공하는 방법( 인증으로 파일 다운로드 )

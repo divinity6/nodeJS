@@ -42,9 +42,6 @@ router.post( '/edit-product' ,
             .isString()
             .isLength( { min : 3 } )
             .trim(),
-        body( 'imageUrl' )
-            /** 유효한 URL 형식인지 체크하는 validator */
-            .isURL(),
         body( 'price' )
             /** 소숫점이하를 가지고 있는지 체크하는 validator */
             .isFloat(),
