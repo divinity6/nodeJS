@@ -397,4 +397,75 @@ exports.getInvoice = ( req , res , next ) => {
 - 따라서, 해당 파일을 전달하기 전에, DB 에서 해당 주문을한 사용자를 찾고, 
 
 
-- 해당 사용자와 로그인한 사용자가 일치하는지 검증하면된
+- 해당 사용자와 로그인한 사용자가 일치하는지 검증하면된다
+
+---
+
+- 현재, 위의방식으로 파일시스템에 접근을하게 되면( fs.readFile ), NodeJS 가 파일시스템에 접근해, 콘텐츠 전체를 메모리로 읽어들인 후 응답과 함께반환한다
+  - 즉, 파일의 크기가 크다면, 응답을 보내는데 아주 오래걸린다
+
+
+- 서버의 메모리가 어느시점에 오버플로우될 수 있다. 들어오는 요청이 너무 많아지면, 
+
+
+- 모든 데이터를 메모리로 읽어들이는데, 메모리에 제한이 존재하기 때문에 파일 데이터를 읽어서 응답으로 제공하는것은 좋은 방법이 아니다
+
+
+- 대신, 데이터를 스트리밍하는 방법이 좋다
+
+
+- 데이터를다 브라우저에 스트리밍하게되면, 일반 파일시스템과는 다르게, **브라우저에 의해 차근차근 다운로드** 된다
+  - 크기가 큰 파일일수록 큰 장점이 있다
+  - Nodejs 가 모든 데이터를 메모리로 읽어들이지 앟고, 그때그때 브라우저로 스트리밍해서, 한 Chunk 의 데이터만 저장하면 된다
+  - 즉, 모든 Chunk 가 한번에 들어오기를 기다려서, 한 객체로 연결시키는것보다,
+  - 그때그때, 브라우저에 전달해, 브라우저가 들어오는 데이터조각을 하나의 최종 파일로 결합시키도록 하는 것이다
+  
+
+- 즉, stream 을 이용해 브라우저에 전달하면, 서버에 부담을 덜어주고, 브라우저 환경에서 빠르게 실행시킬 수 있다
+
+````javascript
+/** ===== controller/shop.js ===== */
+const fs = require( 'fs' );
+const path = require("path");
+/**
+ * - Invoice Controller
+ *
+ * --> 인증 파일제공 컨트롤러
+ *
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.getInvoice = ( req , res , next ) => {
+  const orderId = req.params.orderId;
+  const invoiceName = `invoice-${orderId}.pdf`;
+  /** 모든 OS 에서 동작하도록 path 모듈을 이용하여, 해당 파일 경로를 찾는다 */
+  const invoicePath = path.join('data', 'invoices', invoiceName);
+
+  /**
+   * - 스트리밍 방식으로 파일을 읽는다.
+   *
+   * - 즉, 청크( Chunk )단위로 파일을 읽는다
+   */
+  const file = fs.createReadStream( invoicePath );
+  /** 브라우저에 pdf 라는 정보를 제공하면 브라우저 내부에서 해당 파일을 inline 으로 연다 */
+  res.setHeader( 'Content-Type' , 'application/pdf' );
+  /**
+   * - 클라이언트에게 콘텐츠가 어떻게 제공되는지 정의할 수 있다
+   *
+   * inline : 브라우저에서 열림
+   * attachment : 파일을 다운로드함
+   * */
+  res.setHeader( 'Content-Disposition' , `inline; filename="${ invoiceName }"` );
+
+  /**
+   * - pipe 메서드를 이용해 읽어들인 데이터를 res 로 전달
+   *
+   * --> response 는 쓰기 가능한 스트림이기 때문에, 읽기 가능한 스트림을 사용해,
+   *     출력값을 쓰기 스트림으로 전달한다
+   *
+   *  - 응답이 데이터를 가지고 브라우저로 스트리밍된다
+   */
+  file.pipe( res );
+}
+````

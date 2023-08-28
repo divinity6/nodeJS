@@ -267,26 +267,32 @@ exports.getInvoice = ( req , res , next ) => {
             const invoiceName = `invoice-${ orderId }.pdf`;
             /** 모든 OS 에서 동작하도록 path 모듈을 이용하여, 해당 파일 경로를 찾는다 */
             const invoicePath = path.join( 'data' , 'invoices' , invoiceName );
-            fs.readFile( invoicePath , ( err , data ) => {
-                /**
-                 * - error 가 존재할 경우, 기본 에러핸들러에서 처리하고,
-                 *   error 가 존재하지 않을 경우에는 찾은 데이터( 파일 )를 전달함
-                 */
-                if ( err ){
-                    return next( err );
-                }
-                /** 브라우저에 pdf 라는 정보를 제공하면 브라우저 내부에서 해당 파일을 inline 으로 연다 */
-                res.setHeader( 'Content-Type' , 'application/pdf' );
-                /**
-                 * - 클라이언트에게 콘텐츠가 어떻게 제공되는지 정의할 수 있다
-                 *
-                 * inline : 브라우저에서 열림
-                 * attachment : 파일을 다운로드함
-                 * */
-                res.setHeader( 'Content-Disposition' , `inline; filename="${ invoiceName }"` );
-                /** 해당 파일을 브라우저에 전달 */
-                res.send( data );
-            } );
+
+            /**
+             * - 스트리밍 방식으로 파일을 읽는다.
+             *
+             * - 즉, 청크( Chunk )단위로 파일을 읽는다
+             */
+            const file = fs.createReadStream( invoicePath );
+            /** 브라우저에 pdf 라는 정보를 제공하면 브라우저 내부에서 해당 파일을 inline 으로 연다 */
+            res.setHeader( 'Content-Type' , 'application/pdf' );
+            /**
+             * - 클라이언트에게 콘텐츠가 어떻게 제공되는지 정의할 수 있다
+             *
+             * inline : 브라우저에서 열림
+             * attachment : 파일을 다운로드함
+             * */
+            res.setHeader( 'Content-Disposition' , `inline; filename="${ invoiceName }"` );
+
+            /**
+             * - pipe 메서드를 이용해 읽어들인 데이터를 res 로 전달
+             *
+             * --> response 는 쓰기 가능한 스트림이기 때문에, 읽기 가능한 스트림을 사용해,
+             *     출력값을 쓰기 스트림으로 전달한다
+             *
+             *  - 응답이 데이터를 가지고 브라우저로 스트리밍된다
+             */
+            file.pipe( res );
         } )
         .catch( err => next( err ) );
 }
