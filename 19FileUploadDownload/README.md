@@ -469,3 +469,78 @@ exports.getInvoice = ( req , res , next ) => {
   file.pipe( res );
 }
 ````
+
+---
+
+### createPDF
+
+- 서버에서 PDF 를 즉시생성하는 방법
+
+
+- 주문을 받을때, 실제 주문 데이터를 기반으로 PDF 파일을 생성
+
+
+- PDFKit 은 PDF 생성시 자주 사용되는 패키지다
+
+````shell
+npm install --save pdfkit
+````
+
+- pdfDoc 스트림은 읽을 수 있는 파일스트림을 제공하기 때문에 
+
+
+- 쓰기가능 res 스트림에 pipe 할 수 있다
+
+````javascript
+/** ===== controller/shop.js ===== */
+const fs = require( 'fs' );
+const path = require("path");
+const PDFDocument = require( "pdfkit" );
+
+/**
+ * - Invoice Controller
+ *
+ * --> 인증 파일제공 컨트롤러
+ *
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.getInvoice = ( req , res , next ) => {
+  const orderId = req.params.orderId;
+  const invoiceName = `invoice-${orderId}.pdf`;
+  /** 모든 OS 에서 동작하도록 path 모듈을 이용하여, 해당 파일 경로를 찾는다 */
+  const invoicePath = path.join('data', 'invoices', invoiceName);
+
+
+  /** pdfDoc 객체는 읽을 수 있는 스트림에 해당한다 */
+  const pdfDoc = new PDFDocument();
+
+  /** 브라우저에 pdf 라는 정보를 제공하면 브라우저 내부에서 해당 파일을 inline 으로 연다 */
+  res.setHeader( 'Content-Type' , 'application/pdf' );
+  /**
+   * - 클라이언트에게 콘텐츠가 어떻게 제공되는지 정의할 수 있다
+   *
+   * inline : 브라우저에서 열림
+   * attachment : 파일을 다운로드함
+   * */
+  res.setHeader( 'Content-Disposition' , `inline; filename="${ invoiceName }"` );
+
+  /**
+   * - fs 에서 읽을 수 있는 파일스트림으로 만들어 pdfDoc 의 pipe 메서드에 전달한다
+   *
+   * --> path 를 설정해, 해당 파일을 클라이언트 뿐만 아니라, 서버에도 저장되도록 한다
+   */
+  pdfDoc.pipe( fs.createWriteStream( invoicePath ) );
+  /**
+   * - 결괏값을 응답에도 pipe 한다
+   *
+   * --> res 는 쓰기가능한 스트림이고, pdfDoc 은 읽기가능하기 때문에 진행할 수 있다
+   */
+  pdfDoc.pipe( res );
+  pdfDoc.text( 'Hello word!' );   // text 한줄 추가
+  pdfDoc.end();   // pdf 의 쓰기가 완료됨을 알림
+}
+````
+
+

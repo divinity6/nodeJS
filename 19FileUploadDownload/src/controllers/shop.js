@@ -1,5 +1,6 @@
 const fs = require( 'fs' );
 const path = require("path");
+const PDFDocument = require( "pdfkit" );
 
 const Product = require( '../models/product' );
 const Order = require( '../models/order' );
@@ -268,12 +269,9 @@ exports.getInvoice = ( req , res , next ) => {
             /** 모든 OS 에서 동작하도록 path 모듈을 이용하여, 해당 파일 경로를 찾는다 */
             const invoicePath = path.join( 'data' , 'invoices' , invoiceName );
 
-            /**
-             * - 스트리밍 방식으로 파일을 읽는다.
-             *
-             * - 즉, 청크( Chunk )단위로 파일을 읽는다
-             */
-            const file = fs.createReadStream( invoicePath );
+            /** pdfDoc 객체는 읽을 수 있는 스트림에 해당한다 */
+            const pdfDoc = new PDFDocument();
+
             /** 브라우저에 pdf 라는 정보를 제공하면 브라우저 내부에서 해당 파일을 inline 으로 연다 */
             res.setHeader( 'Content-Type' , 'application/pdf' );
             /**
@@ -284,15 +282,22 @@ exports.getInvoice = ( req , res , next ) => {
              * */
             res.setHeader( 'Content-Disposition' , `inline; filename="${ invoiceName }"` );
 
+            console.log( '<< pdfDoc >>' , pdfDoc );
+
             /**
-             * - pipe 메서드를 이용해 읽어들인 데이터를 res 로 전달
+             * - fs 에서 읽을 수 있는 파일스트림으로 만들어 pdfDoc 의 pipe 메서드에 전달한다
              *
-             * --> response 는 쓰기 가능한 스트림이기 때문에, 읽기 가능한 스트림을 사용해,
-             *     출력값을 쓰기 스트림으로 전달한다
-             *
-             *  - 응답이 데이터를 가지고 브라우저로 스트리밍된다
+             * --> path 를 설정해, 해당 파일을 클라이언트 뿐만 아니라, 서버에도 저장되도록 한다
              */
-            file.pipe( res );
+            pdfDoc.pipe( fs.createWriteStream( invoicePath ) );
+            /**
+             * - 결괏값을 응답에도 pipe 한다
+             *
+             * --> res 는 쓰기가능한 스트림이고, pdfDoc 은 읽기가능하기 때문에 진행할 수 있다
+             */
+            pdfDoc.pipe( res );
+            pdfDoc.text( 'Hello word!' );   // text 한줄 추가
+            pdfDoc.end();   // pdf 의 쓰기가 완료됨을 알림
         } )
         .catch( err => next( err ) );
 }
