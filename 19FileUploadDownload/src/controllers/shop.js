@@ -4,6 +4,7 @@ const PDFDocument = require( "pdfkit" );
 
 const Product = require( '../models/product' );
 const Order = require( '../models/order' );
+const {or} = require("sequelize");
 
 /**
  * - 제품 리스트 페이지 반환 Controller
@@ -268,7 +269,7 @@ exports.getInvoice = ( req , res , next ) => {
             const invoiceName = `invoice-${ orderId }.pdf`;
             /** 모든 OS 에서 동작하도록 path 모듈을 이용하여, 해당 파일 경로를 찾는다 */
             const invoicePath = path.join( 'data' , 'invoices' , invoiceName );
-
+            console.log( '<< invoicePath >>' , invoicePath );
             /** pdfDoc 객체는 읽을 수 있는 스트림에 해당한다 */
             const pdfDoc = new PDFDocument();
 
@@ -282,8 +283,6 @@ exports.getInvoice = ( req , res , next ) => {
              * */
             res.setHeader( 'Content-Disposition' , `inline; filename="${ invoiceName }"` );
 
-            console.log( '<< pdfDoc >>' , pdfDoc );
-
             /**
              * - fs 에서 읽을 수 있는 파일스트림으로 만들어 pdfDoc 의 pipe 메서드에 전달한다
              *
@@ -296,7 +295,27 @@ exports.getInvoice = ( req , res , next ) => {
              * --> res 는 쓰기가능한 스트림이고, pdfDoc 은 읽기가능하기 때문에 진행할 수 있다
              */
             pdfDoc.pipe( res );
-            pdfDoc.text( 'Hello word!' );   // text 한줄 추가
+            /**
+             * - PDF 셋 설정을 할 수 있다
+             */
+            pdfDoc.registerFont( 'NotoSansCKJ', path.join( 'public' , 'font' , 'NotoSansKR-Medium.ttf' ) );
+            pdfDoc.font( 'NotoSansCKJ' );
+            pdfDoc.fontSize( 26 ).text( 'Invoice' , {
+                underline : true,
+            } );   // text 한줄 추가
+            pdfDoc.text( '---------------------------' );
+            let totalPrice = 0;
+            order.products.forEach( prod => {
+                totalPrice += prod.quantity * prod.product.price;
+                pdfDoc
+                    .fontSize( 14 )
+                    .text(
+                    `${ prod.product.title } - ${ prod.quantity } x $${ prod.product.price }` );
+            } );
+            pdfDoc.text( '---' );
+            pdfDoc.fontSize( 20 ).text( `Total Price: $${ totalPrice }` );
+
+
             pdfDoc.end();   // pdf 의 쓰기가 완료됨을 알림
         } )
         .catch( err => next( err ) );
