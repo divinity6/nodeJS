@@ -218,8 +218,8 @@ exports.postEditProduct = ( req , res , next ) => {
  * @param res
  * @param next
  */
-exports.postDeleteProduct = (  req , res , next ) => {
-    const prodId = req.body.productId;
+exports.deleteProduct = ( req , res , next ) => {
+    const prodId = req.params.productId;
 
     Product.findById( prodId )
         .then( product => {
@@ -239,12 +239,17 @@ exports.postDeleteProduct = (  req , res , next ) => {
         } )
         .then( result => {
             console.log( '<<destroyProduct>> :' , result );
-            res.redirect( "/admin/products" );
+            // res.redirect( "/admin/products" );
+            /**
+             * - 리다이렉트 시키지 않고 이제 JSON 데이터를 반환한다
+             */
+            res.status( 200 ).json( { message : 'Success!' } );
         } )
         .catch( err => {
-            const error = new Error( err );
-            error.httpStatusCode = 500;
-            return next( error );
+            res.status( 500 ).json( { message : 'Deleting product failed.' } );
+            // const error = new Error( err );
+            // error.httpStatusCode = 500;
+            // return next( error );
         } );
 
 }
