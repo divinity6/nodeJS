@@ -258,6 +258,38 @@ exports.getOrders = ( req , res , next ) => {
 }
 
 /**
+ * - checkout controller
+ *
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.getCheckout = ( req , res , next ) => {
+
+    /** productId 에 해당하는 필드값들을 채워오는 명령 */
+    req.user
+        .populate( 'cart.items.productId' )
+        .then( user => {
+            const products = user.cart.items;
+            let total = 0;
+            products.forEach( p => {
+                total += p.quantity * p.productId.price;
+            } )
+            res.render( 'shop/checkout' , {
+                pageTitle : 'Checkout' ,
+                path : '/checkout' ,
+                products : products,
+                totalSum : total,
+            } );
+        } )
+        .catch( err => {
+            const error = new Error( err );
+            error.httpStatusCode = 500;
+            return next( error );
+        } );
+}
+
+/**
  * - post Orders Controller
  *
  * --> 카트에 있는 모든 제품을 orders 로 이동

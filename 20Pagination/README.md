@@ -311,3 +311,27 @@ const deleteProduct = ( btn ) => {
 
 - AJAX Requests 더 알아보기: https://developer.mozilla.org/en-US/docs/Web/Guide/AJAX/Getting_Started
 
+---
+
+### Adding Payments
+
+- Stripe 를 이용한 가상 결제 시스템 만들기
+
+
+- Payment Process
+  - 결제 방식에 대한 정보( 신용카드 ) 수집
+  - 신용카드 정보가 정확한지 체크
+  - 신용카드에 비용 청구
+  - 결제 내역 관리
+  - 내 서버( 앱 )에서 주문 처리
+
+  
+- 결제관련해서는 법 and 기술적으로 복잡하여, 아웃소싱업체에서 담당한다
+  - 보통 Stripe 서비스를 사용한다
+
+
+- 클라이언트와 서버 데이터만 작성하면된다
+  - 클라이언트에서 신용카드 데이터를 수집하여 Stripe 서버로 보낸다
+  - Stripe 서버에서 값이 유효한지 체크후 신용카드 데이터를 암호화한 토큰과 확인 내역을 보내준다
+  - 그럼 우리 서버에 토큰을 보내, 서버에서 신용카드에 청구하거나, Stripe 를 통해 결제방식에 청구한다
+    - ( 요금객체를 생성해서, 토큰과 가격 정보를 Stripe 에 보내면 Stripe 가 청구와 관리를 담당한다 )
