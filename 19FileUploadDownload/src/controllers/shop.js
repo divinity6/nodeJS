@@ -295,9 +295,7 @@ exports.getInvoice = ( req , res , next ) => {
              * --> res 는 쓰기가능한 스트림이고, pdfDoc 은 읽기가능하기 때문에 진행할 수 있다
              */
             pdfDoc.pipe( res );
-            /**
-             * - PDF 셋 설정을 할 수 있다
-             */
+            /** PDF 셋 설정을 할 수 있다 */
             pdfDoc.registerFont( 'NotoSansCKJ', path.join( 'public' , 'font' , 'NotoSansKR-Medium.ttf' ) );
             pdfDoc.font( 'NotoSansCKJ' );
             pdfDoc.fontSize( 26 ).text( 'Invoice' , {

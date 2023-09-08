@@ -543,4 +543,164 @@ exports.getInvoice = ( req , res , next ) => {
 }
 ````
 
+- PDF 문서를 한글로 렌더링하려면 한글폰트를 추가해줘야한다
 
+````javascript
+/** ===== controller/shop.js ===== */
+const fs = require( 'fs' );
+const path = require("path");
+const PDFDocument = require( "pdfkit" );
+
+/**
+ * - Invoice Controller
+ *
+ * --> 인증 파일제공 컨트롤러
+ *
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.getInvoice = ( req , res , next ) => {
+  const orderId = req.params.orderId;
+  const invoiceName = `invoice-${orderId}.pdf`;
+  /** 모든 OS 에서 동작하도록 path 모듈을 이용하여, 해당 파일 경로를 찾는다 */
+  const invoicePath = path.join('data', 'invoices', invoiceName);
+
+
+  /** pdfDoc 객체는 읽을 수 있는 스트림에 해당한다 */
+  const pdfDoc = new PDFDocument();
+
+  /** 브라우저에 pdf 라는 정보를 제공하면 브라우저 내부에서 해당 파일을 inline 으로 연다 */
+  res.setHeader( 'Content-Type' , 'application/pdf' );
+  /**
+   * - 클라이언트에게 콘텐츠가 어떻게 제공되는지 정의할 수 있다
+   *
+   * inline : 브라우저에서 열림
+   * attachment : 파일을 다운로드함
+   * */
+  res.setHeader( 'Content-Disposition' , `inline; filename="${ invoiceName }"` );
+
+  /**
+   * - fs 에서 읽을 수 있는 파일스트림으로 만들어 pdfDoc 의 pipe 메서드에 전달한다
+   *
+   * --> path 를 설정해, 해당 파일을 클라이언트 뿐만 아니라, 서버에도 저장되도록 한다
+   */
+  pdfDoc.pipe( fs.createWriteStream( invoicePath ) );
+  /**
+   * - 결괏값을 응답에도 pipe 한다
+   *
+   * --> res 는 쓰기가능한 스트림이고, pdfDoc 은 읽기가능하기 때문에 진행할 수 있다
+   */
+  pdfDoc.pipe( res );
+  /**
+   * - PDF 셋 설정을 할 수 있다
+   */
+  pdfDoc.registerFont( 'NotoSansCKJ', path.join( 'public' , 'font' , 'NotoSansKR-Medium.ttf' ) );
+  pdfDoc.font( 'NotoSansCKJ' );
+  pdfDoc.fontSize( 26 ).text( 'Invoice' , {
+    underline : true,
+  } );   // text 한줄 추가
+  pdfDoc.text( '---------------------------' );
+  let totalPrice = 0;
+  order.products.forEach( prod => {
+    totalPrice += prod.quantity * prod.product.price;
+    pdfDoc
+            .fontSize( 14 )
+            .text(
+                    `${ prod.product.title } - ${ prod.quantity } x $${ prod.product.price }` );
+  } );
+  pdfDoc.text( '---' );
+  pdfDoc.fontSize( 20 ).text( `Total Price: $${ totalPrice }` );
+
+
+  pdfDoc.end();   // pdf 의 쓰기가 완료됨을 알림
+}
+````
+
+- 현재는 이미지를 저장하면, 계속해서 images 폴더에 불필요한 이미지가 쌓인다
+
+
+- 따라서, 제품을 편집할때, 해당 이미지를 제거하는 작업을 추가해줘야한다
+
+
+- 파일제거를 도와주는 helper 함수를 작성하고, 제품 수정, 제거시 해당 파일경로에 존재하는 파일을 제거하도록 한다
+
+````javascript
+/** ===== util/file.js ===== */
+/**
+ * - 파일관련 helper 유틸
+ */
+const fs = require( 'fs' );
+
+/**
+ * - 파일 경로를 전달하여 해당 경로의 파일을 제거
+ * @param { string } filePath - 제거할 파일 경로 + 파일명
+ */
+const deleteFile = ( filePath ) => {
+  /**
+   * - 해당 이름과 이름에 연결된 파일을 삭제하는 메서드
+   */
+  fs.unlink( filePath , ( err ) => {
+    if ( err ){
+      throw (err);
+    }
+  } );
+}
+exports.deleteFile = deleteFile;
+````
+
+- 실제 제품을 수정하거나 제거할때, 해당 파일도함께 제거한다
+
+````javascript
+/**
+ * - 제품 수정  Controller
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.postEditProduct = ( req , res , next ) => {
+    const image = req.file;
+    Product
+        .findById( prodId )
+        /**
+         * - product 가 mongoose 객체이기 때문에,
+         *   해당 model 객체의 프로퍼티를 수정해주고,
+         *   저장해주면 업데이트가 된다
+         */
+        .then( product => {
+            /** 제대로된 이미지 경로가 존재할 경우에만 이미지 경로 설정 */
+            if ( image ){
+                /** 이전의 파일제거 */
+                fileHelper.deleteFile( product.imageUrl );
+                product.imageUrl = image.path;
+            }
+        });
+}
+
+
+/**
+ * - 제품 제거 Controller
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.postDeleteProduct = (  req , res , next ) => {
+    const prodId = req.body.productId;
+    
+    Product.findById( prodId )
+        .then( product => {
+            /** 이전의 파일제거 */
+            fileHelper.deleteFile(product.imageUrl);
+        } )
+}
+````
+
+---
+
+- MMulter 공식 참고자료: https://github.com/expressjs/multer
+
+
+- 스트리밍 파일: https://medium.freecodecamp.org/node-js-streams-everything-you-need-to-know-c9141306be93
+
+
+- PDFKit으로 PDF 생성하는 법: http://pdfkit.org/docs/getting_started.html

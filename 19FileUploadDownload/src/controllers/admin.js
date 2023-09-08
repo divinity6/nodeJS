@@ -1,5 +1,7 @@
 const { validationResult } = require( 'express-validator' );
 const Product = require( "../models/product" );
+/** 파일관련 헬퍼 */
+const fileHelper = require( '../util/file' );
 
 /**
  * - Admin Products Controller
@@ -190,11 +192,13 @@ exports.postEditProduct = ( req , res , next ) => {
             }
             product.title = title;
             product.price = price;
+            product.description = description;
             /** 제대로된 이미지 경로가 존재할 경우에만 이미지 경로 설정 */
             if ( image ){
+                /** 이전의 파일제거 */
+                fileHelper.deleteFile( product.imageUrl );
                 product.imageUrl = image.path;
             }
-            product.description = description;
 
             return product.save().then( () => {
                 res.redirect( "/admin/products" );
@@ -217,13 +221,22 @@ exports.postEditProduct = ( req , res , next ) => {
 exports.postDeleteProduct = (  req , res , next ) => {
     const prodId = req.body.productId;
 
-    /**
-     * - deleteOne 메서드를 사용하면 손쉽게 구현할 수 있다
-     *
-     * - _id 가 prodId 와 같은지 체크하면서,
-     *  userId 또한 req.user._id 와 같은지 체크하면 된다
-     */
-    Product.deleteOne( { _id : prodId , userId : req.user._id } )
+    Product.findById( prodId )
+        .then( product => {
+            if ( !product ){
+                return next( new Error( 'Product not found.' ) );
+            }
+            /** 이전의 파일제거 */
+            fileHelper.deleteFile( product.imageUrl );
+
+            /**
+             * - deleteOne 메서드를 사용하면 손쉽게 구현할 수 있다
+             *
+             * - _id 가 prodId 와 같은지 체크하면서,
+             *  userId 또한 req.user._id 와 같은지 체크하면 된다
+             */
+            return Product.deleteOne( { _id : prodId , userId : req.user._id } )
+        } )
         .then( result => {
             console.log( '<<destroyProduct>> :' , result );
             res.redirect( "/admin/products" );
@@ -233,4 +246,5 @@ exports.postDeleteProduct = (  req , res , next ) => {
             error.httpStatusCode = 500;
             return next( error );
         } );
+
 }
