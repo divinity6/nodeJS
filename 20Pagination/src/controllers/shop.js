@@ -16,15 +16,44 @@ const ITEMS_PER_PAGE = 2;
  */
 exports.getProducts = ( req , res , next )=> {
 
-    /**
-     *  - find 로 모든 제품을 가져올 수 있다
-     */
+    /** page 쿼리에 접근 */
+    const page = Number( req.query.page ) || 1;
+    let totalItems = 0;
+
+    /** find 로 모든 제품을 가져올 수 있다 */
     Product.find()
+        /** 찾은 Product 의 총계를 반환함 */
+        .countDocuments()
+        .then( numProducts => {
+            totalItems = numProducts;
+            return Product.find()
+                /**
+                 * - skip 메서드를 추가하면,
+                 *   find 로 찾은 결과중 첫 번째부터 skip 갯수만큼 생략한다
+                 */
+                .skip( ( page - 1 ) * ITEMS_PER_PAGE )
+                /**
+                 * - limit 메서드는 find 로 가져오는 데이터양을 지정할 수 있다
+                 */
+                .limit( ITEMS_PER_PAGE )
+        } )
         .then( products => {
             res.render( 'shop/product-list' , {
-                prods : products ,
-                pageTitle : 'All Products' ,
+                pageTitle : 'Products' ,
                 path : '/products' ,
+                prods : products ,
+                currentPage : page,
+                /**
+                 * - ( 현재 페이지 * 현재 페이지 갯수 ) 보다
+                 *   총 아이템갯수가 클 경우에만 다음 버튼이 나온다
+                 * */
+                hasNextPage : ITEMS_PER_PAGE * page < totalItems,
+                /** 1 페이지가 아닐 경우에만 이전 버튼이 나온다 */
+                hasPreviousPage : page > 1,
+                nextPage : page + 1,
+                previousPage : page - 1,
+                /** 전체 페이지를 보여줄 페이지 갯수만큼 나누고 올려서 반환하면, 총 페이지 갯수를 알 수 있다 */
+                lastPage : Math.ceil( totalItems / ITEMS_PER_PAGE ),
             } );
         } )
         .catch( err => {
@@ -74,24 +103,42 @@ exports.getProduct = ( req , res , next ) =>{
  */
 exports.getIndex = ( req , res , next ) => {
     /** page 쿼리에 접근 */
-    const page = req.query.page || 1;
-
+    const page = Number( req.query.page ) || 1;
+    let totalItems = 0;
 
     Product.find()
-        /**
-         * - skip 메서드를 추가하면,
-         *   find 로 찾은 결과중 첫 번째부터 skip 갯수만큼 생략한다
-         */
-        .skip( ( page - 1 ) * ITEMS_PER_PAGE )
-        /**
-         * - limit 메서드는 find 로 가져오는 데이터양을 지정할 수 있다
-         */
-        .limit( ITEMS_PER_PAGE )
+        /** 찾은 Product 의 총계를 반환함 */
+        .countDocuments()
+        .then( numProducts => {
+            totalItems = numProducts;
+            return Product.find()
+                /**
+                 * - skip 메서드를 추가하면,
+                 *   find 로 찾은 결과중 첫 번째부터 skip 갯수만큼 생략한다
+                 */
+                .skip( ( page - 1 ) * ITEMS_PER_PAGE )
+                /**
+                 * - limit 메서드는 find 로 가져오는 데이터양을 지정할 수 있다
+                 */
+                .limit( ITEMS_PER_PAGE )
+    } )
         .then( products => {
             res.render( 'shop/index' , {
                 pageTitle : 'Shop' ,
                 path : '/' ,
                 prods : products ,
+                currentPage : page,
+                /**
+                 * - ( 현재 페이지 * 현재 페이지 갯수 ) 보다
+                 *   총 아이템갯수가 클 경우에만 다음 버튼이 나온다
+                 * */
+                hasNextPage : ITEMS_PER_PAGE * page < totalItems,
+                /** 1 페이지가 아닐 경우에만 이전 버튼이 나온다 */
+                hasPreviousPage : page > 1,
+                nextPage : page + 1,
+                previousPage : page - 1,
+                /** 전체 페이지를 보여줄 페이지 갯수만큼 나누고 올려서 반환하면, 총 페이지 갯수를 알 수 있다 */
+                lastPage : Math.ceil( totalItems / ITEMS_PER_PAGE ),
             } );
         } )
         .catch( err => {
