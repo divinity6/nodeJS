@@ -4,7 +4,9 @@ const PDFDocument = require( "pdfkit" );
 
 const Product = require( '../models/product' );
 const Order = require( '../models/order' );
-const {or} = require("sequelize");
+
+/** 몇개의 제품을 가져올 것인지 설정하는 상수 */
+const ITEMS_PER_PAGE = 2;
 
 /**
  * - 제품 리스트 페이지 반환 Controller
@@ -71,8 +73,20 @@ exports.getProduct = ( req , res , next ) =>{
  * @param next
  */
 exports.getIndex = ( req , res , next ) => {
+    /** page 쿼리에 접근 */
+    const page = req.query.page || 1;
+
 
     Product.find()
+        /**
+         * - skip 메서드를 추가하면,
+         *   find 로 찾은 결과중 첫 번째부터 skip 갯수만큼 생략한다
+         */
+        .skip( ( page - 1 ) * ITEMS_PER_PAGE )
+        /**
+         * - limit 메서드는 find 로 가져오는 데이터양을 지정할 수 있다
+         */
+        .limit( ITEMS_PER_PAGE )
         .then( products => {
             res.render( 'shop/index' , {
                 pageTitle : 'Shop' ,
