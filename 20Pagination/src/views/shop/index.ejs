@@ -6,6 +6,8 @@
     <%- include('../includes/navigation.ejs') %>
 
     <main>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>"/>
+        <button class="btn payment-btn" onclick="onPayment( this )">테스트 버튼</button>
         <% if (prods.length > 0) { %>
             <div class="grid">
                 <% for (let product of prods) { %>
@@ -42,4 +44,9 @@
             <h1>No Products Found!</h1>
         <% } %>
     </main>
+<!--    <script-->
+<!--            src="https://t1.kakaocdn.net/kakao_js_sdk/2.4.0/kakao.min.js"-->
+<!--            integrity="sha384-mXVrIX2T/Kszp6Z0aEWaA8Nm7J6/ZeWXbL8UpGRjKwWe56Srd/iyNmWMBhcItAjH"-->
+<!--            crossorigin="anonymous"></script>-->
+    <script src="/js/payment.js"></script>
 <%- include('../includes/end.ejs') %>
