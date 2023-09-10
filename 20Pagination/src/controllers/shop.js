@@ -4,6 +4,7 @@ const PDFDocument = require( "pdfkit" );
 
 const Product = require( '../models/product' );
 const Order = require( '../models/order' );
+const privateKeys = require( '../util/privateKeys' );
 
 /** 몇개의 제품을 가져올 것인지 설정하는 상수 */
 const ITEMS_PER_PAGE = 2;
@@ -265,22 +266,91 @@ exports.getOrders = ( req , res , next ) => {
  * @param next
  */
 exports.getCheckout = ( req , res , next ) => {
+    let products;
+    let total = 0;
 
     /** productId 에 해당하는 필드값들을 채워오는 명령 */
     req.user
         .populate( 'cart.items.productId' )
         .then( user => {
-            const products = user.cart.items;
-            let total = 0;
+            products = user.cart.items;
+            total = 0;
+
             products.forEach( p => {
                 total += p.quantity * p.productId.price;
-            } )
+            } );
+
+            /** 결제 정보 렌더아이템 */
+            const paymentInfo = {
+                niceClientId : privateKeys.NICE_PAY_CLIENT_KEY,
+                lineItems : products.map( p => ( {
+                    name : p.productId.title,
+                    description : p.productId.description,
+                    amount : p.productId.price,
+                    currency : 'won',
+                    quantity : p.quantity,
+                } ) ),
+                successURL : `${ req.protocol }://${ req.get( 'host' ) }/checkout/success`,
+                niceReturnURL : `${ req.protocol }://${ req.get( 'host' ) }/payment/nice-pay/success`,
+                cancelURL : `${ req.protocol }://${ req.get( 'host' ) }/checkout/cancel`,
+            };
+
             res.render( 'shop/checkout' , {
-                pageTitle : 'Checkout' ,
-                path : '/checkout' ,
+                pageTitle : 'Checkout',
+                path : '/checkout',
                 products : products,
                 totalSum : total,
+                paymentInfoStr : `${JSON.stringify( paymentInfo )}`,
             } );
+        } )
+        .catch( err => {
+            const error = new Error( err );
+            error.httpStatusCode = 500;
+            return next( error );
+        } );
+}
+
+/**
+ * - get Checkout Controller
+ *
+ * --> 카트에 있는 모든 제품을 orders 로 이동
+ *
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.getCheckoutSuccess = ( req , res , next ) => {
+    /** productId 에 해당하는 필드값들을 채워오는 명령 */
+    req.user
+        .populate( 'cart.items.productId' )
+        .then( user => {
+            console.log( 'userId' , user.cart.items );
+            /** 가져온 제품들중 필요한 값들만 추출 */
+            const products = user.cart.items.map( item => {
+                return {
+                    quantity : item.quantity,
+                    /**
+                     * - item.productId 이렇게만하면 mongoose 가 자동으로 해당 데이터중 id 를 찾아할당하므로,
+                     *   _doc 를 이용하여 해당 데이터에 접근할 수 있다
+                     * */
+                    product : {...item.productId._doc },
+                }
+            } );
+            const order = new Order( {
+                user : {
+                    email : req.user.email,
+                    /** mongoose 가 자체적으로 userId 를 선택할 것이다 */
+                    userId : req.user
+                },
+                products
+            } );
+            return order.save();
+        } )
+        .then( result => {
+            return req.user.clearCart();
+        } )
+        .then( () => {
+            res.redirect( '/orders' );
         } )
         .catch( err => {
             const error = new Error( err );

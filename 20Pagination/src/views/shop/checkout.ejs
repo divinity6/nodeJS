@@ -16,5 +16,27 @@
         <div class="centered">
             <h2>Total : <%= totalSum %></h2>
         </div>
+        <div class="centered">
+            <button id="order-kakaoPay" class="btn">카카오페이 주문</button>
+            <button id="order-creditCard" class="btn">신용카드 주문</button>
+            <script src="https://pay.nicepay.co.kr/v1/js/"></script>
+            <script>
+                /** 전역변수에 필요한 데이터 저장 */
+                const paymentInfo = '<%= paymentInfoStr %>'.replace(/\&#34;/gi, '"' ).replace( /\s*/g, "" );
+                window.paymentStore = JSON.parse( paymentInfo );
+                window.paymentStore.csrfToken = '<%= csrfToken %>';
+                window.paymentStore.amount = paymentStore.lineItems.reduce( ( acc , item ) => {
+                    acc += item.amount;
+                    return acc;
+                } , 0 );
+                window.paymentStore.quantity = paymentStore.lineItems.reduce( ( acc , item ) => {
+                    acc += item.quantity;
+                    return acc;
+                } , 0 );
+                window.paymentStore.name = paymentStore.lineItems[ 0 ]?.name || "";
+                console.log( '<< paymentStore.lineItems >>' , paymentStore );
+            </script>
+            <script src="/js/payment.js" defer></script>
+        </div>
     </main>
     <%- include('../includes/end.ejs') %>

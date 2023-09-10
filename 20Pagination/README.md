@@ -335,3 +335,174 @@ const deleteProduct = ( btn ) => {
   - Stripe 서버에서 값이 유효한지 체크후 신용카드 데이터를 암호화한 토큰과 확인 내역을 보내준다
   - 그럼 우리 서버에 토큰을 보내, 서버에서 신용카드에 청구하거나, Stripe 를 통해 결제방식에 청구한다
     - ( 요금객체를 생성해서, 토큰과 가격 정보를 Stripe 에 보내면 Stripe 가 청구와 관리를 담당한다 )
+
+
+---
+
+### Payments
+
+- 현재 Stripe 는 한국을 지원하지 않아서, nicePay( 신용카드 종합결제 ) 와 kakaoPay 로 대체하기로 한다
+
+
+- nicePay 같은 경우에는 클라이언트에서 나이스 API 를 호출하기 때문에, 클라이언트에 url 및 정보등을 넘겨야한다
+
+````javascript
+/** ===== controller/shop.js ===== */
+const privateKeys = require( '../util/privateKeys' );
+/**
+ * - checkout controller
+ *
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.getCheckout = ( req , res , next ) => {
+
+  /** 결제 정보 렌더아이템 */
+  const paymentInfo = {
+    niceClientId : privateKeys.NICE_PAY_CLIENT_KEY,
+    lineItems : products.map( p => ( {
+      name : p.productId.title,
+      description : p.productId.description,
+      amount : p.productId.price,
+      currency : 'won',
+      quantity : p.quantity,
+    } ) ),
+    successURL : `${ req.protocol }://${ req.get( 'host' ) }/checkout/success`,
+    niceReturnURL : `${ req.protocol }://${ req.get( 'host' ) }/payment/nice-pay/success`,
+    cancelURL : `${ req.protocol }://${ req.get( 'host' ) }/checkout/cancel`,
+  };
+
+  res.render( 'shop/checkout' , {
+    pageTitle : 'Checkout',
+    path : '/checkout',
+    products : products,
+    totalSum : total,
+    paymentInfoStr : `${JSON.stringify( paymentInfo )}`,
+  } );
+}
+````
+
+- 서버에서 클라이언트에 넘겨준 데이터는 inline 으로 삽입된 script 태크에서 접근할 수 있는데, 
+
+
+- 일반 데이터는 해석을 잘 못하고 JSON 화 시킨 후, 해석해서 해당 script 태그에서 데이터를 저장한다
+
+````html
+<script>
+  /** 전역변수에 필요한 데이터 저장 */
+  const paymentInfo = '<%= paymentInfoStr %>'.replace(/\&#34;/gi, '"' ).replace( /\s*/g, "" );
+  window.paymentStore = JSON.parse( paymentInfo );
+  window.paymentStore.csrfToken = '<%= csrfToken %>'
+  window.paymentStore.amount = paymentStore.lineItems.reduce( ( acc , item) => {
+    acc += item.amount;
+    return acc;
+  } , 0 );
+  window.paymentStore.name = paymentStore.lineItems[ 0 ].name || "";
+</script>
+````
+
+- 그 후, 결제 스크립트 내부에서 저장된 값들에 접근할 수 있도록 한다
+
+
+- 카카오페이와 나이스페이결제를 호출하는 api 들에서 해당 값들을 불러와 사용하며, 
+
+
+- 각각 페이별 결제 로직을 탄다
+
+````javascript
+/** ===== public/js/payment.js ===== */
+/**
+ * - 카카오페이 결제
+ */
+kakaoPayBtn.addEventListener( 'click' , ( e ) => {
+    const reqParam = Object.keys( paymentStore ).reduce( ( ( acc , key ) => {
+        if ( 'lineItems' !== key ){
+            acc[ key ] = paymentStore[ key ];
+        };
+        return acc;
+    } ) , {} );
+
+    const params = new URLSearchParams( reqParam ).toString();
+
+    console.log( 'params' , params );
+    fetch( `/payment/kakao-pay?${ params }` , {
+        method : 'POST',
+        headers : {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'csrf-token' : paymentStore.csrfToken,
+        },
+    } )
+        .then( res => {
+            return res.json()
+        } )
+        .then( data => {
+            console.log( '<< data >>' , data );
+            window.open(data.redirectUrl,'_blank');
+        } )
+        .catch( err => {
+            console.log( '<< err >>' , err );
+        } );
+} );
+
+/**
+ * - 나이스페이 결제
+ */
+creditCardBtn.addEventListener( 'click' , ( e ) => {
+    AUTHNICE.requestPay( {
+        clientId : paymentStore.niceClientId,
+        method : 'card',
+        orderId: Math.random().toString(16).substr(2, 8),
+        amount : paymentStore.amount,
+        goodsName: paymentStore.name,
+        returnUrl: paymentStore.niceReturnURL, //API를 호출할 Endpoint 입력
+        fnError: function (result) {
+            alert('개발자확인용 : ' + result.errorMsg + '')
+        }
+    } );
+} );
+
+````
+
+- 카카오페이는 내 서버에서 리다이렉트 시키므로 CSRF 문제가 없었지만,
+
+
+- 나이스페이결제의 경우 외부 서버에서 리다이렉트시키므로 CSRF 이슈가 있으므로, 해당 경로의 CSRF 를 예외처리해두는 방식으로 처리하였다
+
+````javascript
+/** ===== app.js ===== */
+const csrf = require( 'csurf' );
+
+/** 세션에 CSRF 토큰 값을 설정하는 미들웨어 생성 */
+const csrfProtection = csrf();
+
+/** CSRF 가 session 을 이용하기 때문에 session 다음에 미들웨어 등록 */
+app.use( ( req , res , next ) => {
+    /** 나이스 결제시 예외등록 */
+    if ( '/payment/nice-pay/success' === req.url ){
+        req.csrfToken = () => {
+            return '12345';
+        }
+        return next();
+    }
+    csrfProtection( req , res , next );
+} );
+````
+
+- 그 외에는 라우터와 컨트롤러에서, 각 페이들에서 제공하는 가이드라인대로 진행하면 문제없이 동작한다
+
+
+- 결과적으로 주문을 하게되면, cart 에 있는 제품들을 제3자 패키지( 카카오페이, 나이스페이 )등에 주문 결제처리를하고,
+
+
+- orders 에 추가하게 되는데, 현재 버그는 /checkout/success 을 그냥치고 들어가도 자동으로 장바구니가 지워지고 주문했다고 표시되는 버그가 존재한다
+
+
+- 해당 버그는 데이터베이스와 카카오페이 , 나이스페이의 주문 내역을 비교하여 체크할 수 있다
+
+
+- 실제 운영환경에서는 **WebHooks( 카카오페이 , 나이스페이등 각각에서 제공한다 )** 을 이용하는것이 좋다
+
+---
+

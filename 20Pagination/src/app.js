@@ -7,14 +7,13 @@ const mongoose = require( 'mongoose' );
 const session = require( 'express-session' );
 /** MongoDB 에 세션데이터 저장 및 전달 */
 const MongoDBStore = require( 'connect-mongodb-session' )( session );
+const privateKeys = require( './util/privateKeys' );
 const csrf = require( 'csurf' );
 const flash = require( 'connect-flash' );
 const multer = require( 'multer' );
 
 const errorController = require( './controllers/error' );
 const User = require( './models/user' );
-
-const MONGODB_URI = 'mongodb+srv://hoon:hoonTest@cluster0.ipnka4b.mongodb.net/shop?retryWrites=true';
 
 const app = express();
 /**
@@ -23,7 +22,7 @@ const app = express();
  * @param { string } collection - 데이터를 저장할 데이터베이스 컬렉션이름
  */
 const store = new MongoDBStore( {
-    uri : MONGODB_URI,
+    uri : privateKeys.MONGODB_URI,
     collection : 'sessions'
 } );
 /** 세션에 CSRF 토큰 값을 설정하는 미들웨어 생성 */
@@ -78,6 +77,7 @@ app.set('views', './views');
 const adminRoutes = require( './routes/admin.js' );
 const shopRoutes = require( './routes/shop.js' );
 const authRoutes = require( './routes/auth.js' );
+const paymentRoutes = require( './routes/payment.js' );
 
 /**
  * - 본문 해석 미들웨어
@@ -108,7 +108,16 @@ app.use( session( {
     store
 } ) );
 /** CSRF 가 session 을 이용하기 때문에 session 다음에 미들웨어 등록 */
-app.use( csrfProtection )
+app.use( ( req , res , next ) => {
+    /** 나이스 결제시 예외등록 */
+    if ( '/payment/nice-pay/success' === req.url ){
+        req.csrfToken = () => {
+            return '12345';
+        }
+        return next();
+    }
+    csrfProtection( req , res , next );
+} )
 /** flash 미들웨어를 등록하여, request 객체에서 사용가능 */
 app.use( flash() );
 
@@ -149,6 +158,7 @@ app.use( ( req , res , next ) => {
 app.use( '/admin' , adminRoutes );
 app.use( shopRoutes );
 app.use( authRoutes );
+app.use( '/payment' , paymentRoutes );
 
 app.get( '/500' , errorController.get500 );
 
@@ -175,7 +185,7 @@ app.use( ( error , req , res , next ) => {
 /** mongoose 가 mongoDB 와의 연결을 관리한다 */
 mongoose
     /** shop 데이터베이스에 연결 */
-    .connect( MONGODB_URI )
+    .connect( privateKeys.MONGODB_URI )
     .then( () => {
         console.log( "<<StartApp>>" );
         app.listen( 3000 );
