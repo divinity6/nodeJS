@@ -68,7 +68,11 @@
 
 
 ### [ 16. Pagination ]( https://github.com/divinity6/nodejs-study/tree/master/20Pagination )
-- 페이지네이션 기능
+- 페이지네이션 기능 및 결제 기능
+
+
+### [ 17. RestAPI ]( https://github.com/divinity6/nodejs-study/tree/master/21RestAPI )
+- RestAPI
 
 
 ---

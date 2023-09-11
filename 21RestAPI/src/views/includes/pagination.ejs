@@ -1,0 +1,19 @@
+<section class="pagination">
+    <!-- 현재 페이지가 첫 페이지가 아니고, 이전 페이지가 1 이 아닐 경우 -->
+    <% if ( 1 !== currentPage && 1 !== previousPage ) { %>
+        <a href="?page=1">1</a>
+    <% } %>
+    <!-- 이전 페이지가 있을 경우 -->
+    <%  if ( hasPreviousPage ) { %>
+        <a href="?page=<%= previousPage %>"><%= previousPage %></a>
+    <% } %>
+    <a href="?page=<%= currentPage %>" class="active"><%= currentPage %></a>
+    <!-- 다음 페이지가 있을 경우 -->
+    <%  if ( hasNextPage ) { %>
+        <a href="?page=<%= nextPage %>"><%= nextPage %></a>
+    <% } %>
+    <!-- 현재 페이지가 마지막이 아니고, 다음 페이지가 마지막이 아닐 경우에만 렌더링한다 -->
+    <%  if ( lastPage !== currentPage && nextPage !== lastPage ) { %>
+        <a href="?page=<%= lastPage %>"><%= lastPage %></a>
+    <% } %>
+</section>
