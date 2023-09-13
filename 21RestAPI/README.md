@@ -37,3 +37,28 @@
 
 
 - 다른데이터형식들은 JSON 만큼 간편하고 명확하지 않아 JSON 이 RestAPI 를 구현할때 사용된다
+
+
+- API endPoint 는 HTTP method + Routing 경로를 의미한다
+  - 예) API EndPoint : 
+    - GET/posts
+    - POST/post
+    - GET/posts/:postId
+
+
+- 브라우저에서 JS 를 이용하지 않고, < form > 태그나 < a > 태그를 이용해 통신할때는,
+  - GET , POST 만 사용가능하다
+  - ( 브라우저와 HTML 이 알고있는 기본 메서드 )
+
+
+- JS 를 통해 다른 HTTP 메서드들을 다뤄야 한다
+
+
+- GET, POST , PUT , PATCH , DELETE 외에도 OPTIONS 라는 특별한 HTTP 메서드가 존재한다
+  - 브라우저가 자동으로 보내는 메서드이다
+  - 브라우저가 자동으로 요청을 보내 다음 요청이 무엇인지 알아보는 용도로 쓰인다
+  - 예) 다음요청이 DELETE 요청이라면 해당 요청이 허용되는지 여부
+
+
+- REST API 로 작성할때, 각 역할에 맞도록 요청에 HTTP 메서드를 사용하는 것이 좋다
+  - 반드시 그래야하는 건 아니지만 지킬수록 좋다
