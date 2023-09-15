@@ -111,3 +111,72 @@
 ### Rebuilding
 
 - REST_API 구조로 패키지를 다시 재구성한다
+
+
+- RestAPI 를 사용함으로써, 더이상 res.render 를 반환할 필요가 없다
+
+
+- json 형식의 데이터만 반환하면 된다
+
+
+- Response 객체의 파라미터로 js 객체를 넣으면 json 형태로 변환해서 반환해준다
+
+````javascript
+/**
+ * - 게시물들을 반환하는 controller
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.getPosts = ( req , res , next ) => {
+  /**
+   * - expressJS 에서 제공하는 json 메서드
+   *
+   * --> json 메서드를 이용하면 응답헤더에 자동으로 application/json 를 할당해준다
+   * */
+  res.status( 200 ).json( {
+    posts : [ { title : 'First Post' , content : 'This is the first post' } ]
+  } );
+};
+````
+
+- 사용자가 보내는 요청을 분석할때, bodyParser 패키지를 이용하는데,
+
+
+- 지금까지는 bodyParser 패키지의 urlencoded() 메서드를 이용했다'
+
+
+- 해당 메서드는 x-www-urlencoded 형식의 데이터를 파싱하는 bodyParser 다
+  - 기본적으로 < from > 에서 보내는 요청( POST , GET )은 이런 형식의 데이터를 보낸다
+
+
+````javascript
+const express = require( 'express' );
+const bodyParser = require( 'body-parser' );
+
+const app = express();
+
+/** x-www-urlencoded 형식을 파싱할때 사용하는 bodyParser 다 */
+app.use( bodyParser.urlencoded() );
+````
+
+- 대신 RestAPI 를 사용함으로써 들어오는 body 요청을 JSON 형식으로 분석하게 된다
+
+
+- json() 메서드를 사용하게 되면, 요청을 json 으로 파싱해 body 에 부착하게 된다
+
+````javascript
+const express = require( 'express' );
+const bodyParser = require( 'body-parser' );
+
+const app = express();
+
+/** application/json 형식을 파싱할때 사용하는 bodyParser 다 */
+app.use( bodyParser.json() );
+````
+
+- 이렇게 구축한 RestAPI 를 테스트하는 간편한 방법으로 [ PostMan ]( https://www.postman.com/ ) 이 존재한다
+
+
+- PostMan 을 이용해 API 주소에 요청하면 응답값을 간편하게 받아볼 수 있다
+  - 즉, 간편하게 테스트해볼 수 있는 매우 편리한 사이트다
