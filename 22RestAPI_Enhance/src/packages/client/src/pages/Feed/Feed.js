@@ -8,6 +8,7 @@ import Paginator from '../../components/Paginator/Paginator';
 import Loader from '../../components/Loader/Loader';
 import ErrorHandler from '../../components/ErrorHandler/ErrorHandler';
 import './Feed.css';
+import post from "../../components/Feed/Post/Post";
 
 class Feed extends Component {
   state = {
@@ -37,6 +38,7 @@ class Feed extends Component {
     this.loadPosts();
   }
 
+  /** component 가 Mount 된 후에 호출 */
   loadPosts = direction => {
     if (direction) {
       this.setState({ postsLoading: true, posts: [] });
@@ -50,7 +52,7 @@ class Feed extends Component {
       page--;
       this.setState({ postPage: page });
     }
-    fetch('URL')
+    fetch('http://localhost:8080/feed/posts')
       .then(res => {
         if (res.status !== 200) {
           throw new Error('Failed to fetch posts.');
@@ -58,6 +60,7 @@ class Feed extends Component {
         return res.json();
       })
       .then(resData => {
+        console.log( '<< resData >>' , resData );
         this.setState({
           posts: resData.posts,
           totalPosts: resData.totalItems,
@@ -101,17 +104,30 @@ class Feed extends Component {
     this.setState({ isEditing: false, editPost: null });
   };
 
+  /** edit 이 끝났을 경우 타는 handler */
   finishEditHandler = postData => {
+    console.log( '<< finish Edit >>' , postData );
     this.setState({
       editLoading: true
     });
     // Set up data (with image!)
-    let url = 'URL';
+    let url = 'http://localhost:8080/feed/post';
+    let method = 'POST';
     if (this.state.editPost) {
       url = 'URL';
     }
 
-    fetch(url)
+    /** 서버측 어플리케이션에 컨텐츠 전송 */
+    fetch( url , {
+      method,
+      headers : {
+        'Content-Type' : 'application/json'
+      },
+      body : JSON.stringify( {
+        title : postData.title,
+        content : postData.content
+      } )
+    } )
       .then(res => {
         if (res.status !== 200 && res.status !== 201) {
           throw new Error('Creating or editing a post failed!');
@@ -119,6 +135,7 @@ class Feed extends Component {
         return res.json();
       })
       .then(resData => {
+        console.log( '<< resData >>' , resData );
         const post = {
           _id: resData.post._id,
           title: resData.post.title,

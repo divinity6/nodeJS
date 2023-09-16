@@ -11,7 +11,18 @@ exports.getPosts = ( req , res , next ) => {
      * --> json 메서드를 이용하면 응답헤더에 자동으로 application/json 를 할당해준다
      * */
     res.status( 200 ).json( {
-        posts : [ { title : 'First Post' , content : 'This is the first post' } ]
+        posts : [
+            {
+                _id : '1',
+                title : 'First Post' ,
+                content : 'This is the first post' ,
+                imageUrl : 'images/hodu.png',
+                creator : {
+                    name : 'Maximilian'
+                },
+                createdAt : new Date()
+            }
+        ]
     } );
 };
 
@@ -31,7 +42,16 @@ exports.createPost = ( req , res , next ) => {
     // Create post in db
     res.status( 201 ).json( {
         message : 'Post created successfully!',
-        post : { id : new Date().toISOString(), title , content }
+        post : {
+            _id : new Date().toISOString(),
+            title ,
+            content,
+            imageUrl : 'images/hodu.png',
+            creator : {
+                name : 'Maximilian'
+            },
+            createdAt : new Date()
+        }
     } );
 }
 
