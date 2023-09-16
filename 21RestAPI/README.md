@@ -151,6 +151,7 @@ exports.getPosts = ( req , res , next ) => {
 
 
 ````javascript
+/** ===== app.js ===== */
 const express = require( 'express' );
 const bodyParser = require( 'body-parser' );
 
@@ -166,6 +167,7 @@ app.use( bodyParser.urlencoded() );
 - json() 메서드를 사용하게 되면, 요청을 json 으로 파싱해 body 에 부착하게 된다
 
 ````javascript
+/** ===== app.js ===== */
 const express = require( 'express' );
 const bodyParser = require( 'body-parser' );
 
@@ -180,3 +182,91 @@ app.use( bodyParser.json() );
 
 - PostMan 을 이용해 API 주소에 요청하면 응답값을 간편하게 받아볼 수 있다
   - 즉, 간편하게 테스트해볼 수 있는 매우 편리한 사이트다
+
+---
+
+### CORS?( Cross-Origin-Resource-Sharing )
+
+
+- 교차 출처 리소스 공유( 브라우저에서 기본적으로 허용하지 않는다 )
+  - 포트까지 검사한다
+
+
+- 클라이언트와 서버가 같은 도메인일 경우엔 문제가 없지만, 다른 도메인일 경우에는 문제가 발생한다
+  - 물론 Production 환경에서는 같은 서버에서 응답을 내려주니 상관이 없지만, 개발서버에서는 문제가 된다
+
+
+- 서버측에서 많은 클라이언트들에게 데이터를 전달할 수 있기 때문에 브라우저 클라이언트에게 해당 응답을 받아도 된다고 알려줘야 한다
+
+
+- 이를 해결하려면, 서버 측 코드에서 특수한 헤더를 추가하면 된다
+  - 모든 응답에 헤더를 추가하면된다( 이럴 때 미들웨어를 사용하면 좋다 )
+  - 해당 미들웨어는, 모든 요청전에 설정해주면 모든요청에 설정된다
+
+````javascript
+/** ===== app.js ===== */
+/** CORS 이슈를 해결하기 위해 header 에 교차출처 공유 설정 */
+app.use( ( req , res , next ) => {
+
+  /**
+   * @param { 'Access-Control-Allow-Origin' } string - 특정 출처( 클라이언트 )에서 Origin 즉, 데이터에 액세스할 수 있도록 허용
+   *                                                   ( 보통 * 를 이용하여 모든 도메인에서 접근가능하게 하지만,
+   *                                                     특정 도메인 주소를 입력하여 제한할 수도 있다 )
+   *                                                   다수의 도메인을 작성하려면 , 를 이용해 추가하면 된다
+   */
+  res.setHeader( 'Access-Control-Allow-Origin' , '*' );
+
+  /**
+   * @param { 'Access-Control-Allow-Methods' } string - 특정 출처( 클라이언트 )에서 Methods 즉, HTTP 메서드를 사용할 수 있도록 허용
+   *                                                   ( 외부에서 사용하려는 HTTP 메서드를 , 를 이용해 추가해주면 된다 )
+   *
+   * - 출처에서 어떤 메서드가 허용되는지 알려줘야 한다
+   */
+  res.setHeader( 'Access-Control-Allow-Methods' , 'OPTIONS, GET, POST, PUT, PATCH, DELETE' );
+  /**
+   * @param { 'Access-Control-Allow-Headers' } string - 특정 출처( 클라이언트 )에서 Header 즉, HTTP Header 를 설정할 수 있도록 허용
+   *                                                   ( * 를 이용하여 모든 헤더를 이용가능하게 하지만,
+   *                                                     Content-Type , Authorization 은 반드시 허용해줘야한다 )
+   *                                                   다수의 도메인을 작성하려면 , 를 이용해 추가하면 된다
+   *
+   * - 클라이언트가 헤더에 추가 인증 데이터를 포함한 요청을 보낼 수 있으며 , 컨텐츠 타입을 정의해서 보낼 수 있다
+   */
+  res.setHeader( 'Access-Cont,ol-Allow-Headers' , 'Content-Type, Authorization' );
+
+  next();
+} );
+````
+
+- 클라이언트에서 요청을 전송하면, 우리가 전송하는 Request 전에 
+- 해당 Request 의 HTTP Method 타입을 미리 보내는 것을 알 수 있다
+
+
+- 해당 Request HTTP Method 타입은 OPTIONS 이며, 
+
+
+- 우리가 보내는 다음 HTTP Method 요청이 허용되는 요청인지 여부를 체크한다
+  - HTTP Header 설정의 Access-Control-Allow-Methods 에 등록되어 있는지 체크한다
+
+---
+
+### Module Summary
+
+- 핵심 개념은 RestAPI 는 데이터 교환이란 뜻이다
+  - UI 논리 교환은 일절 없다
+
+
+- REST_API 는 클라이언트에서 완전히 분리되어 있다
+  - 히스토리를 공유하지 않는다
+
+
+- Requests, Responses 시 json 데이터를 첨부하며, Content-Type 을 명시해야 한다
+  - Express.js 는 res.json() 사용시, 자동으로 변경해준다
+  - 브라우저에서는 어떤 메서드를 이용할지에 따라 설정해줘야 한다
+
+
+- CORS 의 경우, API 와 클라이언트가 서로 다른 도메인( 포트까지 같아야 한다 )에서 데이터를 주고받을때 발생한다
+  - 보안장치이므로, 서버에서 해결하는게 좋다
+
+---
+
+- RESTful API 만들기 참고자료:  https://academind.com/learn/node-js/building-a-restful-api-with/
