@@ -1,3 +1,4 @@
+const { validationResult } = require( 'express-validator' );
 /**
  * - 게시물들을 반환하는 controller
  * @param req
@@ -33,6 +34,16 @@ exports.getPosts = ( req , res , next ) => {
  * @param next
  */
 exports.createPost = ( req , res , next ) => {
+    const errors = validationResult( req );
+
+    /** 유효성 검사 실패 코드 */
+    if ( !errors.isEmpty() ){
+        return res.status( 402 ).json( {
+            message : 'Validation failed. entered data is incorrect.',
+            errors : errors.array()
+        } );
+    }
+
     const title = req.body.title;
     const content = req.body.content;
     /**
