@@ -1,5 +1,7 @@
 const express = require( 'express' );
 const bodyParser = require( 'body-parser' );
+const mongoose = require( 'mongoose' );
+const privateKeys = require( './utils/privateKeys' );
 
 const feedRoutes = require( './routes/feed' );
 
@@ -41,5 +43,12 @@ app.use( ( req , res , next ) => {
 
 app.use( '/feed' , feedRoutes );
 
-console.log( "<< StartWebApplication >>" );
-app.listen( 8080 );
+mongoose
+    .connect( privateKeys.MONGODB_URI )
+    .then( () => {
+        console.log( "<< StartWebApplication >>" );
+        app.listen( 8080 );
+    } )
+    .catch( err => {
+        console.log("<<StartApp Err>>", err);
+    } );
