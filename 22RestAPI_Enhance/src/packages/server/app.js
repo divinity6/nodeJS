@@ -1,14 +1,60 @@
+const path = require( 'path' );
 const express = require( 'express' );
+const { v4: uuidv4 } = require( 'uuid' );
 const bodyParser = require( 'body-parser' );
 const mongoose = require( 'mongoose' );
+const multer = require( 'multer' );
+
 const privateKeys = require( './utils/privateKeys' );
-
 const feedRoutes = require( './routes/feed' );
-
 const app = express();
+
+/** 파일을 어디에 설정할지 설정 */
+const fileStorage = multer.diskStorage( {
+    /** multer 에서 처리한 파일을 저장할 위치 */
+    destination : ( req , file , callback ) => {
+        /**
+         * - 첫번째 param - 에러 메시지( 존재하면, 에러가 있는것으로 판단 )
+         *
+         * - 두번째 param - 파일을 저장할 경로
+         */
+        callback( null , path.join( __dirname , 'images' ) );
+    },
+    /** multer 에서 처리한 파일의 파일이름 */
+    filename : ( req , file , callback ) => {
+        /**
+         * - 첫번째 param - 에러 메시지( 존재하면, 에러가 있는것으로 판단 )
+         *
+         * - 두번째 param - 파일 이름
+         */
+        callback( null , `${ uuidv4() }-${ file.originalname }` );
+    }
+} );
+
+const fileFilter = ( req , file , callback ) => {
+    /**
+     * - 첫번째 param - 에러 메시지( 존재하면, 에러가 있는것으로 판단 )
+     *
+     * - 두번째 param - 해당 파일을 저장할지 여부
+     */
+    if ( 'image/png' === file.mimetype ||
+        'image/jpg' === file.mimetype ||
+        'image/jpeg' === file.mimetype ){
+        callback( null , true );
+    }
+    else {
+        callback( null , false );
+    }
+}
 
 /** application/json 형식을 파싱할때 사용하는 bodyParser 다 */
 app.use( bodyParser.json() );
+
+/** image body 필드값을 가져온다 */
+app.use( multer( { storage : fileStorage , fileFilter } ).single( 'image' ) );
+
+/** /images 경로로 라우팅할때는 정적으로 제공 */
+app.use( '/images' , express.static( path.join( __dirname , 'images' ) ) );
 
 /** CORS 이슈를 해결하기 위해 header 에 교차출처 공유 설정 */
 app.use( ( req , res , next ) => {
@@ -42,6 +88,15 @@ app.use( ( req , res , next ) => {
 } );
 
 app.use( '/feed' , feedRoutes );
+
+/** 에러 처리 미들웨어 */
+app.use( ( error , req , res , next ) => {
+    console.log( '<< error >>' , error );
+    const status = error.statusCode || 500;
+    const message = error.message;
+
+    res.status( status ).json( {  message } );
+} );
 
 mongoose
     .connect( privateKeys.MONGODB_URI )
