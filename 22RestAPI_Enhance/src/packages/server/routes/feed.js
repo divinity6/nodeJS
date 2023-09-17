@@ -18,4 +18,14 @@ router.post( '/post' , [
 // GET /post/:postId
 router.get( '/post/:postId' , feedController.getPost );
 
+// PUT /post/:postId
+router.put( '/post/:postId', [
+    /** post validation logic */
+    body( 'title' ).trim().isLength( { min : 5 } ),
+    body( 'content' ).trim().isLength( { min : 5 } )
+] , feedController.updatePost );
+
+// DELETE /post/:postId
+router.delete( '/post/:postId' , feedController.deletePost );
+
 module.exports = router;

@@ -270,7 +270,7 @@ const fileStorage = multer.diskStorage( {
      *
      * - 두번째 param - 파일 이름( uuid 를 이용하여 저장 )
      */
-    callback( null , uuidv4() );
+    callback( null , `${ uuidv4() }-${ file.originalname }` );
   }
 } )
 ````
@@ -294,8 +294,15 @@ exports.createPost = ( req , res , next ) => {
     error.statusCode = 422;
     throw error;
   }
-  /** multer 에서 파일경로를 제공해준다 */
-  const imageUrl = req.file.path;
+  /** 
+   * - multer 에서 파일경로를 제공해준다 
+   *   ( destination 설정에서 fullPath 로 입력했기 때문에, 도메인 경로부터 붙여야 한다 )
+   * */
+  // const imageUrl = req.file.path;
+    
+  /** 절대 경로로 저장했기 때문에 split 으로 잘라서 도메인 위치부터 불러와야 한다 */
+  const fullPath = req.file.path.split( '/' );
+  const imageUrl = `${ fullPath[ fullPath.length - 2 ] }/${ fullPath[ fullPath.length - 1 ] }`;
 }
 ````
 
@@ -326,4 +333,220 @@ fetch( 'http://localhost:8080/feed/post' , {
   method : 'POST',
   body : formData
 } )
+````
+
+---
+
+### Update Post
+
+- 게시물을 업데이트할때는, 기존 게시물을 덮어씌워야하기 때문에 put 메서드를 이용하는 것이 좋다
+  - 일반 html 에서는 요청을 보낼 수 없지만, JS 를 이용하여 요청을 보낼 수 있다
+  - put 요청은 post 요청처럼 요청 본문이 존재한다
+
+````javascript
+/** ===== routes/feed.js ===== */
+const { body } = require( 'express-validator' );
+
+// PUT /post/:postId
+router.put( '/post/:postId' , [
+  /** post validation logic */
+  body( 'title' ).trim().isLength( { min : 5 } ),
+  body( 'content' ).trim().isLength( { min : 5 } )
+] , feedController.updatePost );
+````
+
+- 또한, 게시물을 업데이트할때는, 이미지를 새로 추가하거나, 기존 이미지를 그대로 사용할 수 있다
+
+
+- 따라서, 기존 이미지를 그대로 사용할지, 아니면 이미지를 새로 추가했는지를 검증해야한다
+
+````javascript
+/** ===== controllers/feed.js ===== */
+
+/**
+ * - 단일 게시물 업데이트 Controller
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.updatePost = ( req , res , next ) => {
+
+  /**
+   * - image 를 새로추가했을 경우에는, 새로 추가하고,
+   *   그렇지 않을 경우에는 기존 image 을 사용한다
+   */
+  let imageUrl = req.body.image;
+  if ( req.file ){
+    const fullPath = req.file.path.split( '/' );
+    imageUrl = `${ fullPath[ fullPath.length - 2 ] }/${ fullPath[ fullPath.length - 1 ] }`;
+  }
+}
+````
+
+- 게시물을 업데이트할때는, 이미지를 업데이트하는지 체크해야한다.
+
+
+- 이미지를 업데이트한다면, 이전에 가지고 있던 이미지 경로를 찾아 해당 이미지를 제거한 후,
+
+
+- 새로운 이미지 경로로 대체해 주어야한다
+
+````javascript
+/** ===== controllers/feed.js ===== */
+const Post = require( '../models/post' );
+/**
+ * - 단일 게시물 업데이트 Controller
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.updatePost = ( req , res , next ) => {
+  const errors = validationResult( req );
+
+  /** 유효성 검사 실패 코드 */
+  if ( !errors.isEmpty() ){
+    const error = new Error( 'Validation failed. entered data is incorrect.' );
+    error.statusCode = 422;
+    throw error;
+  }
+
+  const postId = req.params.postId;
+  const title = req.body.title;
+  const content = req.body.content;
+
+  /**
+   * - image 를 새로추가했을 경우에는, 새로 추가하고,
+   *   그렇지 않을 경우에는 기존 imageUrl 을 사용한다
+   */
+  let imageUrl = req.body.image;
+  if ( req.file ){
+    const fullPath = req.file.path.split( '/' );
+    imageUrl = `${ fullPath[ fullPath.length - 2 ] }/${ fullPath[ fullPath.length - 1 ] }`;
+  }
+
+  /** imageUrl 자체가 존재하지 않을경우에는 에러 처리 */
+  if ( !imageUrl ){
+    const error = new Error( 'No file picked.' );
+    error.statusCode = 422;
+    throw error;
+  }
+
+  /** 에러가 없을 경우에는 DB 에 업데이트 */
+  Post.findById( postId )
+          .then( post => {
+            if ( !post ){
+              const error = new Error( 'Could not find post.' );
+              error.statusCode = 404;
+              throw error;
+            }
+
+            /** imageUrl 이 업데이트 되었다면, 이전 Image 를 제거 */
+            if ( imageUrl !== post.imageUrl ){
+              clearImage( post.imageUrl );
+            }
+            post.title = title;
+            post.imageUrl = imageUrl;
+            post.conent = content;
+            return post.save();
+          } )
+          .then( result => {
+            res.status( 200 ).json( { message : 'Post updated!.' , post : result } );
+          } )
+          .catch( err => {
+            if ( !err.statusCode ){
+              err.statusCode = 500;
+            }
+            next( err );
+          } );
+}
+
+/**
+ * - Image 삭제 헬퍼함수
+ *
+ * @param filePath
+ */
+const clearImage = filePath => {
+  /** 현재 path 에서 한단계 상위로 올라가서 */
+  filePath = path.join( __dirname , '..' , filePath );
+  /** 파일을 삭제하고, 오류 로그를 남긴다 */
+  fs.unlink( filePath , err => {
+    console.log( '<< image delete error >>' , err );
+  } )
+};
+````
+
+---
+
+### DeletePost
+
+- 게시물을 제거할때는 delete HTTP 메서드를 이용하는것이 좋다
+
+````javascript
+/** ===== routes/feed.js ===== */
+
+// DELETE /post/:postId
+router.delete( '/post/:postId' , feedController.deletePost );
+````
+
+- 또한, 게시물을 곧바로 삭제하지 않고, 해당 게시물이 존재하는지 먼저 DB 에서 체크한다음, 
+
+
+- 해당 게시물이 존재할 경우, 삭제하는 로직이 안정적이다
+
+
+- 그리고, 사용하는 image 나 파일들도 잊지 않고 제거해주어야 깔끔하게 처리할 수 있다
+
+````javascript
+/** ===== controllers/feed.js ===== */
+const Post = require( '../models/post' );
+/**
+ * - 단일 게시물 삭제 Controller
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.deletePost = ( req , res , next ) => {
+  const postId = req.params.postId;
+  /** 해당 게시물이 존재하는지 체크 */
+  Post.findById( postId )
+          .then( post => {
+            if ( !post ){
+              const error = new Error( 'Could not find post.' );
+              error.statusCode = 404;
+              throw error;
+            }
+
+            // Check logged in user
+            
+            /** 사용하는 이미지 제거 */
+            clearImage( post.imageUrl );
+
+            /** 존재할 경우 DB 에서 제거 */
+            return Post.findByIdAndRemove( postId );
+          } )
+          .then( result => {
+            console.log( '<< Delete Post >>' , result );
+            res.status( 200 ).json( { message : 'Deleted post.' } );
+          } )
+          .catch( err => {
+            if ( !err.statusCode ){
+              err.statusCode = 500;
+            }
+            next( err );
+          } );
+}
+
+/**
+ * - Image 삭제 헬퍼함수
+ *
+ * @param filePath
+ */
+const clearImage = filePath => {
+  /** 현재 path 에서 한단계 상위로 올라가서 */
+  filePath = path.join( __dirname , '..' , filePath );
+  /** 파일을 삭제하고, 오류 로그를 남긴다 */
+  fs.unlink( filePath , err => {
+    console.log( '<< image delete error >>' , err );
+  } )
+};
 ````
