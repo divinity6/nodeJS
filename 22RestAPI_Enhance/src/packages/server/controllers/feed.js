@@ -10,13 +10,33 @@ const Post = require( '../models/post' );
  * @param next
  */
 exports.getPosts = ( req , res , next ) => {
+    const currentPage = req.query.page || 1;
+    const perPage = 2;
+    let totalItems;
 
-    Post.find()
+    /** 전체 Post 를 가지고 온후, 전체 갯수를 반환함 */
+    Post.find().countDocuments()
+        .then( count => {
+            totalItems = count;
+
+            return Post.find()
+                /**
+                 * - skip 메서드를 추가하면,
+                 *   find 로 찾은 결과중 첫 번째부터 skip 갯수만큼 생략한다
+                 */
+                .skip( ( currentPage - 1 ) * perPage )
+                /**
+                 * - limit 메서드는 find 로 가져오는 데이터양을 지정할 수 있다
+                 */
+                .limit( perPage )
+        } )
+        /** 모든 Posts 를 찾아 반환 */
         .then( posts => {
-           res.status( 200 ).json( {
-               message : 'Fetched posts successfully.',
-               posts
-           } );
+            res.status( 200 ).json( {
+                message : 'Fetched posts successfully.',
+                posts ,
+                totalItems
+            } );
         } )
         .catch( err => {
             if ( !err.statusCode ){
