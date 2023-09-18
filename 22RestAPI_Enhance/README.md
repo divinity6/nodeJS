@@ -615,3 +615,139 @@ exports.getPosts = ( req , res , next ) => {
 };
 
 ````
+
+---
+
+### Signup 
+
+- 회원가입을 구현하려면 사용자관련 Model 을 정의한다
+
+
+- 사용자들은 게시물들을 가지고 있으므로, 게시물들을 연결하고, ID 를 저장한다
+
+````javascript
+/** ===== models/user.js ===== */
+const mongoose = require( 'mongoose' );
+const Schema = mongoose.Schema;
+
+const userSchema = new Schema( {
+  email : {
+    type : String,
+    require : true,
+  },
+  password : {
+    type : String,
+    require : true
+  },
+  name : {
+    type : String,
+    require : true,
+  },
+  status : {
+    type : String,
+    require : true,
+  },
+  posts : [
+    {
+      /** ObjectId 타입으로 정의 */
+      type : Schema.Types.ObjectId,
+      /**
+       * 해당 데이터가 어떤 Collection 의 데이터인지 관계를 설정( reference )할 수 있다
+       *
+       * --> 참조할 model 의 이름을 사용하면 된다
+       */
+      ref : 'Post'
+    }
+  ]
+} );
+
+module.exports = mongoose.model( 'User' , userSchema );
+````
+
+- 그 후, Route 를 연결하고( 회원가입시 데이터를 입력하기 때문에 PUT 메서드를 사용하는 것을 추천한다 )
+
+
+- 또한, 회원가입 Controller 에서 로직을 처리하기전에 DB 에서 해당 회원이 존재하는지 체크하는 validator 를 router 에 추가한다
+ 
+````javascript
+/** ===== routes/auth.js ===== */
+const express = require( 'express' );
+const { body } = require( 'express-validator' );
+
+const User = require( '../models/user' );
+
+const router = express.Router();
+
+const authController = require( '../controllers/auth' );
+
+/** 회원가입시 새로운 데이터를 입력하거나 덮어씌우기 때문에 PUT 을 사용한다 */
+// GET /auth/signup
+router.put( '/signup' , [
+  /** auth validation logic */
+  body( 'email' )
+          .isEmail()
+          .withMessage( 'Please enter a valid email.' )
+          /**
+           * - 사용자지정 custom 에러 생성가능
+           * --> 즉, email 뿐만 아니라, 특정 에러등도 커스텀해 추가할 수 있다
+           *
+           * - 즉, 사용자 검증자를 추가할 수 있다
+           *
+           * - custom validator 는 true , false ,error ,promise 객체를 반환할 수 있다
+           */
+          .custom( ( value , { req } ) => {
+            /** email 과 일치하는 사용자를 찾는다 */
+            return User.findOne( { email : value } )
+                    .then( userDoc => {
+                      /**
+                       * - 해당 email 을 가진 사용자가 있다면,
+                       *   해당 사용자를 생성하지 말아야 한다
+                       */
+                      if (userDoc) {
+                        return Promise.reject( 'E-Mail exists already exists!' );
+                      }
+                    } );
+          } )
+          .normalizeEmail(),
+
+  /**
+   * - 들어온 요청의 body 의 password 필드는,
+   *
+   * - 반드시 5 문자열 이상( isLength )이어야한다
+   */
+  body( 'password' ).trim().isLength( { min : 5 } ),
+  /** 이름이 비어있지 않은지 체크 */
+  body( 'name' ).trim().not().isEmpty(),
+] , authController.signup );
+
+module.exports = router;
+````
+
+- Controller 를 연결할때, validation 체크를 통과하면, 데이터베이스에 저장하고,
+
+
+- validation 체크를 통과하지 못하면, error middleware 로 튕겨낸다
+
+````javascript
+/** ===== controllers/auth.js ===== */
+
+/**
+ * - 회원 가입 Controller
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.signup = ( req , res , next ) => {
+  const errors = validationResult( req );
+  /** route validation 에서 체크한 에러가 존재할 경우 */
+  if ( !errors.isEmpty() ){
+    const error = new Error( 'Validation failed.' );
+    error.statusCode = 422;
+    error.data = errors.array();
+    throw error;
+  }
+
+  const { email , name , password } = req.body;
+}
+
+````

@@ -7,6 +7,7 @@ const multer = require( 'multer' );
 
 const privateKeys = require( './utils/privateKeys' );
 const feedRoutes = require( './routes/feed' );
+const authRoutes = require( './routes/auth' );
 const app = express();
 
 /** 파일을 어디에 설정할지 설정 */
@@ -88,14 +89,16 @@ app.use( ( req , res , next ) => {
 } );
 
 app.use( '/feed' , feedRoutes );
+app.use( '/auth' , authRoutes );
 
 /** 에러 처리 미들웨어 */
 app.use( ( error , req , res , next ) => {
     console.log( '<< error >>' , error );
     const status = error.statusCode || 500;
     const message = error.message;
+    const data = error.data;
 
-    res.status( status ).json( {  message } );
+    res.status( status ).json( {  message , data } );
 } );
 
 mongoose
