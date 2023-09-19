@@ -12,12 +12,13 @@ import SinglePostPage from './pages/Feed/SinglePost/SinglePost';
 import LoginPage from './pages/Auth/Login';
 import SignupPage from './pages/Auth/Signup';
 import './App.css';
+import auth from "./pages/Auth/Auth";
 
 class App extends Component {
   state = {
     showBackdrop: false,
     showMobileNav: false,
-    isAuth: true,
+    isAuth: false,  // 인증모드 설정
     token: null,
     userId: null,
     authLoading: false,
@@ -100,8 +101,20 @@ class App extends Component {
   signupHandler = (event, authData) => {
     event.preventDefault();
     this.setState({ authLoading: true });
-    fetch('URL')
+    /** signup api */
+    fetch('http://localhost:8080/auth/signup' , {
+      method : 'PUT',
+      headers : {
+        'Content-Type' : 'application/json'
+      } ,
+      body : JSON.stringify( {
+        email : authData.signupForm.email.value,
+        password : authData.signupForm.password.value,
+        name : authData.signupForm.name.value,
+      } )
+    } )
       .then(res => {
+        console.log( '<< signup res >>' , res );
         if (res.status === 422) {
           throw new Error(
             "Validation failed. Make sure the email address isn't used yet!"

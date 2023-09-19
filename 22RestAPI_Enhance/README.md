@@ -728,6 +728,26 @@ module.exports = router;
 
 - validation 체크를 통과하지 못하면, error middleware 로 튕겨낸다
 
+
+- DB 에 데이터를 저장할때, pw 의 경우에는 hash 화하여 저장해야한다
+  - 보안때문에 일반텍스트로 저장되지 않게 하기 위함
+  - 그렇기 때문에 bcryptjs 를 사용하여 hash 화한다
+
+
+- 일반 설치
+
+````shell
+npm i bcryptjs
+````
+
+- workpsaces 사용시
+
+````shell
+npm i bcryptjs --workspace=${ WORKSPACE_NAME }
+````
+
+- hash 화 하여 저장한후, 응답 값을 받으면 그 값을 frontend 로 반환한다
+
 ````javascript
 /** ===== controllers/auth.js ===== */
 
@@ -748,6 +768,36 @@ exports.signup = ( req , res , next ) => {
   }
 
   const { email , name , password } = req.body;
-}
 
+  /**
+   * - hash 화 하고싶은 문자열을 첫 번째 인자로 넘겨준다
+   *
+   * - 두 번째는 몇 차례의 해싱을 적용할 것인지 지정한다
+   *   ( 솔트 값이 높을수록 오래걸리지만, 더 안전하다 )
+   *
+   * - 12 정도면 높은 보안성능으로 간주된다
+   *
+   * @return { Promise<string> } - 비동기 해쉬 string 값을 반환한다
+   */
+  bcrypt.hash( password , 12 )
+          /** password 를 암호화하고 저장한 후, 응답 값 반환 */
+          .then( hashedPw => {
+            const user = new User( {
+              email ,
+              password : hashedPw,
+              name
+            } );
+
+            return user.save();
+          } )
+          .then( result => {
+            res.status( 201 ).json( { message : 'User created!' , userId : result._id } );
+          } )
+          .catch( err => {
+            if ( !err.statusCode ){
+              err.statusCode = 500;
+            }
+            next( err );
+          } );
+}
 ````
