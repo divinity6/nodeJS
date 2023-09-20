@@ -51,3 +51,44 @@ exports.signup = ( req , res , next ) => {
             next( err );
         } );
 }
+
+/**
+ * - 로그인 Controller
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.login = ( req , res , next ) => {
+    const { email , password } = req.body;
+    let loadedUser;
+
+    /** 해당 email 이 존재하는지 체크 */
+    User.findOne( { email } )
+        .then( user => {
+            /** DB 에 해당 User 가 존재하지 않는다면 에러처리 */
+            if ( !user ) {
+                const error = new Error( 'A user with this email could not be found.' );
+                error.statusCode = 401;
+                throw error;
+            }
+            loadedUser = user;
+
+            /** 사용자의 password 와 DB password 를 검사한다 */
+            return bcrypt.compare( password , user.password )
+        } )
+        .then( isEqual => {
+            /** 사용자가 비밀번호를 잘못 입력했을 경우 */
+            if ( !isEqual ){
+                const error = new Error( 'A user with this email could not be found.' );
+                error.statusCode = 401;
+                throw error;
+            }
+            /** 비밀번호 까지 맞다면 JWT( JSON Web Token )생성 */
+        } )
+        .catch( err => {
+            if ( !err.statusCode ){
+                err.statusCode = 500;
+            }
+            next( err );
+        } );
+}

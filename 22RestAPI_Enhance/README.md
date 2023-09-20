@@ -801,3 +801,93 @@ exports.signup = ( req , res , next ) => {
           } );
 }
 ````
+
+---
+
+### RestAPI Authentication
+
+- 클라이언트는 서버에 인증 데이터로 이메일과 비밀번호를 보낸다
+
+
+- 일반적인 서버는 데이터가 유효하다면 세션을 설정하고 브라우저에 쿠키에 저장시켰다
+
+
+- 하지만, REST API 는 상태성이 없기 때문에, 세션을 사용하지 않는다
+  - ( 클라이언트를 고려하지 않는다는 뜻이다 )
+  - 서버와 클라이언트가 엄격하게 분리되어, 모든 요청이 독립적으로 처리된다
+
+
+- REST API 는 데이터가 유효하다면, 토큰을 클라이언트에 전달한다
+  - 서버에서 생성되는 토큰은 서버만 인증할 수 있는 정보를 가지고 있으며, 클라이언트에 저장한다
+
+
+- 그 후, 클라이언트가 서버에 보내는 요청에 토큰을 부착하면, 인증이 필요한 모든 요청에 저장된 토큰이 부착된다
+  - 토큰을 생성한 서버만이 해당 토큰을 검증할 수 있다
+  - 만약, 프론트엔드에서 토큰을 변경하거나 인증여부를 조작한다면, 서버에서 체크한다
+  - 토큰은 ( JSON Data ) 와 무작위 서명( Signature )를 hash 화해 JWT( JSON Web Token ) 이 된다
+  - 따라서, 클라이언트에서 토큰을 생성하거나, 수정할 수 없다
+
+---
+
+### Login
+
+- 어짜피, 이메일-비밀번호 조합을 체크해야하기 때문에, Login Route 에서 Validation 체크를 진행하지 않고, Controller 에서 진행한다
+
+````javascript
+/** ===== routes/auth.js ===== */
+/**
+ * 로그인시 이메일 , 비밀번호 유효성 검사를 진행할 수도 있지만,
+ * 어짜피 이메일-비밀번호 조합을 체크해야하기 때문에 바로 Controller 에서 진행한다
+ */
+// POST /auth/login
+router.post( '/login' , authController.login )
+````
+
+- Controller 에서 입력한 email 로 해당 user 를 찾고, 사용자가 보낸 비밀번호와 DB 의 비밀번호가 같은지 체크한다
+
+
+- 비밀번호까지 일치한다면 JWT( JSON Web Token )을 생성한다
+
+````javascript
+/** ===== controllers/auth.js ===== */
+/**
+ * - 로그인 Controller
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.login = ( req , res , next ) => {
+  const { email , password } = req.body;
+  let loadedUser;
+
+  /** 해당 email 이 존재하는지 체크 */
+  User.findOne( { email } )
+          .then( user => {
+            /** DB 에 해당 User 가 존재하지 않는다면 에러처리 */
+            if ( !user ) {
+              const error = new Error( 'A user with this email could not be found.' );
+              error.statusCode = 401;
+              throw error;
+            }
+            loadedUser = user;
+
+            /** 사용자의 password 와 DB password 를 검사한다 */
+            return bcrypt.compare( password , user.password )
+          } )
+          .then( isEqual => {
+            /** 사용자가 비밀번호를 잘못 입력했을 경우 */
+            if ( !isEqual ){
+              const error = new Error( 'A user with this email could not be found.' );
+              error.statusCode = 401;
+              throw error;
+            }
+            /** 비밀번호 까지 맞다면 JWT( JSON Web Token )생성 */
+          } )
+          .catch( err => {
+            if ( !err.statusCode ){
+              err.statusCode = 500;
+            }
+            next( err );
+          } );
+}
+````

@@ -47,4 +47,11 @@ router.put( '/signup' , [
     body( 'name' ).trim().not().isEmpty(),
 ] , authController.signup );
 
+/**
+ * 로그인시 이메일 , 비밀번호 유효성 검사를 진행할 수도 있지만,
+ * 어짜피 이메일-비밀번호 조합을 체크해야하기 때문에 바로 Controller 에서 진행한다
+ */
+// POST /auth/login
+router.post( '/login' , authController.login )
+
 module.exports = router;
