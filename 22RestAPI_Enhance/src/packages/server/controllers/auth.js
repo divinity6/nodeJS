@@ -1,5 +1,6 @@
 const { validationResult } = require( 'express-validator' );
 const bcrypt = require( 'bcryptjs' );
+const jwt = require( 'jsonwebtoken' );
 const User = require( '../models/user' );
 
 /**
@@ -84,6 +85,29 @@ exports.login = ( req , res , next ) => {
                 throw error;
             }
             /** 비밀번호 까지 맞다면 JWT( JSON Web Token )생성 */
+
+            /**
+             * - sign 메서드를 이용해 새로운 서명( 시그니처 )생성
+             *
+             * @param { any } payload - 토큰에 이메일, 사용자 아이디등등
+             *   ( 그러나, 비밀번호를 포함하는것은 보안상 좋지 않다 )
+             *
+             * @param { string } secretOrPrivateKey - 서명에 사용할 private key 를 사용한다
+             *                                        ( 이 값을 이용해 난수화해서 해독할 수 없게한다 )
+             *
+             * @param { any } options - 유효기간등 옵션을 설정할 수 있다
+             *                          ( expiresIn : '1h' => 1시간 유효 )
+             */
+            const token = jwt.sign( {
+                email : loadedUser.email,
+                userId : loadedUser._id.toString(),
+            } ,
+                'somesupersecretsecret' , {
+                expiresIn : '1h'
+            } );
+
+            /** 토큰값과 사용자 id 를 반환 */
+            res.status( 200 ).json( { token , userId : loadedUser._id.toString() } );
         } )
         .catch( err => {
             if ( !err.statusCode ){

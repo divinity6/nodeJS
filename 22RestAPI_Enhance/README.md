@@ -891,3 +891,97 @@ exports.login = ( req , res , next ) => {
           } );
 }
 ````
+
+---
+
+### JWT( JSON Web Token )
+
+- 사용자 자격증명시, JWT 를 이용해 자격증명을 할 수 있다
+
+
+- nodeJS 에서는 JWT 토큰을 이용할때 jsonwebtoken 이라는 라이브러리를 이용한다
+
+````shell
+npm install --save jsonwebtoken
+````
+
+- 인증시에 , jsonwebtoken 를 이용하여, 이메일 사용자아이디등등을 이용하여 토큰을 생성하게 되는데,
+  - 토큰 생성시 privateKey 를 포함하여 난수화한다
+  - ( 프론트엔드에서 해당 토큰을 가지고 있기때문에, 복잡한 해싱 과정을 거친다 )
+
+
+- 또한, 토큰이 탈취 및 도용당할것을 대비해서 토큰의 유효기간을 설정할 수 있다
+
+````javascript
+/**
+ * - 로그인 Controller
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.login = ( req , res , next ) => {
+    const { email , password } = req.body;
+    let loadedUser;
+
+    /** 해당 email 이 존재하는지 체크 */
+    User.findOne( { email } )
+        .then( user => {
+            /** DB 에 해당 User 가 존재하지 않는다면 에러처리 */
+            if ( !user ) {
+                const error = new Error( 'A user with this email could not be found.' );
+                error.statusCode = 401;
+                throw error;
+            }
+            loadedUser = user;
+
+            /** 사용자의 password 와 DB password 를 검사한다 */
+            return bcrypt.compare( password , user.password )
+        } )
+        .then( isEqual => {
+            /** 사용자가 비밀번호를 잘못 입력했을 경우 */
+            if ( !isEqual ){
+                const error = new Error( 'A user with this email could not be found.' );
+                error.statusCode = 401;
+                throw error;
+            }
+            /** 비밀번호 까지 맞다면 JWT( JSON Web Token )생성 */
+
+            /**
+             * - sign 메서드를 이용해 새로운 서명( 시그니처 )생성
+             *
+             * @param { any } payload - 토큰에 이메일, 사용자 아이디등등
+             *   ( 그러나, 비밀번호를 포함하는것은 보안상 좋지 않다 )
+             *
+             * @param { string } secretOrPrivateKey - 서명에 사용할 private key 를 사용한다
+             *                                        ( 이 값을 이용해 난수화해서 해독할 수 없게한다 )
+             *
+             * @param { any } options - 유효기간등 옵션을 설정할 수 있다
+             *                          ( expiresIn : '1h' => 1시간 유효 )
+             */
+            const token = jwt.sign( {
+                email : loadedUser.email,
+                userId : loadedUser._id.toString(),
+            } ,
+                'somesupersecretsecret' , {
+                expiresIn : '1h'
+            } );
+
+            /** 토큰값과 사용자 id 를 반환 */
+            res.status( 200 ).json( { token , userId : loadedUser._id.toString() } );
+        } )
+        .catch( err => {
+            if ( !err.statusCode ){
+                err.statusCode = 500;
+            }
+            next( err );
+        } );
+}
+````
+
+- https://jwt.io/ 에 접속하여 토큰을 검증해볼 수 있는데, 
+
+
+- 제작한 토큰을 입력하면 해당 사이트에서 자동으로 해석해준다
+
+
+- 어짜피, 이렇게 해석해도, 해당 토큰의 데이터를 수정하면 서버의 토큰과 다르기 때문에 의미가 없다
