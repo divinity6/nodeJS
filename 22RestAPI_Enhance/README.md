@@ -913,6 +913,7 @@ npm install --save jsonwebtoken
 - 또한, 토큰이 탈취 및 도용당할것을 대비해서 토큰의 유효기간을 설정할 수 있다
 
 ````javascript
+/** ===== controllers/auth.js ===== */
 /**
  * - 로그인 Controller
  * @param req
@@ -985,3 +986,147 @@ exports.login = ( req , res , next ) => {
 
 
 - 어짜피, 이렇게 해석해도, 해당 토큰의 데이터를 수정하면 서버의 토큰과 다르기 때문에 의미가 없다
+
+---
+
+### Block
+
+- 들어오는 요청에 JWT 토큰이 부착되어 있지 않다면, 요청을 차단해야하기에, 모든 요청을 검사하는 미들웨어를 추가한다
+
+
+- frontend 에서 JWT 토큰을 요청에 부착할때, header, body 둘 중 하나에 부착할 수 있는데, body 보단 header 에 부착하는것이 좋다
+  - 왜냐하면, GET 요청등 body 가 없는 요청등에서 인증이 필요할 수 있는데 이때는 요청 본문이 없기 때문이다
+  - 또한, header 중 query 에 입력할 수 도 있지만, 헤더 Authorization 필드에 추가하는것이 좋다
+  - ( 공식정인 인증정보를 추가필드 )
+  - 요청을 보낼때 Authorization 값으로 Bearer 를 prefix 로 붙여준다
+  - ( 토큰의 유형을 구분할때 사용하는데 Bearer Token 은 인증 토큰과 같고, 보통 JWT 에 사용한다 )
+
+  
+````javascript
+/** ========== frontend ========== */
+/** ===== pages/Feed/Feed.js ===== */
+
+loadPosts = direction => {
+  fetch(`http://localhost:8080/feed/posts?page=${ page }`, {
+    headers : {
+      /** header 에 인증 토큰 부착 */
+      Authorization : `Bearer ${ this.props.token }`
+    }
+  } ) 
+}
+
+````
+
+- 또한 Authorization 헤더를 이용하려면, backend 에서 해당 header 를 반드시 활성화 시켜줘야 한다
+
+````javascript
+/** ===== app.js ===== */
+
+/** CORS 이슈를 해결하기 위해 header 에 교차출처 공유 설정 */
+app.use( ( req , res , next ) => {
+  /**
+   * @param { 'Access-Control-Allow-Headers' } string - 특정 출처( 클라이언트 )에서 Header 즉, HTTP Header 를 설정할 수 있도록 허용
+   *                                                   ( * 를 이용하여 모든 헤더를 이용가능하게 하지만,
+   *                                                     Content-Type , Authorization 은 반드시 허용해줘야한다 )
+   *                                                   다수의 도메인을 작성하려면 , 를 이용해 추가하면 된다
+   *
+   * - 클라이언트가 헤더에 추가 인증 데이터를 포함한 요청을 보낼 수 있으며 , 컨텐츠 타입을 정의해서 보낼 수 있다
+   */
+  res.setHeader( 'Access-Control-Allow-Headers' , 'Content-Type, Authorization' );
+
+  next();
+} );
+````
+
+- JWT 를 이용하여 서버에 데이터를 전송하게 되면, 서버에서는 JWT 토큰을 해석하여
+
+
+- 인증 여부를 체크하고, 요청에 분석한 userId 등의 정보를 부착하여 다른 route 들에서 사용할 수 있도록 해야한다
+
+
+- 따라서, 해당 토큰 분석 및 req 부착기능을 middleware 로 분리하여 공통적으로 처리하도록 한다 
+
+````javascript
+/** ===== middleware/is-auth.js ===== */
+
+const jwt = require( 'jsonwebtoken' );
+
+/**
+ * - JSON Web Token 인증 미들웨어
+ * @param req
+ * @param res
+ * @param next
+ */
+module.exports = ( req , res , next ) => {
+    const authHeader = req.get( 'Authorization' );
+
+    /** 인증헤더를 부착하지 않았을 경우 */
+    if ( !authHeader ){
+        const error = new Error( 'Not authenticated.' );
+        error.statusCode = 401;
+        throw error;
+    }
+
+    /** Authorization 헤더 반환 Bearer 부분을 잘라서 사용 */
+    const [ _ , token ] = authHeader.split( ' ' );
+    let decodedToken;
+    try {
+        /**
+         * - verify() 메서드는 토큰을 해석할뿐만 아니라, 체크하는 과정도 거친다
+         *
+         * - decoded 메서드도 존재하지만, 해독만하지, 유효한지는 체크하지 않기 때문에
+         *   반드시 verify 메서드를 사용한다
+         *
+         * --> verify 메서드는 토큰과 비공개 인증키를 함께 넣어줘야한다
+         */
+        decodedToken = jwt.verify( token , 'somesupersecretsecret' );
+    }
+    catch ( err ){
+        /** error 핸들러에서 처리 */
+        err.statusCode = 500;
+        throw err;
+    }
+
+    /** 해독은 잘되었지만, 토큰이 유효하지 않을 경우 */
+    if ( !decodedToken ){
+        const error = new Error( 'Not authenticated.' );
+        error.statusCode = 401;
+        throw error;
+    }
+
+    /** 인증이 되었다면 해당 토큰의 userId 를 요청에 부착하여 사용 */
+    req.userId = decodedToken.userId;
+    console.log( '<< JWT Auth UserId>>' , req.userId );
+    next();
+}
+````
+
+- 인증이 필요한 모든 route 등에 부착
+
+````javascript
+/** ===== routes/feed.js ===== */
+
+const feedController = require( '../controllers/feed' );
+const isAuth = require( '../middleware/is-auth' );
+
+const router = express.Router();
+
+/** 인증이 필요한 모든 route 들에 부착 */
+
+// GET /feed/posts
+router.get( '/posts' , isAuth , feedController.getPosts );
+````
+
+- 당연하지만, 이렇게 JWT 인증을 추가했으면 인증이 필요한 모든 frontend 요청에 인증 헤더를 추가해줘야한다
+
+````javascript
+/** ========== frontend ========== */
+/** ===== pages/Feed/Feed.js ===== */
+/** 프론트엔드 게시물 삭제 요청 */
+fetch(`http://localhost:8080/feed/post/${ postId }` , {
+      method : 'DELETE',
+      headers : {
+        Authorization : `Bearer ${ this.props.token }`
+      }
+    })
+````
