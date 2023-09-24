@@ -3,6 +3,9 @@ const path = require( 'path' );
 const { validationResult } = require( 'express-validator' );
 
 const Post = require( '../models/post' );
+
+const User = require( '../models/user' );
+
 /**
  * - 게시물 목록을 반환하는 controller
  * @param req
@@ -72,25 +75,40 @@ exports.createPost = ( req , res , next ) => {
     const imageUrl = `${ fullPath[ fullPath.length - 2 ] }/${ fullPath[ fullPath.length - 1 ] }`;
     const title = req.body.title;
     const content = req.body.content;
+    let creator;
+
     const post = new Post( {
         title ,
         content,
         imageUrl,
-        creator : {
-            name : 'Maximilian'
-        },
+        creator : req.userId,
     } );
     /** 해당 게시물을 DB 에 저장 */
     post.save()
+        /** 여기에서 찾은 User 는 현재 로그인 중인 사용자다 */
         .then( result => {
+            return User.findById( req.userId );
+        } )
+        .then( user => {
+            creator = user;
 
+            /** 해당 사용자의 posts 목록도 업데이트 해준다 */
+            user.posts.push( post );
+
+            return user.save();
+        } )
+        .then( result => {
             /**
              * 상태코드 201 은 게시물을 생성했다는 알림을 명시적으로 보내는 것이다
              * ( 반면 200 은 단지 성공했다는 알림만 보낸다 )
              */
             res.status( 201 ).json( {
                 message : 'Post created successfully!',
-                post : result
+                post,
+                creator : {
+                    _id : creator._id,
+                    name : creator.name
+                }
             } );
         } )
         .catch( err => {

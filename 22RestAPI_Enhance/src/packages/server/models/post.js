@@ -17,9 +17,11 @@ const postSchema = new Schema( {
         type : String,
         required : true,
     },
+    /** 사용자와 게시물의 관계 설정 */
     creator : {
-        type : Object,
-        required : String,
+        type : Schema.Types.ObjectId,
+        ref : 'User',
+        required : true,
     }
 } , { timestamps : true } );
 

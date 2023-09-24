@@ -1130,3 +1130,124 @@ fetch(`http://localhost:8080/feed/post/${ postId }` , {
       }
     })
 ````
+
+---
+
+### Connect Post
+
+- 이제 게시물을 생성한 User 와 Post 를 연결한다
+
+
+- 이때, Post Model 과 User Model 을 연결하는데, 
+
+
+- Schema 의 ObjectId 를 설정하여 두 테이블간의 관계를 설정할 수 있다
+
+````javascript
+/** ===== models/post.js ===== */
+const mongoose = require( 'mongoose' );
+const Schema = mongoose.Schema;
+
+/**
+ * - Schema 의 2 번째 인수로 Option 을 설정할 수 있다
+ */
+const postSchema = new Schema({
+  /** 사용자와 게시물의 관계 설정 */
+  creator : {
+    type : Schema.Types.ObjectId,
+    ref : 'User',
+    required : true,
+  }
+} );
+
+/** 해당 Schema( 청사진 )에 기반한 model export */
+module.exports = mongoose.model( 'Post' , postSchema );
+````
+
+- 이렇게 User 테이블과 Post 테이블간의 관계를 설정하여 서로를 참조할 수 있도록 한다
+
+````javascript
+/** ===== models/post.js ===== */
+const mongoose = require( 'mongoose' );
+const Schema = mongoose.Schema;
+
+const userSchema = new Schema( {
+  posts : [
+    {
+      /** ObjectId 타입으로 정의 */
+      type : Schema.Types.ObjectId,
+      /**
+       * 해당 데이터가 어떤 Collection 의 데이터인지 관계를 설정( reference )할 수 있다
+       *
+       * --> 참조할 model 의 이름을 사용하면 된다
+       */
+      ref : 'Post'
+    }
+  ] 
+} );
+
+/** 해당 Schema( 청사진 )에 기반한 model export */
+module.exports = mongoose.model( 'User' , userSchema );
+````
+
+- 그 후, 새로운 게시물을 생성하는 controller 에서 게시물을 생성하고 post 테이블만 업데이트 해주는 것이 아니라,
+
+
+- 사용자 table 또한 Post 리스트들을 들고 있기 때문에, 사용자 Post 리스트도 업데이트해준다
+
+````javascript
+/** ===== controllers/feed.js ===== */
+
+/**
+ * - 게시물을 생성하는 controller
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.createPost = ( req , res , next ) => {
+  const post = new Post( {
+    title ,
+    content,
+    imageUrl,
+    /** 인증 미들웨어에서 설정한 userId 사용 */
+    creator : req.userId,
+  } );
+
+  /** 해당 게시물을 DB 에 저장 */
+  post.save()
+    /** 여기에서 찾은 User 는 현재 로그인 중인 사용자다 */
+    .then( result => {
+      return User.findById( req.userId );
+    } )
+    .then( user => {
+      creator = user;
+
+      /** 해당 사용자의 posts 목록도 업데이트 해준다 */
+      user.posts.push( post );
+
+      return user.save();
+    } )
+    .then( result => {
+      /**
+       * 상태코드 201 은 게시물을 생성했다는 알림을 명시적으로 보내는 것이다
+       * ( 반면 200 은 단지 성공했다는 알림만 보낸다 )
+       */
+      res.status( 201 ).json( {
+        message : 'Post created successfully!',
+        post,
+        creator : {
+          _id : creator._id,
+          name : creator.name
+        }
+      } );
+    } )
+    .catch( err => {
+      if ( !err.statusCode ){
+        err.statusCode = 500;
+      }
+      next( err );
+    } );
+}
+````
+
+- 즉, 이렇게 테이블간의 관계설정을 해두고, 서로 테이블간의 id 만 참조하도록 한다
