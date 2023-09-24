@@ -1277,49 +1277,147 @@ exports.deletePost = ( req , res , next ) => {
   const postId = req.params.postId;
   /** 해당 게시물이 존재하는지 체크 */
   Post.findById( postId )
-          .then( post => {
-            if ( !post ){
-              const error = new Error( 'Could not find post.' );
-              error.statusCode = 404;
-              throw error;
-            }
+    .then( post => {
+      if ( !post ){
+        const error = new Error( 'Could not find post.' );
+        error.statusCode = 404;
+        throw error;
+      }
 
-            /** 해당 Post 의 생성자가 현재 User 와 같은지 체크( 자기자신이 만든 게시물인지 체크 ) */
-            if ( post.creator.toString() !== req.userId ){
-              const error = new Error( 'Not authorized!' );
-              error.statusCode = 403;
-              throw error;
-            }
+      /** 해당 Post 의 생성자가 현재 User 와 같은지 체크( 자기자신이 만든 게시물인지 체크 ) */
+      if ( post.creator.toString() !== req.userId ){
+        const error = new Error( 'Not authorized!' );
+        error.statusCode = 403;
+        throw error;
+      }
 
-            // Check logged in user
-            clearImage( post.imageUrl );
+      // Check logged in user
+      clearImage( post.imageUrl );
 
-            /** 존재할 경우 DB 에서 제거 */
-            return Post.findByIdAndRemove( postId );
-          } )
-          /** 사용자 테이블에서도 삭제 */
-          .then( result => {
-            console.log( '<< Delete Post >>' , result );
-            return User.findById( req.userId );
-          } )
-          .then( user => {
-            /**
-             * - Mongoose 에서 제공하는 pull 메서드를 사용하면,
-             *   삭제하려는 게시물의 ID 를 전달하면 리스트에서 삭제해준다
-             * */
-            user.posts.pull( postId );
-            return user.save();
-          } )
-          .then( result => {
-            res.status( 200 ).json( { message : 'Deleted post.' } );
-          } )
-          .catch( err => {
-            if ( !err.statusCode ){
-              err.statusCode = 500;
-            }
-            next( err );
-          } );
+      /** 존재할 경우 DB 에서 제거 */
+      return Post.findByIdAndRemove( postId );
+    } )
+    /** 사용자 테이블에서도 삭제 */
+    .then( result => {
+      console.log( '<< Delete Post >>' , result );
+      return User.findById( req.userId );
+    } )
+    .then( user => {
+      /**
+       * - Mongoose 에서 제공하는 pull 메서드를 사용하면,
+       *   삭제하려는 게시물의 ID 를 전달하면 리스트에서 삭제해준다
+       * */
+      user.posts.pull( postId );
+      return user.save();
+    } )
+    .then( result => {
+      res.status( 200 ).json( { message : 'Deleted post.' } );
+    } )
+    .catch( err => {
+      if ( !err.statusCode ){
+        err.statusCode = 500;
+      }
+      next( err );
+    } );
 }
 ````
 
 - 결론적으로, 각 요청들이 독립적으로 처리되기때문에, 세션을 사용하지 않고, JSON Web Token 을 사용한다
+
+---
+
+### Async Await 적용
+
+- async await 도 내부 소스코드를 살펴보면 .then() 메서드를 이용하여 구현되어 있다
+
+
+- 또한, 최상위 레벨에서( 함수내부에서가 아닌 ) async 없이 프로미스를 await 할 수 있다
+
+
+- 지금 작업물에서 getPosts 컨트롤러에서는 creator 필드( User 테이블의 )를 채워오지 않았었는데,
+
+
+- 해당 필드는 User 테이블이 가지고 있다. 단지, Post 테이블은 User 테이블을 참조만하고 있기 때문에,
+
+
+- populate 메서드를 이용하여 해당 필드를 채워서 가져올 수 있다
+
+````javascript
+/** ========== async await 적용 ========== */
+/** ===== controllers/feed.js ===== */
+/**
+ * - 게시물 목록을 반환하는 controller
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.getPosts = async ( req , res , next ) => {
+    const currentPage = req.query.page || 1;
+    const perPage = 2;
+
+    try {
+        /** 전체 Post 를 가지고 온후, 전체 갯수를 반환함 */
+        const totalItems = await Post.find().countDocuments();
+
+        /** 모든 Posts 를 찾아 반환 */
+        const posts = await Post.find()
+            /** 참조 중인 User 테이블에서 creator 필드를 채워서 반환 */
+            .populate('creator')
+            /**
+             * - skip 메서드를 추가하면,
+             *   find 로 찾은 결과중 첫 번째부터 skip 갯수만큼 생략한다
+             */
+            .skip( ( currentPage - 1 ) * perPage )
+            /**
+             * - limit 메서드는 find 로 가져오는 데이터양을 지정할 수 있다
+             */
+            .limit( perPage )
+
+        res.status( 200 ).json( {
+            message : 'Fetched posts successfully.',
+            posts ,
+            totalItems
+        } );
+    }
+    catch ( err ){
+        if ( !err.statusCode ){
+            err.statusCode = 500;
+        }
+        next( err );
+    }
+};
+````
+
+- 또한 Mongoose 에서 지원하는 
+
+
+- find() , countDocuments() , populate() 등의 메서드들은 실제로 Promise 객체를 반환하는것이 아니라,
+
+
+- Promise 와 유사한 객체를 반환해줘 동일한 기능을 제공하는것이다
+
+
+- 그러나, 실제 Promise 객체로 반환받고 싶다면 exec() 메서드를 이용하면 실제 Promise 객체를 반환받아 사용할 수 있다
+
+
+- 또한 에러처리는 try , catch 를 사용한다
+
+````javascript
+/** ========== async await 적용 ========== */
+/** ===== controllers/feed.js ===== */
+
+/**
+ * - 게시물 목록을 반환하는 controller
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.getPosts = async ( req , res , next ) => {
+    /** 실제 Prmise 객체를 반환 */
+  const totalItems = await Post.find().countDocuments().exec();
+
+  const posts = await Post.find().exec();
+}
+````
+
+- 그러나 hashing 처리하는 bcrypt 라이브러리 같은 경우는 실제 Promise 객체를 반환한다

@@ -12,41 +12,40 @@ const User = require( '../models/user' );
  * @param res
  * @param next
  */
-exports.getPosts = ( req , res , next ) => {
+exports.getPosts = async ( req , res , next ) => {
     const currentPage = req.query.page || 1;
     const perPage = 2;
-    let totalItems;
 
-    /** 전체 Post 를 가지고 온후, 전체 갯수를 반환함 */
-    Post.find().countDocuments()
-        .then( count => {
-            totalItems = count;
+    try {
+        /** 전체 Post 를 가지고 온후, 전체 갯수를 반환함 */
+        const totalItems = await Post.find().countDocuments();
 
-            return Post.find()
-                /**
-                 * - skip 메서드를 추가하면,
-                 *   find 로 찾은 결과중 첫 번째부터 skip 갯수만큼 생략한다
-                 */
-                .skip( ( currentPage - 1 ) * perPage )
-                /**
-                 * - limit 메서드는 find 로 가져오는 데이터양을 지정할 수 있다
-                 */
-                .limit( perPage )
-        } )
         /** 모든 Posts 를 찾아 반환 */
-        .then( posts => {
-            res.status( 200 ).json( {
-                message : 'Fetched posts successfully.',
-                posts ,
-                totalItems
-            } );
-        } )
-        .catch( err => {
-            if ( !err.statusCode ){
-                err.statusCode = 500;
-            }
-            next( err );
+        const posts = await Post.find()
+            /** 참조 중인 User 테이블에서 creator 필드를 채워서 반환 */
+            .populate('creator')
+            /**
+             * - skip 메서드를 추가하면,
+             *   find 로 찾은 결과중 첫 번째부터 skip 갯수만큼 생략한다
+             */
+            .skip( ( currentPage - 1 ) * perPage )
+            /**
+             * - limit 메서드는 find 로 가져오는 데이터양을 지정할 수 있다
+             */
+            .limit( perPage )
+
+        res.status( 200 ).json( {
+            message : 'Fetched posts successfully.',
+            posts ,
+            totalItems
         } );
+    }
+    catch ( err ){
+        if ( !err.statusCode ){
+            err.statusCode = 500;
+        }
+        next( err );
+    }
 };
 
 /**
@@ -55,7 +54,7 @@ exports.getPosts = ( req , res , next ) => {
  * @param res
  * @param next
  */
-exports.createPost = ( req , res , next ) => {
+exports.createPost = async ( req , res , next ) => {
     const errors = validationResult( req );
 
     /** 유효성 검사 실패 코드 */
@@ -83,40 +82,39 @@ exports.createPost = ( req , res , next ) => {
         imageUrl,
         creator : req.userId,
     } );
-    /** 해당 게시물을 DB 에 저장 */
-    post.save()
+    try {
+        /** 해당 게시물을 DB 에 저장 */
+        await post.save();
+
         /** 여기에서 찾은 User 는 현재 로그인 중인 사용자다 */
-        .then( result => {
-            return User.findById( req.userId );
-        } )
-        .then( user => {
-            creator = user;
+        const user = await User.findById( req.userId );
 
-            /** 해당 사용자의 posts 목록도 업데이트 해준다 */
-            user.posts.push( post );
+        creator = user;
 
-            return user.save();
-        } )
-        .then( result => {
-            /**
-             * 상태코드 201 은 게시물을 생성했다는 알림을 명시적으로 보내는 것이다
-             * ( 반면 200 은 단지 성공했다는 알림만 보낸다 )
-             */
-            res.status( 201 ).json( {
-                message : 'Post created successfully!',
-                post,
-                creator : {
-                    _id : creator._id,
-                    name : creator.name
-                }
-            } );
-        } )
-        .catch( err => {
-            if ( !err.statusCode ){
-                err.statusCode = 500;
+        /** 해당 사용자의 posts 목록도 업데이트 해준다 */
+        user.posts.push( post );
+
+        await user.save();
+
+        /**
+         * 상태코드 201 은 게시물을 생성했다는 알림을 명시적으로 보내는 것이다
+         * ( 반면 200 은 단지 성공했다는 알림만 보낸다 )
+         */
+        res.status( 201 ).json( {
+            message : 'Post created successfully!',
+            post,
+            creator : {
+                _id : creator._id,
+                name : creator.name
             }
-            next( err );
         } );
+    }
+    catch( err ){
+        if ( !err.statusCode ){
+            err.statusCode = 500;
+        }
+        next( err );
+    }
 }
 
 /**
@@ -125,24 +123,25 @@ exports.createPost = ( req , res , next ) => {
  * @param res
  * @param next
  */
-exports.getPost = ( req , res , next ) => {
+exports.getPost = async ( req , res , next ) => {
     const postId = req.params.postId;
 
-    Post.findById( postId )
-        .then( post => {
-            if ( !post ){
-                const error = new Error( 'Could not find post.' );
-                error.statusCode = 404;
-                throw error;
-            }
-            res.status( 200 ).json( { message : 'Post fetched.' , post } );
-        } )
-        .catch( err => {
-            if ( !err.statusCode ){
-                err.statusCode = 500;
-            }
-            next( err );
-        } );
+    try {
+        const post = await Post.findById( postId );
+
+        if ( !post ){
+            const error = new Error( 'Could not find post.' );
+            error.statusCode = 404;
+            throw error;
+        }
+        res.status( 200 ).json( { message : 'Post fetched.' , post } );
+    }
+    catch( err ){
+        if ( !err.statusCode ){
+            err.statusCode = 500;
+        }
+        next( err );
+    }
 }
 
 /**
@@ -151,7 +150,7 @@ exports.getPost = ( req , res , next ) => {
  * @param res
  * @param next
  */
-exports.updatePost = ( req , res , next ) => {
+exports.updatePost = async ( req , res , next ) => {
     const errors = validationResult( req );
 
     /** 유효성 검사 실패 코드 */
@@ -182,40 +181,41 @@ exports.updatePost = ( req , res , next ) => {
         throw error;
     }
 
-    /** 에러가 없을 경우에는 DB 에 업데이트 */
-    Post.findById( postId )
-        .then( post => {
-            if ( !post ){
-                const error = new Error( 'Could not find post.' );
-                error.statusCode = 404;
-                throw error;
-            }
+    try {
+        /** 에러가 없을 경우에는 DB 에 업데이트 */
+        const post = await Post.findById( postId );
 
-            /** 해당 Post 의 생성자가 현재 User 와 같은지 체크( 자기자신이 만든 게시물인지 체크 ) */
-            if ( post.creator.toString() !== req.userId ){
-                const error = new Error( 'Not authorized!' );
-                error.statusCode = 403;
-                throw error;
-            }
+        if ( !post ){
+            const error = new Error( 'Could not find post.' );
+            error.statusCode = 404;
+            throw error;
+        }
 
-            /** imageUrl 이 업데이트 되었다면, 이전 Image 를 제거 */
-            if ( imageUrl !== post.imageUrl ){
-                clearImage( post.imageUrl );
-            }
-            post.title = title;
-            post.imageUrl = imageUrl;
-            post.conent = content;
-            return post.save();
-        } )
-        .then( result => {
-            res.status( 200 ).json( { message : 'Post updated!.' , post : result } );
-        } )
-        .catch( err => {
-            if ( !err.statusCode ){
-                err.statusCode = 500;
-            }
-            next( err );
-        } );
+        /** 해당 Post 의 생성자가 현재 User 와 같은지 체크( 자기자신이 만든 게시물인지 체크 ) */
+        if ( post.creator.toString() !== req.userId ){
+            const error = new Error( 'Not authorized!' );
+            error.statusCode = 403;
+            throw error;
+        }
+
+        /** imageUrl 이 업데이트 되었다면, 이전 Image 를 제거 */
+        if ( imageUrl !== post.imageUrl ){
+            clearImage( post.imageUrl );
+        }
+        post.title = title;
+        post.imageUrl = imageUrl;
+        post.conent = content;
+
+        const result = await post.save();
+
+        res.status( 200 ).json( { message : 'Post updated!.' , post : result } );
+    }
+    catch( err ){
+        if ( !err.statusCode ){
+            err.statusCode = 500;
+        }
+        next( err );
+    }
 }
 
 /**
@@ -224,52 +224,50 @@ exports.updatePost = ( req , res , next ) => {
  * @param res
  * @param next
  */
-exports.deletePost = ( req , res , next ) => {
+exports.deletePost = async ( req , res , next ) => {
     const postId = req.params.postId;
-    /** 해당 게시물이 존재하는지 체크 */
-    Post.findById( postId )
-        .then( post => {
-            if ( !post ){
-                const error = new Error( 'Could not find post.' );
-                error.statusCode = 404;
-                throw error;
-            }
 
-            /** 해당 Post 의 생성자가 현재 User 와 같은지 체크( 자기자신이 만든 게시물인지 체크 ) */
-            if ( post.creator.toString() !== req.userId ){
-                const error = new Error( 'Not authorized!' );
-                error.statusCode = 403;
-                throw error;
-            }
+    try {
+        /** 해당 게시물이 존재하는지 체크 */
+        const post = await Post.findById( postId );
 
-            // Check logged in user
-            clearImage( post.imageUrl );
+        if ( !post ){
+            const error = new Error( 'Could not find post.' );
+            error.statusCode = 404;
+            throw error;
+        }
 
-            /** 존재할 경우 DB 에서 제거 */
-            return Post.findByIdAndRemove( postId );
-        } )
+        /** 해당 Post 의 생성자가 현재 User 와 같은지 체크( 자기자신이 만든 게시물인지 체크 ) */
+        if ( post.creator.toString() !== req.userId ){
+            const error = new Error( 'Not authorized!' );
+            error.statusCode = 403;
+            throw error;
+        }
+
+        // Check logged in user
+        clearImage( post.imageUrl );
+
+        /** 존재할 경우 DB 에서 제거 */
+        await Post.findByIdAndRemove( postId );
+
         /** 사용자 테이블에서도 삭제 */
-        .then( result => {
-            console.log( '<< Delete Post >>' , result );
-            return User.findById( req.userId );
-        } )
-        .then( user => {
-            /**
-             * - Mongoose 에서 제공하는 pull 메서드를 사용하면,
-             *   삭제하려는 게시물의 ID 를 전달하면 리스트에서 삭제해준다
-             * */
-            user.posts.pull( postId );
-            return user.save();
-        } )
-        .then( result => {
-            res.status( 200 ).json( { message : 'Deleted post.' } );
-        } )
-        .catch( err => {
+        const user = await User.findById( req.userId );
+
+        /**
+         * - Mongoose 에서 제공하는 pull 메서드를 사용하면,
+         *   삭제하려는 게시물의 ID 를 전달하면 리스트에서 삭제해준다
+         * */
+        user.posts.pull( postId );
+        await user.save();
+
+        res.status( 200 ).json( { message : 'Deleted post.' } );
+    }
+    catch( err ){
         if ( !err.statusCode ){
             err.statusCode = 500;
         }
         next( err );
-    } );
+    }
 }
 
 /**

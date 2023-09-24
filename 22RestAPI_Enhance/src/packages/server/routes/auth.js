@@ -6,6 +6,7 @@ const User = require( '../models/user' );
 const router = express.Router();
 
 const authController = require( '../controllers/auth' );
+const isAuth = require('../middleware/is-auth');
 
 /** 회원가입시 새로운 데이터를 입력하거나 덮어씌우기 때문에 PUT 을 사용한다 */
 // GET /auth/signup
@@ -52,6 +53,17 @@ router.put( '/signup' , [
  * 어짜피 이메일-비밀번호 조합을 체크해야하기 때문에 바로 Controller 에서 진행한다
  */
 // POST /auth/login
-router.post( '/login' , authController.login )
+router.post( '/login' , authController.login );
+
+// GET /auth/status
+router.get( '/status' , authController.getUserStatus );
+
+// PATCH /auth/status
+router.patch( '/status' , isAuth , [
+    body('status')
+        .trim()
+        .not()
+        .isEmpty()
+] , authController.updateUserStatus );
 
 module.exports = router;
