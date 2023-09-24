@@ -191,6 +191,13 @@ exports.updatePost = ( req , res , next ) => {
                 throw error;
             }
 
+            /** 해당 Post 의 생성자가 현재 User 와 같은지 체크( 자기자신이 만든 게시물인지 체크 ) */
+            if ( post.creator.toString() !== req.userId ){
+                const error = new Error( 'Not authorized!' );
+                error.statusCode = 403;
+                throw error;
+            }
+
             /** imageUrl 이 업데이트 되었다면, 이전 Image 를 제거 */
             if ( imageUrl !== post.imageUrl ){
                 clearImage( post.imageUrl );
@@ -228,14 +235,33 @@ exports.deletePost = ( req , res , next ) => {
                 throw error;
             }
 
+            /** 해당 Post 의 생성자가 현재 User 와 같은지 체크( 자기자신이 만든 게시물인지 체크 ) */
+            if ( post.creator.toString() !== req.userId ){
+                const error = new Error( 'Not authorized!' );
+                error.statusCode = 403;
+                throw error;
+            }
+
             // Check logged in user
             clearImage( post.imageUrl );
 
             /** 존재할 경우 DB 에서 제거 */
             return Post.findByIdAndRemove( postId );
         } )
+        /** 사용자 테이블에서도 삭제 */
         .then( result => {
             console.log( '<< Delete Post >>' , result );
+            return User.findById( req.userId );
+        } )
+        .then( user => {
+            /**
+             * - Mongoose 에서 제공하는 pull 메서드를 사용하면,
+             *   삭제하려는 게시물의 ID 를 전달하면 리스트에서 삭제해준다
+             * */
+            user.posts.pull( postId );
+            return user.save();
+        } )
+        .then( result => {
             res.status( 200 ).json( { message : 'Deleted post.' } );
         } )
         .catch( err => {

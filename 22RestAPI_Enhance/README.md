@@ -1251,3 +1251,75 @@ exports.createPost = ( req , res , next ) => {
 ````
 
 - 즉, 이렇게 테이블간의 관계설정을 해두고, 서로 테이블간의 id 만 참조하도록 한다
+
+---
+
+### UpdateDelete Post
+
+
+- 해당 게시물을 제거하거나 업데이트 하기전에 해당 사용자인지 체크하는 로직을 추가해줘야 인증이 마무리된다
+
+
+- 또한 게시물을 제거할때는, 해당 게시물을 가지고 있는 테이블의 컬렉션또한 업데이트를 해줘야한다
+  - 예를 들어, user 테이블은 현재 post 테이블의 id 들을 가지고 있기 때문에 이 데이터 또한 제거해줘야한다
+
+
+````javascript
+/** ===== controllers/feed.js ===== */
+
+/**
+ * - 단일 게시물 삭제 Controller
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.deletePost = ( req , res , next ) => {
+  const postId = req.params.postId;
+  /** 해당 게시물이 존재하는지 체크 */
+  Post.findById( postId )
+          .then( post => {
+            if ( !post ){
+              const error = new Error( 'Could not find post.' );
+              error.statusCode = 404;
+              throw error;
+            }
+
+            /** 해당 Post 의 생성자가 현재 User 와 같은지 체크( 자기자신이 만든 게시물인지 체크 ) */
+            if ( post.creator.toString() !== req.userId ){
+              const error = new Error( 'Not authorized!' );
+              error.statusCode = 403;
+              throw error;
+            }
+
+            // Check logged in user
+            clearImage( post.imageUrl );
+
+            /** 존재할 경우 DB 에서 제거 */
+            return Post.findByIdAndRemove( postId );
+          } )
+          /** 사용자 테이블에서도 삭제 */
+          .then( result => {
+            console.log( '<< Delete Post >>' , result );
+            return User.findById( req.userId );
+          } )
+          .then( user => {
+            /**
+             * - Mongoose 에서 제공하는 pull 메서드를 사용하면,
+             *   삭제하려는 게시물의 ID 를 전달하면 리스트에서 삭제해준다
+             * */
+            user.posts.pull( postId );
+            return user.save();
+          } )
+          .then( result => {
+            res.status( 200 ).json( { message : 'Deleted post.' } );
+          } )
+          .catch( err => {
+            if ( !err.statusCode ){
+              err.statusCode = 500;
+            }
+            next( err );
+          } );
+}
+````
+
+- 결론적으로, 각 요청들이 독립적으로 처리되기때문에, 세션을 사용하지 않고, JSON Web Token 을 사용한다
