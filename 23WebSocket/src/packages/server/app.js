@@ -104,8 +104,17 @@ app.use( ( error , req , res , next ) => {
 mongoose
     .connect( privateKeys.MONGODB_URI )
     .then( () => {
+        const server = app.listen( 8080 );
         console.log( "<< StartWebApplication >>" );
-        app.listen( 8080 );
+
+        /** DB 를 연결한 후, 서버를 시작한 후에 Socket.io 를 연결하는 것이 좋다 */
+        const io = require( 'socket.io' )( server );
+        console.log( "<< StartWebSocket >>" );
+
+        /** 새로운 클라이언트가 연결될 때마다... */
+        io.on( 'connection' , socket => {
+            console.log( "<< Client Connected >>" , socket );
+        } );
     } )
     .catch( err => {
         console.log("<<StartApp Err>>", err);

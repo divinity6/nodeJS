@@ -37,6 +37,10 @@
 
 
 - 웹 소켓 프로토콜을 배후에서 편하게 사용할 수 있도록 설정해준다
+  - Socket.io 를 설정할때는 서버와 클라이언트 둘 다 설치한다
+  - ( 서로 통신해야하기 때문에 )
+  
+
 
 ````shell
 npm i socket.io
@@ -47,3 +51,66 @@ npm i socket.io
 ````shell
 npm i socket.io --workspace=<< 워크스페이스_이름 >>
 ````
+
+---
+
+- socket.io 를 연결할때는 DB 를 연결하고, 서버를 시작한 후에 Socket 을 연결하는 것이 일반적이다
+  - 왜냐하면, app.listen 메서드는 실제 **노드 서버 앱을 반환**하는데, 해당 앱을 Socket 에서 요구하기 때문이다
+
+
+- http 서버를 사용하여( WebSocket 이 HTTP 서버를 사용하기 때문에 ) HTTP 프로토콜을 기반으로 웹 소켓 연결을 구축한다
+  - socket.io 파라미터에 NodeApp 을 넘기면 배후에서 Socket 설정을 모두 설정해준다
+
+
+````javascript
+/** ===== app.js ===== */
+const express = require( 'express' );
+const mongoose = require( 'mongoose' );
+const app = express();
+
+mongoose
+    .connect( privateKeys.MONGODB_URI )
+    .then( () => {
+        const server = app.listen( 8080 );
+        console.log( "<< StartWebApplication >>" );
+
+        /** DB 를 연결한 후, 서버를 시작한 후에 Socket.io 를 연결하는 것이 좋다 */
+        const io = require( 'socket.io' )( server );
+    } )
+    .catch( err => {
+        console.log("<<StartApp Err>>", err);
+    } );
+````
+
+- 해당 소켓에 연결되었다면, 새로운 이벤트를 등록할 수 있는데, 
+
+
+- 예시로 connect 이벤트리스너는 새로운 클라이언트가 연결될 때마다, 특정 함수를 실행할 수 있다
+
+
+````javascript
+/** ===== app.js ===== */
+const express = require( 'express' );
+const mongoose = require( 'mongoose' );
+const app = express();
+
+mongoose
+    .connect( privateKeys.MONGODB_URI )
+    .then( () => {
+        const server = app.listen( 8080 );
+        console.log( "<< StartWebApplication >>" );
+
+        /** DB 를 연결한 후, 서버를 시작한 후에 Socket.io 를 연결하는 것이 좋다 */
+        const io = require( 'socket.io' )( server );
+
+        /** 새로운 클라이언트가 연결될 때마다... */
+        io.on( 'connection' , socket => {
+          console.log( "<< Client Connected >>" );
+        } );
+    } )
+    .catch( err => {
+        console.log("<<StartApp Err>>", err);
+    } );
+````
+
+- 이제, client 에도 해당 해당 소켓을 연결하면 된다
