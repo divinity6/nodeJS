@@ -107,13 +107,12 @@ mongoose
         const server = app.listen( 8080 );
         console.log( "<< StartWebApplication >>" );
 
-        /** DB 를 연결한 후, 서버를 시작한 후에 Socket.io 를 연결하는 것이 좋다 */
-        const io = require( 'socket.io' )( server );
-        console.log( "<< StartWebSocket >>" );
+        /** socket 연결 */
+        const io = require( './socket' ).init( server );
 
         /** 새로운 클라이언트가 연결될 때마다... */
         io.on( 'connection' , socket => {
-            console.log( "<< Client Connected >>" , socket );
+            console.log( "<< ConnectedWebSocket >>" );
         } );
     } )
     .catch( err => {

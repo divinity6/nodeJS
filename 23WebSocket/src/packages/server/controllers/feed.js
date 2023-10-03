@@ -2,8 +2,8 @@ const fs = require( 'fs' );
 const path = require( 'path' );
 const { validationResult } = require( 'express-validator' );
 
+const io = require( '../socket' );
 const Post = require( '../models/post' );
-
 const User = require( '../models/user' );
 
 /**
@@ -24,6 +24,8 @@ exports.getPosts = async ( req , res , next ) => {
         const posts = await Post.find()
             /** 참조 중인 User 테이블에서 creator 필드를 채워서 반환 */
             .populate('creator')
+            /** 데이터를 내림차순 정렬 - 최근에 작성된 순으로 정렬하여 반환 */
+            .sort( { createdAt : -1 } )
             /**
              * - skip 메서드를 추가하면,
              *   find 로 찾은 결과중 첫 번째부터 skip 갯수만큼 생략한다
@@ -74,7 +76,6 @@ exports.createPost = async ( req , res , next ) => {
     const imageUrl = `${ fullPath[ fullPath.length - 2 ] }/${ fullPath[ fullPath.length - 1 ] }`;
     const title = req.body.title;
     const content = req.body.content;
-    let creator;
 
     const post = new Post( {
         title ,
@@ -89,12 +90,23 @@ exports.createPost = async ( req , res , next ) => {
         /** 여기에서 찾은 User 는 현재 로그인 중인 사용자다 */
         const user = await User.findById( req.userId );
 
-        creator = user;
-
         /** 해당 사용자의 posts 목록도 업데이트 해준다 */
         user.posts.push( post );
 
         await user.save();
+
+        /**
+         * - webSocket 에 연결된 모든 사용자에게 메시지를 발신한다
+         *
+         * @param { string } posts - 이벤트 이름
+         * @param { any } data - 전달할 데이터
+         */
+        io.getIO().emit( 'posts' , {
+            action : 'create',
+            post : {
+                ...post._doc,
+                creator : { _id : req.userId , name : user.name } }
+        } );
 
         /**
          * 상태코드 201 은 게시물을 생성했다는 알림을 명시적으로 보내는 것이다
@@ -104,8 +116,8 @@ exports.createPost = async ( req , res , next ) => {
             message : 'Post created successfully!',
             post,
             creator : {
-                _id : creator._id,
-                name : creator.name
+                _id : user._id,
+                name : user.name
             }
         } );
     }
@@ -151,6 +163,7 @@ exports.getPost = async ( req , res , next ) => {
  * @param next
  */
 exports.updatePost = async ( req , res , next ) => {
+    const postId = req.params.postId;
     const errors = validationResult( req );
 
     /** 유효성 검사 실패 코드 */
@@ -160,10 +173,8 @@ exports.updatePost = async ( req , res , next ) => {
         throw error;
     }
 
-    const postId = req.params.postId;
     const title = req.body.title;
     const content = req.body.content;
-
     /**
      * - image 를 새로추가했을 경우에는, 새로 추가하고,
      *   그렇지 않을 경우에는 기존 imageUrl 을 사용한다
@@ -183,7 +194,7 @@ exports.updatePost = async ( req , res , next ) => {
 
     try {
         /** 에러가 없을 경우에는 DB 에 업데이트 */
-        const post = await Post.findById( postId );
+        const post = await Post.findById( postId ).populate( 'creator' );
 
         if ( !post ){
             const error = new Error( 'Could not find post.' );
@@ -192,7 +203,7 @@ exports.updatePost = async ( req , res , next ) => {
         }
 
         /** 해당 Post 의 생성자가 현재 User 와 같은지 체크( 자기자신이 만든 게시물인지 체크 ) */
-        if ( post.creator.toString() !== req.userId ){
+        if ( post.creator._id.toString() !== req.userId ){
             const error = new Error( 'Not authorized!' );
             error.statusCode = 403;
             throw error;
@@ -207,6 +218,15 @@ exports.updatePost = async ( req , res , next ) => {
         post.conent = content;
 
         const result = await post.save();
+
+        /** 모든 저장로직을 마치고 데이터를 반환할때 websocket 메시지로 반환한다 */
+        /**
+         * - webSocket 에 연결된 모든 사용자에게 메시지를 발신한다
+         *
+         * @param { string } posts - 이벤트 이름
+         * @param { any } data - 전달할 데이터
+         */
+        io.getIO().emit( 'posts' , { action : 'update', post : result } );
 
         res.status( 200 ).json( { message : 'Post updated!.' , post : result } );
     }
@@ -259,6 +279,18 @@ exports.deletePost = async ( req , res , next ) => {
          * */
         user.posts.pull( postId );
         await user.save();
+
+        /** 모든 저장로직을 마치고 데이터를 반환할때 websocket 메시지로 반환한다 */
+        /**
+         * - webSocket 에 연결된 모든 사용자에게 메시지를 발신한다
+         *
+         * @param { string } posts - 이벤트 이름
+         * @param { any } data - 전달할 데이터
+         */
+        io.getIO().emit( 'posts' , {
+            action : 'delete',
+            post : postId,
+        } )
 
         res.status( 200 ).json( { message : 'Deleted post.' } );
     }
