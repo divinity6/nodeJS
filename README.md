@@ -82,6 +82,10 @@
 ### [ 19. WebSocket ]( https://github.com/divinity6/nodejs-study/tree/master/23WebSocket )
 - 웹소켓 및 Socket.io
 
+
+### [ 20. GraphQL ]( https://github.com/divinity6/nodejs-study/tree/master/24GraphQL )
+- GraphQL
+
 ---
 
 - 출처 : https://www.udemy.com/course/nodejs-mvc-rest-apis-graphql-deno/

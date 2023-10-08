@@ -1,0 +1,13 @@
+{
+  "name": "nodejs-sample",
+  "version": "1.0.0",
+  "description": "nodejs-sample-server",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "start": "npm start --workspaces",
+    "start-server": "npm start --w nodejs-sample-server",
+    "start-client": "npm start --w nodejs-sample-client"
+  }
+}
