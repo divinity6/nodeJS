@@ -96,6 +96,29 @@ app.use( '/graphql' , graphqlHTTP( {
     schema : graphqlSchema,
     rootValue : graphqlResolver,
     graphiql : true,        // graphiql 툴 사용 http://localhost:8080/graphql 로 접근하여 테스트 할 수 있다
+    customFormatErrorFn( err ){
+        console.log( '<< err >>' , err )
+        /**
+         * - originalError 에는 graphQL 외에서 발생한 error 객체가 들어간다
+         *
+         * - 즉, graphql query 에 글자가 누락되는 등의 error 가 발생하면,
+         *   originalError 에 추가되지 않는다
+         */
+        if ( !err.originalError ){
+            return err;
+        }
+
+        const data = err.originalError.data;
+        const message = err.message || 'An error occurred.';
+        const code = err.originalError.code || 500;
+
+        /** 원하는 error 객체를 생성해서 반환할 수 있다 */
+        return {
+            message,
+            status : code,
+            data
+        }
+    }
 } ) );
 
 /** 에러 처리 미들웨어 */

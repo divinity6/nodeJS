@@ -523,7 +523,7 @@ module.exports = {
 
     /** password 체크 */
     if (
-        !validator.isEmpty( userInput.password ) ||
+        validator.isEmpty( userInput.password ) ||
         !validator.isLength( userInput.password , { min : 5 } )
     ){
       errors.push( { message : 'Password too short!' } );
@@ -536,5 +536,107 @@ module.exports = {
     
     /** 그 후 로직 */
   }
+}
+````
+
+- 해당 validation 체크 결과는 graphql 을 등록했던 주소에서 체크할 수 있다
+
+---
+
+### ErrorHandling
+
+- GraphQL 에서 ErrorFormat 을 지정할 수 있는데, graphql 을 등록하는 객체에 
+
+
+- customFormatErrorFn 함수를 추가하여 원하는 error 를 반환하게 할 수 있다
+
+
+- customFormatErrorFn 에서 받는 error 파라미터에는 originalError 프로퍼티가 존재할 수 있는데,
+
+
+- originalError 에는 graphQL 외에서 발생한 error 객체가 들어간다
+  - 즉, graphql query 에 글자가 누락되는 등의 error 가 발생하면, originalError 에 추가되지 않는다
+
+````javascript
+/** ===== app.js ===== */
+
+/** post 요청으로 제한하지않고 모든 middleware 타입으로 넘겨준다 */
+app.use( '/graphql' , graphqlHTTP( {
+  schema : graphqlSchema,
+  rootValue : graphqlResolver,
+  graphiql : true,        // graphiql 툴 사용 http://localhost:8080/graphql 로 접근하여 테스트 할 수 있다
+  customFormatErrorFn( err ){
+    console.log( '<< err >>' , err )
+    /**
+     * - originalError 에는 graphQL 외에서 발생한 error 객체가 들어간다
+     *
+     * - 즉, graphql query 에 글자가 누락되는 등의 error 가 발생하면,
+     *   originalError 에 추가되지 않는다
+     */
+    if ( !err.originalError ){
+      return err;
+    }
+
+    const data = err.originalError.data;
+    const message = err.message || 'An error occurred.';
+    const code = err.originalError.code || 500;
+
+    /** 원하는 error 객체를 생성해서 반환할 수 있다 */
+    return {
+      message,
+      status : code,
+      data
+    }
+  }
+} ) );
+````
+
+- resolvers.js 에서 error 발생시 data 와 code 필드를 추가하여, 
+
+
+- grapql 생성시 등록한 customFormatErrorFn 함수에서 받도록 추가한다
+
+````javascript
+/** ===== graphql/resolvers.js ===== */
+
+/** 들어오는 Query 를 위해 실행되는 논리 정의 */
+module.exports = {
+  createUser : async function( { userInput } , req ){
+
+    const errors = [];
+    /** email 체크 */
+
+    /** password 체크 */
+
+    if ( 0 < errors.length ){
+      const error = new Error( 'Invalid input.' );
+      /** 에러 객체의 data 필드에 발생한 error 들 추가 */
+      error.data = errors;
+      error.code = 422;
+      
+      throw error;
+    }
+    
+    /** 그 후 로직 */
+  }
+}
+````
+
+- 내가 설정한 error 를 반환받아 처리할 수 있다
+
+````json
+{
+  "errors": [
+    {
+      "message": "Invalid input.",
+      "status": 422,
+      "data": [
+        {
+          "message": "E-Mail is invalid."
+        }
+      ]
+    }
+  ],
+  "data": null
 }
 ````

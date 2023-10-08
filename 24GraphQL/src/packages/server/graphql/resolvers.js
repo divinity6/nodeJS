@@ -20,7 +20,7 @@ module.exports = {
 
         /** password 체크 */
         if (
-            !validator.isEmpty( userInput.password ) ||
+            validator.isEmpty( userInput.password ) ||
             !validator.isLength( userInput.password , { min : 5 } )
         ){
             errors.push( { message : 'Password too short!' } );
@@ -28,6 +28,10 @@ module.exports = {
 
         if ( 0 < errors.length ){
             const error = new Error( 'Invalid input.' );
+            /** 에러 객체의 data 필드에 발생한 error 들 추가 */
+            error.data = errors;
+            error.code = 422;
+
             throw error;
         }
 
