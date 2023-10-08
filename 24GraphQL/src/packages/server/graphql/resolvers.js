@@ -1,4 +1,6 @@
 const bcrypt = require( 'bcryptjs' );
+const validator = require( 'validator' );
+
 const User = require( '../models/user' );
 
 /** 들어오는 Query 를 위해 실행되는 논리 정의 */
@@ -9,6 +11,25 @@ module.exports = {
      * */
     createUser : async function( { userInput } , req ){
         const existingUser = await User.findOne( { email : userInput.email } );
+
+        const errors = [];
+        /** email 체크 */
+        if ( !validator.isEmail( userInput.email ) ){
+           errors.push( { message : 'E-Mail is invalid.' } );
+        }
+
+        /** password 체크 */
+        if (
+            !validator.isEmpty( userInput.password ) ||
+            !validator.isLength( userInput.password , { min : 5 } )
+        ){
+            errors.push( { message : 'Password too short!' } );
+        }
+
+        if ( 0 < errors.length ){
+            const error = new Error( 'Invalid input.' );
+            throw error;
+        }
 
         /** 사용자가 존재할 경우 에러 생성 */
         if ( existingUser ){

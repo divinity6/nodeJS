@@ -123,10 +123,18 @@
   - express-graphql 은 graphql 14.7.0 이나, 15.3.0 버전과 호환된다
 
 ````shell
+# 기본
+npm i graphql@15.3.0
+
+# workspaces 를 사용하는 경우
 npm i graphql@15.3.0 --workspace=<< 워크스페이스_이름 >>
 ````
 
 ````shell
+# 기본
+npm i express-graphql
+
+# workspaces 를 사용하는 경우
 npm i express-graphql --workspace=<< 워크스페이스_이름 >>
 ````
 
@@ -430,7 +438,7 @@ module.exports = buildSchema( `
 - Schema 에 작성했던 parameter 타입과, response 타입을 통하여, 실제 사용자를 생성하는 로직을 작성한다
 
 ````javascript
-/** ===== graphql/schema.js ===== */
+/** ===== graphql/resolvers.js ===== */
 
 const bcrypt = require( 'bcryptjs' );
 const User = require( '../models/user' );
@@ -472,4 +480,61 @@ module.exports = {
         }
     }
 };
+````
+
+--- 
+
+### validation
+
+- Rest API 에서는 express-validator 를 이용해 라우트에 미들웨어로 추가했다
+
+
+- 그러나, graphQL 의 경우는 단 하나의 endpoint 를 가지기 때문에, 
+
+
+- 필요에 따라 validation 체크를 수행할 수 있도록 resolver 에서 validation 체크를 수행해야 한다
+
+
+- 따라서, express-validator 가 아니라 express-validator 의 core package 인 validator 를 설치한다
+
+````shell
+# 기본
+npm i validator
+
+# workspaces 를 이용하는 경우
+npm i validator --workspace=<< 워크스페이스_이름 >>
+````
+
+- 설치 후 resolvers.js 에서 로직을 체크할 수 있다 
+
+````javascript
+/** ===== graphql/resolvers.js ===== */
+
+/** 들어오는 Query 를 위해 실행되는 논리 정의 */
+module.exports = {
+  createUser : async function( { userInput } , req ){
+    const existingUser = await User.findOne( { email : userInput.email } );
+
+    const errors = [];
+    /** email 체크 */
+    if ( !validator.isEmail( userInput.email ) ){
+      errors.push( { message : 'E-Mail is invalid.' } );
+    }
+
+    /** password 체크 */
+    if (
+        !validator.isEmpty( userInput.password ) ||
+        !validator.isLength( userInput.password , { min : 5 } )
+    ){
+      errors.push( { message : 'Password too short!' } );
+    }
+
+    if ( 0 < errors.length ){
+      const error = new Error( 'Invalid input.' );
+      throw error;
+    }
+    
+    /** 그 후 로직 */
+  }
+}
 ````
