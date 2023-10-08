@@ -114,7 +114,7 @@
 
 ---
 
-### How to Install
+### How to Install Server
 
 - graphQL 을 사용할 것이기 때문에, route 폴더( app.js 에서 사용하는 route 들 전부 )와 socket.io 라이브러리를 제거한다
 
@@ -147,11 +147,31 @@ server/
 
 ---
 
+### How to Install Client
+
+- 현재 프로젝트 기준, Feed.js 에서 openSocket 관련된 코드와 addPost , updatePost 메서드들을 제거한다
+  - ( 나중에 다르게 작성할 예정 )
+
+- 아래 파일 수정
+````
+client/
+|
+|– src/                          
+    |
+    |– pages/                     
+        |
+        |– Feed/                 
+            |
+            |– Feed.js                  # openSocket , addPost , updatePost 제거
+````
+
+---
+
 ### How to Use?
 
 - GraphQL 의 가장 큰 특징으로 하나의 EndPoint 로 받고자 하는 frontend 데이터를 정의할 수 있다
 
-### GraphQL 의 query 를 사용하는 방법
+### Query 를 사용하여 데이터 요청
 
 ---
 
@@ -234,10 +254,36 @@ const graphqlResolver = require( './graphql/resolvers' );
 /** post 요청으로 제한하지않고 모든 middleware 타입으로 넘겨준다 */
 app.use( '/graphql' , graphqlHTTP( {
   schema : graphqlSchema,
-  rootValue : graphqlResolver
+  rootValue : graphqlResolver,
+  graphiql : true,        // graphiql 툴 사용 http://localhost:8080/graphql 로 접근하여 테스트 할 수 있다
 } ) );
 
 ````
+
+- 또한 app.js 에서 graphQL 을 등록할때, { graphiql : true } 값을 입력해 두었다면,
+
+
+- graphQL 을 등록한 url 로 이동하여 graphQL API 를 테스트해볼수도 있다
+  - 위의 예시에서는 http://localhost:8080/graphql
+
+
+- 해당 url 로 접근하여, 주석아래에 요청할 값들을 작성하고 play( run ) 버튼을 눌러 응답값을 체크할 수 있다
+
+````shell
+# 아래 형태로 작성하여 응답값을 왼쪽에서 바로 볼 수 있다
+
+mutation{
+  createUser( userInput:{ email :"test@test.com" , name :"Max" , password :"tester" } ) {
+    _id
+    email
+  }
+}
+````
+
+- 즉, PostMan 보다 테스트하기 용이하다.
+
+
+- 자동완성이 지원되어, 상호작용이 가능하고, 오른쪽에 참고 DOC 를 지원하여 쉽게 테스트할 수 있다
 
 ---
 
@@ -302,3 +348,128 @@ fetch( 'http://localhost:8080/graphql' , {
 
 - 서버에서 받는 데이터가 필터링되어 들어온다
   - ( 응답데이터의 부담이 줄어든다! )
+
+---
+
+### Mutation 을 사용하여 데이터 응답
+
+- 데이터를 요청시 반환하는 것 뿐만이 아니라, 
+  - frontend 에서 데이터를 업데이트해야할 경우, 
+  - Mutation 을 사용할 수 있다
+
+---
+
+#### schema.js
+
+- type 선언시 queryName( paramName : paramType ) 형태로 입력하면, 요청시 입력한 파라미터를 입력할 수 있다 
+
+
+- 사용자가 입력한 데이터 타입을 만들경우에는 type 키워드가 아닌, input 키워드를 사용한다
+
+
+- 또한, GraphQL 타입 중 ID 타입은 GraphQL 이 제공하는 type 으로, ID 로 취급된다
+
+
+- 기본 GraphQL built-in 타입이 아닌, 레퍼런스 타입들은( Object ,Array 등 ) 
+  - 반드시 input, type 등으로 선언해줘야 한다
+
+````javascript
+/** ===== graphql/schema.js ===== */
+
+/** Query , Mutation, Subscription 등 GraphQL 서비스 유형 정의 */
+const { buildSchema } = require( 'graphql' );
+
+module.exports = buildSchema( `
+    type Post {
+        _id : ID!
+        title : String!
+        content : String!
+        imageUrl : String!
+        creator : User!
+        createdAt : String!
+        updatedAt : String!
+    }
+
+    type User {
+        _id : ID!
+        name : String!
+        email : String!
+        password : String
+        status : String!
+        posts : [Post!]!
+    }
+
+    input UserInputData {
+        email : String!
+        name : String!
+        password : String!
+    }
+    
+    type RootQuery {
+        hello : String
+    }
+
+    type RootMutation {
+        createUser( userInput : UserInputData ): User!
+    }
+    
+    schema {
+        query : RootQuery
+        mutation : RootMutation
+    }
+` );
+````
+
+---
+
+#### resolver.js
+
+- resolver 에서는 query 에 파라미터를 추가시, 파라미터를 받을 수 있다
+
+
+- Schema 에 작성했던 parameter 타입과, response 타입을 통하여, 실제 사용자를 생성하는 로직을 작성한다
+
+````javascript
+/** ===== graphql/schema.js ===== */
+
+const bcrypt = require( 'bcryptjs' );
+const User = require( '../models/user' );
+
+/** 들어오는 Query 를 위해 실행되는 논리 정의 */
+module.exports = {
+    /**
+     * - Schema 에 정의했던 arguments 데이터들이 첫 번째 argument 에 들어온다
+     *   ( 다수의 arguments 들을 입력할 수 있기 때문에, 첫번째 파라미터에 객체형태로 들어온다 )
+     * */
+    createUser : async function( { userInput } , req ){
+        const existingUser = await User.findOne( { email : userInput.email } );
+
+        /** 사용자가 존재할 경우 에러 생성 */
+        if ( existingUser ){
+            const error = new Error( 'User exists already!' );
+            throw error;
+        }
+
+        /** password 를 암호화하고 저장한 후, 응답 값 반환 */
+        const hashedPw = await bcrypt.hash( userInput.password , 12 );
+        const user = new User( {
+            email : userInput.email,
+            name : userInput.name,
+            password : hashedPw
+        } );
+
+        /** DB 에 사용자 저장 */
+        const createdUser = await user.save();
+
+        /**
+         * - Schema 에 정의된 User 객체와 같은 type 을 반환하도록 한다
+         *
+         * - _doc 를 사용하면, Mongoose 가 추가한 메타데이터를 제외한 사용자가 입력한 데이터들만 반환한다
+         */
+        return {
+            ...createdUser._doc,
+            _id : createdUser._id.toString(),
+        }
+    }
+};
+````

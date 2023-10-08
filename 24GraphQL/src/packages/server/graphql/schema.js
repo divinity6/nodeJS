@@ -1,17 +1,42 @@
-/** Query , Mutation, Subscription 등 GraphQL 서비스 유형 정의 */
 const { buildSchema } = require( 'graphql' );
 
+/** Query , Mutation, Subscription 등 GraphQL 서비스 유형 정의 */
 module.exports = buildSchema( `
-    type TestData {
-        text : String!
-        views : Int!
+    type Post {
+        _id : ID!
+        title : String!
+        content : String!
+        imageUrl : String!
+        creator : User!
+        createdAt : String!
+        updatedAt : String!
     }
 
+    type User {
+        _id : ID!
+        name : String!
+        email : String!
+        password : String
+        status : String!
+        posts : [Post!]!
+    }
+
+    input UserInputData {
+        email : String!
+        name : String!
+        password : String!
+    }
+    
     type RootQuery {
-        hello: TestData
+        hello : String
+    }
+
+    type RootMutation {
+        createUser( userInput : UserInputData ): User!
     }
     
     schema {
-        query: RootQuery
+        query : RootQuery
+        mutation : RootMutation
     }
 ` );

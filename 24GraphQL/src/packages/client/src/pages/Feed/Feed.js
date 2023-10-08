@@ -1,5 +1,4 @@
 import React, { Component, Fragment } from 'react';
-import openSocket from 'socket.io-client';
 
 import Post from '../../components/Feed/Post/Post';
 import Button from '../../components/Button/Button';
@@ -37,55 +36,7 @@ class Feed extends Component {
       .catch(this.catchError);
 
     this.loadPosts();
-
-    /** 해당 웹 소켓을 구현할때, 웹소켓이 연결된 서버의 포트를 입력한다 */
-    const socket = openSocket( `http://localhost:8080` );
-
-    /** 서버에서 보낸 socket posts 이벤트 수신 */
-    socket.on( 'posts' , data => {
-      console.log( '<< Listen Websocket Post >>' , data );
-      if ( 'create' === data.action ){
-        this.addPost( data.post );
-      }
-      else if ( 'update' === data.action ){
-        this.updatePost( data.post );
-      }
-      else if ( 'delete' === data.action ){
-        this.loadPosts();
-      }
-    } );
   }
-
-  /** Post 추가하여 상태 업데이트 ( 상태가 업데이트되면 자동으로 DOM 에 렌더링 ) */
-  addPost = post => {
-    this.setState(prevState => {
-      const updatedPosts = [...prevState.posts];
-      if (prevState.postPage === 1) {
-        if (prevState.posts.length >= 2) {
-          updatedPosts.pop();
-        }
-        updatedPosts.unshift(post);
-      }
-      return {
-        posts: updatedPosts,
-        totalPosts: prevState.totalPosts + 1
-      };
-    });
-  }
-
-  /** Post 업데이트 ( 상태가 업데이트되면 자동으로 DOM 에 렌더링 ) */
-  updatePost = post => {
-    this.setState(prevState => {
-      const updatedPosts = [...prevState.posts];
-      const updatedPostIndex = updatedPosts.findIndex(p => p._id === post._id);
-      if ( -1 < updatedPostIndex ) {
-        updatedPosts[updatedPostIndex] = post;
-      }
-      return {
-        posts: updatedPosts
-      };
-    });
-  };
 
   /** component 가 Mount 된 후에 호출 */
   loadPosts = direction => {

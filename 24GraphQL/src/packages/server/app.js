@@ -94,7 +94,8 @@ app.use( ( req , res , next ) => {
 /** post 요청으로 제한하지않고 모든 middleware 타입으로 넘겨준다 */
 app.use( '/graphql' , graphqlHTTP( {
     schema : graphqlSchema,
-    rootValue : graphqlResolver
+    rootValue : graphqlResolver,
+    graphiql : true,        // graphiql 툴 사용 http://localhost:8080/graphql 로 접근하여 테스트 할 수 있다
 } ) );
 
 /** 에러 처리 미들웨어 */
