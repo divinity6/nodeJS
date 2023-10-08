@@ -111,3 +111,194 @@
 
 
 - 쿼리 표현을 요청 본문에 넣기 위해 오직 POST 요청만 사용한다
+
+---
+
+### How to Install
+
+- graphQL 을 사용할 것이기 때문에, route 폴더( app.js 에서 사용하는 route 들 전부 )와 socket.io 라이브러리를 제거한다
+
+
+- 그 후 graphql 과 express-graphql 패키지를 설치한다
+  - express-graphql 은 graphql 14.7.0 이나, 15.3.0 버전과 호환된다
+
+````shell
+npm i graphql@15.3.0 --workspace=<< 워크스페이스_이름 >>
+````
+
+````shell
+npm i express-graphql --workspace=<< 워크스페이스_이름 >>
+````
+
+- 상위 버전을 사용하려면, express-graphql 이 아닌, graphql-helix 를 사용하면 된다
+
+- 추가되는 패키지 구조
+````
+server/
+|
+|– graphql/                          # graphql 관련된 코드들
+|   |
+|   |– schema.js                     # Query , Mutation, Subscription 등 GraphQL 서비스 유형 정의( router 역할 )
+|   |
+|   |– resolvers.js                  # 들어오는 Query 를 위해 실행되는 논리등( controller 역할 )
+|
+|– app.js
+````
+
+---
+
+### How to Use?
+
+- GraphQL 의 가장 큰 특징으로 하나의 EndPoint 로 받고자 하는 frontend 데이터를 정의할 수 있다
+
+### GraphQL 의 query 를 사용하는 방법
+
+---
+
+#### schema.js
+
+- Rest API 의 Route 역할로, 응답하고자하는 Schema 를 정의한다
+
+
+- 이때, 벡틱( `` )을 이용하여 선언하는데, GraphQL 에 내장된 유형은 String , Int , Float , Boolean , ID 등이 있다
+  - 필드는 콤마( , )를 사용하지 않고, 반환하고자 하는 타입들을 선언한다
+  
+
+- **type** :
+  - type TestData {}등, 반환하고자 하는 데이터 응답 타입을 정의한다( key : value 형태 )
+  - 이때, 응답 타입에 ! 를 붙이면 required 가 된다( String! )
+
+
+- **schema** :
+  - 사용하고자 하는 type 필드를 정의 및 작성한다( 이때, query 로 받을지, Mutation 으로 받을지 등등을 설정한다 )
+
+````javascript
+/** ===== graphql/schema.js ===== */
+
+/** Query , Mutation, Subscription 등 GraphQL 서비스 유형 정의 */
+const { buildSchema } = require( 'graphql' );
+
+module.exports = buildSchema( `
+    type TestData {
+        text : String!
+        views : Int!
+    }
+
+    type RootQuery {
+        hello: TestData
+    }
+    
+    schema {
+        query: RootQuery
+    }
+` );
+````
+
+---
+
+#### resolvers.js
+
+- Rest API 의 Controller 역할로, 생성한 Schema 의 반환 메서드 및 논리를 정의한다
+
+
+- 이때, **Schema 에 정의된 각 Query , Mutation 등의 이름과 일치하는 메서드**가 필요하다
+  - ( Query 이름이 위의 RootQuery 타입에서는 hello 이기 때문에 hello 메서드가 필요하다 )
+
+````javascript
+/** ===== graphql/resolvers.js ===== */
+
+/** 들어오는 Query 를 위해 실행되는 논리 정의 */
+module.exports = {
+  hello(){
+    return {
+      text : 'Hello World!',
+      views : 1245
+    }
+  }
+};
+````
+
+---
+
+#### app.js
+
+- 이제, app.js 에서 graphQL 과 express app 을 연결시켜준다
+
+````javascript
+/** ===== app.js ===== */
+
+const { graphqlHTTP } = require( 'express-graphql' );
+const graphqlSchema = require( './graphql/schema' );
+const graphqlResolver = require( './graphql/resolvers' );
+
+/** post 요청으로 제한하지않고 모든 middleware 타입으로 넘겨준다 */
+app.use( '/graphql' , graphqlHTTP( {
+  schema : graphqlSchema,
+  rootValue : graphqlResolver
+} ) );
+
+````
+
+---
+
+#### frontend
+
+- frontend 에서 이제 요청을 보낼때, app.js 에서 설정한 entryPoint 로 요청을 보내면,
+
+
+- 요청 query 에 따라 응답을 반환해준다
+
+````javascript
+/** ========== frontend request ========== */
+fetch( 'http://localhost:8080/graphql' , {
+  method : 'POST',
+  body : {
+      /** 받고자 하는 데이터들을 콤마( , ) 없이 String 형식으로 나열  */
+      query : "{ hello { text } }"
+  }
+} )
+````
+
+- 응답값은 아래와 같다
+
+````json
+{
+  "data": {
+    "hello": {
+      "text": "Hello World!"
+    }
+  }
+}
+````
+
+- 요청 query 에 필드를 추가할 경우
+
+````javascript
+/** ========== frontend request ========== */
+fetch( 'http://localhost:8080/graphql' , {
+  method : 'POST',
+  body : {
+      /** 받고자 하는 데이터들을 콤마( , ) 없이 String 형식으로 나열  */
+      query : "{ hello { text views } }"
+  }
+} )
+````
+
+- 응답값은 아래와 같다
+
+````json
+{
+  "data": {
+    "hello": {
+      "text": "Hello World!",
+      "views": 1245
+    }
+  }
+}
+````
+
+- 즉, 지금까지의 과정으로 frontend 에서 받고자하는 데이터를 filtering 하는 것이 아니라, express-graphql 에 의해
+
+
+- 서버에서 받는 데이터가 필터링되어 들어온다
+  - ( 응답데이터의 부담이 줄어든다! )

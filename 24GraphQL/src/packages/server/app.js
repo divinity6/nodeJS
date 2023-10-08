@@ -5,9 +5,12 @@ const bodyParser = require( 'body-parser' );
 const mongoose = require( 'mongoose' );
 const multer = require( 'multer' );
 
+const { graphqlHTTP } = require( 'express-graphql' );
+const graphqlSchema = require( './graphql/schema' );
+const graphqlResolver = require( './graphql/resolvers' );
+
 const privateKeys = require( './utils/privateKeys' );
-const feedRoutes = require( './routes/feed' );
-const authRoutes = require( './routes/auth' );
+
 const app = express();
 
 /** 파일을 어디에 설정할지 설정 */
@@ -88,8 +91,11 @@ app.use( ( req , res , next ) => {
     next();
 } );
 
-app.use( '/feed' , feedRoutes );
-app.use( '/auth' , authRoutes );
+/** post 요청으로 제한하지않고 모든 middleware 타입으로 넘겨준다 */
+app.use( '/graphql' , graphqlHTTP( {
+    schema : graphqlSchema,
+    rootValue : graphqlResolver
+} ) );
 
 /** 에러 처리 미들웨어 */
 app.use( ( error , req , res , next ) => {
@@ -104,16 +110,8 @@ app.use( ( error , req , res , next ) => {
 mongoose
     .connect( privateKeys.MONGODB_URI )
     .then( () => {
-        const server = app.listen( 8080 );
+        app.listen( 8080 );
         console.log( "<< StartWebApplication >>" );
-
-        /** socket 연결 */
-        const io = require( './socket' ).init( server );
-
-        /** 새로운 클라이언트가 연결될 때마다... */
-        io.on( 'connection' , socket => {
-            console.log( "<< ConnectedWebSocket >>" );
-        } );
     } )
     .catch( err => {
         console.log("<<StartApp Err>>", err);
