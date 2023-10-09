@@ -818,3 +818,263 @@ fetch( 'http://localhost:8080/graphql' , {
   }
 } )
 ````
+
+---
+
+### createPost
+
+- 게시물 추가할때도, Schema 에 게시물 타입을 정의한다
+
+````javascript
+/** ===== graphql/schema.js ===== */
+
+const { buildSchema } = require( 'graphql' );
+
+/** 하나의 entryPoint 를 사용하기 때문에, 이곳에 정의한다 */
+module.exports = buildSchema( `
+
+    type Post {
+        _id : ID!
+        title : String!
+        content : String!
+        imageUrl : String!
+        creator : User!
+        createdAt : String!
+        updatedAt : String!
+    }
+    
+    input PostInputData {
+        title : String!
+        content : String!
+        imageUrl : String!
+    }
+
+    type RootMutation {
+        createPost( postInput : PostInputData ) : Post!
+    }
+
+    schema {
+        query : RootQuery
+        mutation : RootMutation
+    }
+` );
+````
+
+- 그리고, 정의한 타입에 따라 내보내주는 resolver 를 추가한다 
+
+````javascript
+/** ===== graphql/resolvers.js ===== */
+const validator = require( 'validator' );
+const Post = require( '../models/post' );
+
+/** 들어오는 Query 를 위해 실행되는 논리 정의 */
+module.exports = {
+  /** 게시물 추가하기 */
+  createPost : async ( { postInput } , req ) => {
+    const errors = [];
+    /** title validation 체크 */
+    if ( validator.isEmpty( postInput.title ) ||
+            !validator.isLength( postInput.title , { min : 5 } ) ){
+      errors.push( { message : 'Title is invalid.' } );
+    }
+
+    /** content validation 체크 */
+    if ( validator.isEmpty( postInput.content ) ||
+            !validator.isLength( postInput.content , { min : 5 } ) ){
+      errors.push( { message : 'Content is invalid.' } );
+    }
+
+    if ( 0 < errors.length ){
+      const error = new Error( 'Invalid input.' );
+      /** 에러 객체의 data 필드에 발생한 error 들 추가 */
+      error.data = errors;
+      error.code = 422;
+
+      throw error;
+    }
+
+    /** 새로운 게시물 생성 */
+    const post = new Post( {
+      title : postInput.title,
+      content : postInput.content,
+      imageUrl : postInput.imageUrl,
+    } );
+    const createdPost = await post.save();
+    // Add post to user's posts
+    return {
+      ...createdPost._doc ,
+      _id : createdPost._id.toString(),
+      /**
+       * - 작성일시등은 Date 타입으로 저장되는데 GraphQL 은 읽지 못하기 때문에,
+       *   String 으로 변환해주면 된다
+       */
+      createdAt : createdPost.createdAt.toISOString(),
+      updatedAt : createdPost.updatedAt.toISOString(),
+    }
+  }
+}
+````
+
+- 그런데, 게시물을 추가하거나, 가져올때, 요청하는 사람이 인증된 사람인지,
+
+
+- 즉, 검증된 사람인지 검증하는 작업이 필요하다
+
+
+- 따라서, 기존 토큰 검증 미들웨어에서 검증하는데, 검증처리시 에러처리는
+  - ( 예를들어, 검증되지 않은사람이거나, 유효하지 토큰이거나등등... )
+
+
+- GraphQL resolver 에서 던지는게 맞으므로, 에러를 직접 던지지 않고, 식별할 수 있는 flag 만 설정해둔다
+  - 예) isAuth = false 등
+
+````javascript
+/** ===== middleware/auth.js ===== */
+const jwt = require( 'jsonwebtoken' );
+
+/**
+ * - JSON Web Token 인증 미들웨어
+ * @param req
+ * @param res
+ * @param next
+ */
+module.exports = ( req , res , next ) => {
+  const authHeader = req.get( 'Authorization' );
+
+  /** 인증헤더를 부착하지 않았을 경우 */
+  if ( !authHeader ){
+    /**
+     * - 일반 Error Handler 에서 처리하는것이 아닌,
+     *   GraphQL resolver 에서 처리하도록 수정
+     */
+    req.isAuth = false;
+    return next();
+  }
+
+  /** Authorization 헤더 반환 Bearer 부분을 잘라서 사용 */
+  const [ _ , token ] = authHeader.split( ' ' );
+  let decodedToken;
+  try {
+    /**
+     * - verify() 메서드는 토큰을 해석할뿐만 아니라, 체크하는 과정도 거친다
+     *
+     * - decoded 메서드도 존재하지만, 해독만하지, 유효한지는 체크하지 않기 때문에
+     *   반드시 verify 메서드를 사용한다
+     *
+     * --> verify 메서드는 토큰과 비공개 인증키를 함께 넣어줘야한다
+     */
+    decodedToken = jwt.verify( token , 'somesupersecretsecret' );
+  }
+  catch ( err ){
+    /**
+     * - 일반 Error Handler 에서 처리하는것이 아닌,
+     *   GraphQL resolver 에서 처리하도록 수정
+     */
+    req.isAuth = false;
+    return next();
+  }
+
+  /** 해독은 잘되었지만, 토큰이 유효하지 않을 경우 */
+  if ( !decodedToken ){
+    /**
+     * - 일반 Error Handler 에서 처리하는것이 아닌,
+     *   GraphQL resolver 에서 처리하도록 수정
+     */
+    req.isAuth = false;
+    return next();
+  }
+
+  /** 인증이 되었다면 해당 토큰의 userId 를 요청에 부착하여 사용 */
+  req.userId = decodedToken.userId;
+  /** 복호화를 성공한 경우에만 true 로 설정 */
+  req.isAuth = true;
+  console.log( '<< JWT Auth UserId>>' , req.userId );
+
+  next();
+}
+````
+
+- 그러므로, 해당 검증처리는 GraphQL 미들웨어보다 먼저 실행되어야 하므로, 
+
+
+- GraphQL 상위 미들웨어에 등록해준다
+
+
+- 즉, 인증처리 미들웨어에서 처리하는것은 isAuth flag 가 인증되었는지 여부와 사용자를 설정하는 것이다
+
+````javascript
+/** ===== app.js ===== */
+const express = require( 'express' );
+const { graphqlHTTP } = require( 'express-graphql' );
+const auth = require( './middleware/auth' );
+const app = express();
+
+/** GraphQL 동작전 token 체크 미들웨어에서 먼저 체크 */
+app.use( auth );
+
+/** post 요청으로 제한하지않고 모든 middleware 타입으로 넘겨준다 */
+app.use( '/graphql' , graphqlHTTP( { ... } ) );
+
+````
+
+- 그 후, resolver 에서 인증처리가 되어있는지 validation 체크하고,
+
+
+- userId 정보가 제공되므로,  Post Model 의 creator 필드를 업데이트할 수 있다
+
+
+````javascript
+/** ===== graphql/resolvers.js ===== */
+const validator = require( 'validator' );
+const User = require( '../models/user' );
+const Post = require( '../models/post' );
+
+/** 들어오는 Query 를 위해 실행되는 논리 정의 */
+module.exports = {
+  /** 게시물 추가하기 */
+  createPost : async ( { postInput } , req ) => {
+    /** 검증되지 않은 사용자일 경우 처리 */
+    if ( !req.isAuth ){
+      const error = new Error( 'Not authenticated!' );
+      error.code = 401;
+      throw error;
+    }
+
+    /** validation 체크 로직... */
+
+    /** 여기에서 찾은 User 는 현재 로그인 중인 사용자다 */
+    const user = await User.findOne( req.userId );
+    if ( !user ){
+      const error = new Error( 'Invalid user.' );
+      error.code = 422;
+      throw error;
+    }
+
+    /** 새로운 게시물 생성 */
+    const post = new Post( {
+      title : postInput.title,
+      content : postInput.content,
+      imageUrl : postInput.imageUrl,
+      /** creator 필드에 DB 에서 가져온 User 설정 */
+      creator : user,
+    } );
+    const createdPost = await post.save();
+
+    /** 해당 사용자의 posts 목록도 업데이트 해준다 */
+    user.posts.push( post );
+
+    // await user.save();
+
+    return {
+      ...createdPost._doc ,
+      _id : createdPost._id.toString(),
+      /**
+       * - 작성일시등은 Date 타입으로 저장되는데 GraphQL 은 읽지 못하기 때문에,
+       *   String 으로 변환해주면 된다
+       */
+      createdAt : createdPost.createdAt.toISOString(),
+      updatedAt : createdPost.updatedAt.toISOString(),
+    }
+  }
+}
+````

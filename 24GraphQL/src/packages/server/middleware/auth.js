@@ -11,9 +11,12 @@ module.exports = ( req , res , next ) => {
 
     /** 인증헤더를 부착하지 않았을 경우 */
     if ( !authHeader ){
-        const error = new Error( 'Not authenticated.' );
-        error.statusCode = 401;
-        throw error;
+        /**
+         * - 일반 Error Handler 에서 처리하는것이 아닌,
+         *   GraphQL resolver 에서 처리하도록 수정
+         */
+        req.isAuth = false;
+        return next();
     }
 
     /** Authorization 헤더 반환 Bearer 부분을 잘라서 사용 */
@@ -31,20 +34,29 @@ module.exports = ( req , res , next ) => {
         decodedToken = jwt.verify( token , 'somesupersecretsecret' );
     }
     catch ( err ){
-        /** error 핸들러에서 처리 */
-        err.statusCode = 500;
-        throw err;
+        /**
+         * - 일반 Error Handler 에서 처리하는것이 아닌,
+         *   GraphQL resolver 에서 처리하도록 수정
+         */
+        req.isAuth = false;
+        return next();
     }
 
     /** 해독은 잘되었지만, 토큰이 유효하지 않을 경우 */
     if ( !decodedToken ){
-        const error = new Error( 'Not authenticated.' );
-        error.statusCode = 401;
-        throw error;
+        /**
+         * - 일반 Error Handler 에서 처리하는것이 아닌,
+         *   GraphQL resolver 에서 처리하도록 수정
+         */
+        req.isAuth = false;
+        return next();
     }
 
     /** 인증이 되었다면 해당 토큰의 userId 를 요청에 부착하여 사용 */
     req.userId = decodedToken.userId;
+    /** 복호화를 성공한 경우에만 true 로 설정 */
+    req.isAuth = true;
     console.log( '<< JWT Auth UserId>>' , req.userId );
+
     next();
 }

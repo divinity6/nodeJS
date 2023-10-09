@@ -2,6 +2,7 @@ const bcrypt = require( 'bcryptjs' );
 const validator = require( 'validator' );
 const jwt = require( 'jsonwebtoken' );
 const User = require( '../models/user' );
+const Post = require( '../models/post' );
 
 /** 들어오는 Query 를 위해 실행되는 논리 정의 */
 module.exports = {
@@ -9,7 +10,7 @@ module.exports = {
      * - Schema 에 정의했던 arguments 데이터들이 첫 번째 argument 에 들어온다
      *   ( 다수의 arguments 들을 입력할 수 있기 때문에, 첫번째 파라미터에 객체형태로 들어온다 )
      * */
-    createUser : async function( { userInput } , req ){
+    createUser : async ( { userInput } , req ) => {
         const existingUser = await User.findOne( { email : userInput.email } );
 
         const errors = [];
@@ -98,5 +99,70 @@ module.exports = {
             email : user.email
         } , 'somesupersecretsecret' , { expiresIn : '1h' } );
         return { token , userId : user._id.toString() }
+    },
+    /** 게시물 추가하기 */
+    createPost : async ( { postInput } , req ) => {
+        /** 검증되지 않은 사용자일 경우 처리 */
+        if ( !req.isAuth ){
+            const error = new Error( 'Not authenticated!' );
+            error.code = 401;
+            throw error;
+        }
+
+        const errors = [];
+        /** title validation 체크 */
+        if ( validator.isEmpty( postInput.title ) ||
+            !validator.isLength( postInput.title , { min : 5 } ) ){
+            errors.push( { message : 'Title is invalid.' } );
+        }
+
+        /** content validation 체크 */
+        if ( validator.isEmpty( postInput.content ) ||
+            !validator.isLength( postInput.content , { min : 5 } ) ){
+            errors.push( { message : 'Content is invalid.' } );
+        }
+
+        if ( 0 < errors.length ){
+            const error = new Error( 'Invalid input.' );
+            /** 에러 객체의 data 필드에 발생한 error 들 추가 */
+            error.data = errors;
+            error.code = 422;
+
+            throw error;
+        }
+
+        /** 여기에서 찾은 User 는 현재 로그인 중인 사용자다 */
+        const user = await User.findOne( req.userId );
+        if ( !user ){
+            const error = new Error( 'Invalid user.' );
+            error.code = 422;
+            throw error;
+        }
+
+        /** 새로운 게시물 생성 */
+        const post = new Post( {
+            title : postInput.title,
+            content : postInput.content,
+            imageUrl : postInput.imageUrl,
+            /** creator 필드에 DB 에서 가져온 User 설정 */
+            creator : user,
+        } );
+        const createdPost = await post.save();
+
+        /** 해당 사용자의 posts 목록도 업데이트 해준다 */
+        user.posts.push( post );
+
+        // await user.save();
+
+        return {
+            ...createdPost._doc ,
+            _id : createdPost._id.toString(),
+            /**
+             * - 작성일시등은 Date 타입으로 저장되는데 GraphQL 은 읽지 못하기 때문에,
+             *   String 으로 변환해주면 된다
+             */
+            createdAt : createdPost.createdAt.toISOString(),
+            updatedAt : createdPost.updatedAt.toISOString(),
+        }
     }
 };

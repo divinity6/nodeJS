@@ -8,6 +8,7 @@ const multer = require( 'multer' );
 const { graphqlHTTP } = require( 'express-graphql' );
 const graphqlSchema = require( './graphql/schema' );
 const graphqlResolver = require( './graphql/resolvers' );
+const auth = require( './middleware/auth' );
 
 const privateKeys = require( './utils/privateKeys' );
 
@@ -95,6 +96,9 @@ app.use( ( req , res , next ) => {
 
     next();
 } );
+
+/** GraphQL 동작전 token 체크 미들웨어에서 먼저 체크 */
+app.use( auth );
 
 /** post 요청으로 제한하지않고 모든 middleware 타입으로 넘겨준다 */
 app.use( '/graphql' , graphqlHTTP( {
