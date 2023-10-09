@@ -1,6 +1,6 @@
 const bcrypt = require( 'bcryptjs' );
 const validator = require( 'validator' );
-
+const jwt = require( 'jsonwebtoken' );
 const User = require( '../models/user' );
 
 /** 들어오는 Query 를 위해 실행되는 논리 정의 */
@@ -61,5 +61,42 @@ module.exports = {
             ...createdUser._doc,
             _id : createdUser._id.toString(),
         }
+    },
+    /** 로그인 resolver  */
+    login : async ( { email , password } ) => {
+        const user = await User.findOne( { email } );
+
+        /** 유효한 사용자가 없을 경우 */
+        if ( !user ){
+            const error = new Error( 'User not found.' );
+            error.code = 401;
+            throw error;
+        }
+
+        /** 사용자의 password 와 DB password 를 검사한다 */
+        const isEqual = await bcrypt.compare( password, user.password );
+        if ( !isEqual ){
+            const error = new Error( 'Password is incorrect.' );
+            error.code = 401;
+            throw error;
+        }
+
+        /**
+         * - sign 메서드를 이용해 새로운 서명( 시그니처 )생성
+         *
+         * @param { any } payload - 토큰에 이메일, 사용자 아이디등등
+         *   ( 그러나, 비밀번호를 포함하는것은 보안상 좋지 않다 )
+         *
+         * @param { string } secretOrPrivateKey - 서명에 사용할 private key 를 사용한다
+         *                                        ( 이 값을 이용해 난수화해서 해독할 수 없게한다 )
+         *
+         * @param { any } options - 유효기간등 옵션을 설정할 수 있다
+         *                          ( expiresIn : '1h' => 1시간 유효 )
+         */
+        const token = jwt.sign( {
+            userId : user._id.toString(),
+            email : user.email
+        } , 'somesupersecretsecret' , { expiresIn : '1h' } );
+        return { token , userId : user._id.toString() }
     }
 };

@@ -88,6 +88,11 @@ app.use( ( req , res , next ) => {
      */
     res.setHeader( 'Access-Control-Allow-Headers' , 'Content-Type, Authorization' );
 
+    /** GraphQL 사용시, OPTIONS 로 URI 체크시 유효한 응답을 반환하도록 설정 */
+    if ( 'OPTIONS' === req.method ){
+        return res.sendStatus( 200 );
+    }
+
     next();
 } );
 

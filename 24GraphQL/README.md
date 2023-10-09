@@ -327,14 +327,20 @@ fetch( 'http://localhost:8080/graphql' , {
 
 - 요청 query 에 필드를 추가할 경우
 
+
+- GraphQL 중 일반 Query 타입일 경우에는, 타입을 명시하지 않고,
+
+
+- JSON.stringify( { query : ... } ) 형태로 곧바로 보낸다
+
 ````javascript
 /** ========== frontend request ========== */
 fetch( 'http://localhost:8080/graphql' , {
   method : 'POST',
-  body : {
-      /** 받고자 하는 데이터들을 콤마( , ) 없이 String 형식으로 나열  */
-      query : "{ hello { text views } }"
-  }
+  body : JSON.stringify( {
+    /** 받고자 하는 데이터들을 콤마( , ) 없이 String 형식으로 나열  */
+    query : "{ hello { text views } }"
+  } )
 } )
 ````
 
@@ -639,4 +645,176 @@ module.exports = {
   ],
   "data": null
 }
+````
+
+#### frontend
+
+- frontend 에서 요청을 보낼때 entryPoint 는 하나기 때문에, graphql entryPoint 로 요청을 보낸다 
+
+
+- graphql 을 처음 사용하면 요청을 보낼시 Failed to fetch 에러를 만나게 되는데, 
+  - 브라우저가 실제 요청을 보내기전 Options 메서드를 전송해 해당 URI 가 유효한지 체크한다
+  - 그러나, 문제는 Express GraphQL 이 POST 나 GET 요청을 제외하고 모든 요청을 자동으로 거부한다
+  - ( 따라서, Options 요청도 거절된다 )
+
+
+- 따라서, 서버에서 OPTIONS 메서드로 들어온 요청을 서버 Header 설정에서 OK 로 응답하도록 설정해줘야 한다
+
+````javascript
+/** ===== app.js ===== */
+
+/** CORS 이슈를 해결하기 위해 header 에 교차출처 공유 설정 */
+app.use( ( req , res , next ) => {
+
+    /** 이전 HTTP Header 설정 코드들... */
+    
+    /** GraphQL 사용시, OPTIONS 로 URI 체크시 유효한 응답을 반환하도록 설정 */
+    if ( 'OPTIONS' === req.method ){
+        return res.sendStatus( 200 );
+    }
+    next();
+} );
+
+````
+
+- frontend 에서는 요청을 보낼때, graphql 형식에 맞게 보내줘야하는데,
+
+
+- 문자열 형태로 모든 데이터를 작성하여 보낸다
+
+
+- GraphQL 요청 중 일반 query 타입을 제외하고는, 어떤 요청 query 인지 명시하여 보내줘야 한다
+
+````javascript
+/** ========== frontend request ========== */
+const graphqlQuery = {
+  query :`
+    mutation {
+      createUser( userInput: { 
+        email :"${ authData.signupForm.email.value }" , 
+        name :"${ authData.signupForm.name.value }" , 
+        password :"${ authData.signupForm.password.value }" 
+        } ) {
+        _id
+        email
+      }
+    }
+  `
+};
+
+fetch( 'http://localhost:8080/graphql' , {
+  method : 'POST',
+  body : {
+      /** 받고자 하는 데이터들을 콤마( , ) 없이 String 형식으로 나열  */
+      query : JSON.stringify( graphqlQuery )
+  }
+} )
+````
+
+---
+
+### Auth
+
+- 로그인은 결국 사용자 데이터를 전송하고, 토큰을 받기 원하는 일반적인 Query 와 같다
+
+
+- 따라서, RestAPI 의 로그인 방식을 사용할 수 있다
+
+````javascript
+/** ===== graphql/schema.js ===== */
+
+const { buildSchema } = require( 'graphql' );
+
+/** 하나의 entryPoint 를 사용하기 때문에, 이곳에 login 관련 Schema 도 정의한다 */
+module.exports = buildSchema( `
+
+    type AuthData {
+        token : String!
+        userId : String!
+    }
+
+    type RootQuery {
+        login( email : String!, password : String! ) : AuthData!
+    }
+
+    schema {
+        query : RootQuery
+        mutation : RootMutation
+    }
+` );
+````
+
+- 그리고, 정의했던 Schema 를 토대로 login resolver 를 추가해주면 된다
+
+````javascript
+/** ===== graphql/resolvers.js ===== */
+const bcrypt = require( 'bcryptjs' );
+const jwt = require( 'jsonwebtoken' );
+const User = require( '../models/user' );
+
+/** 들어오는 Query 를 위해 실행되는 논리 정의 */
+module.exports = {
+  /** 로그인 resolver  */
+  login : async ( { email , password } ) => {
+    const user = await User.findOne( { email } );
+
+    /** 유효한 사용자가 없을 경우 */
+    if ( !user ){
+      const error = new Error( 'User not found.' );
+      error.code = 401;
+      throw error;
+    }
+
+    /** 사용자의 password 와 DB password 를 검사한다 */
+    const isEqual = await bcrypt.compare( password, user.password );
+    if ( !isEqual ){
+      const error = new Error( 'Password is incorrect.' );
+      error.code = 401;
+      throw error;
+    }
+
+    /**
+     * - sign 메서드를 이용해 새로운 서명( 시그니처 )생성
+     *
+     * @param { any } payload - 토큰에 이메일, 사용자 아이디등등
+     *   ( 그러나, 비밀번호를 포함하는것은 보안상 좋지 않다 )
+     *
+     * @param { string } secretOrPrivateKey - 서명에 사용할 private key 를 사용한다
+     *                                        ( 이 값을 이용해 난수화해서 해독할 수 없게한다 )
+     *
+     * @param { any } options - 유효기간등 옵션을 설정할 수 있다
+     *                          ( expiresIn : '1h' => 1시간 유효 )
+     */
+    const token = jwt.sign( {
+      userId : user._id.toString(),
+      email : user.email
+    } , 'somesupersecretsecret' , { expiresIn : '1h' } );
+    return { token , userId : user._id.toString() }
+  }
+}
+````
+
+- 다시한번 말하지만, GraphQL 에서 일반 query 타입은 query 를 생략할 수 있다
+
+
+- 따라서, frontend request 에서 query 를 생략하고 데이터를 요청할 수 있다
+
+````javascript
+/** ========== frontend request ========== */
+const graphqlQuery = {
+  query : `{ 
+    login( email : "${ authData.email }" , password : "${ authData.password }" ) {
+      token
+      userId
+    } 
+  }`
+}
+
+fetch( 'http://localhost:8080/graphql' , {
+  method : 'POST',
+  body : {
+      /** 받고자 하는 데이터들을 콤마( , ) 없이 String 형식으로 나열  */
+      query : JSON.stringify( graphqlQuery )
+  }
+} )
 ````
