@@ -130,9 +130,9 @@ module.exports = {
 
             throw error;
         }
-
+        console.log( '<< req.userId >>' , req.userId );
         /** 여기에서 찾은 User 는 현재 로그인 중인 사용자다 */
-        const user = await User.findOne( req.userId );
+        const user = await User.findById( req.userId );
         if ( !user ){
             const error = new Error( 'Invalid user.' );
             error.code = 422;

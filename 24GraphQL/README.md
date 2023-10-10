@@ -1043,7 +1043,7 @@ module.exports = {
     /** validation 체크 로직... */
 
     /** 여기에서 찾은 User 는 현재 로그인 중인 사용자다 */
-    const user = await User.findOne( req.userId );
+    const user = await User.findById( req.userId );
     if ( !user ){
       const error = new Error( 'Invalid user.' );
       error.code = 422;
@@ -1077,4 +1077,42 @@ module.exports = {
     }
   }
 }
+````
+
+- 서버의 GraphQL 작업이 완료되었다면, 이제 frontend 에서 게시물 생성 요청을 보내면 된다
+
+
+- 이때, 응답받는 데이터 중 중첩된 필드에서 받을 필드를 지정해서, 원하는 필드만 필터링해서 받아올 수 있다
+
+````javascript
+/** ========== frontend request ========== */
+let graphqlQuery = {
+          query : `
+        mutation {
+          createPost( postInput : { 
+            title : "${ postData.title }" , 
+            content : "${ postData.content }" , 
+            imageUrl: "some url" 
+          } ) {
+            _id
+            title
+            content
+            imageUrl
+            creator {
+              name
+            }
+            createdAt
+          }
+        }
+      `
+        }
+
+/** 서버측 어플리케이션에 컨텐츠 전송 */
+fetch( `http://localhost:8080/graphql` , {
+  method : 'POST',
+  body : JSON.stringify( graphqlQuery ),
+  headers : {
+    Authorization : `Bearer ${ this.props.token }`
+  }
+} )
 ````
