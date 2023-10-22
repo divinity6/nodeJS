@@ -1022,7 +1022,6 @@ app.use( '/graphql' , graphqlHTTP( { ... } ) );
 
 - userId 정보가 제공되므로,  Post Model 의 creator 필드를 업데이트할 수 있다
 
-
 ````javascript
 /** ===== graphql/resolvers.js ===== */
 const validator = require( 'validator' );
@@ -1106,6 +1105,122 @@ let graphqlQuery = {
         }
       `
         }
+
+/** 서버측 어플리케이션에 컨텐츠 전송 */
+fetch( `http://localhost:8080/graphql` , {
+  method : 'POST',
+  body : JSON.stringify( graphqlQuery ),
+  headers : {
+    Authorization : `Bearer ${ this.props.token }`
+  }
+} )
+````
+
+- 전체 게시물을 반환할때는, 전체 게시물 뿐만아니라, 반환하는 게시물 갯수도 반환해야 하기 때문에, 
+
+
+- 게시물 반환용 새로운 type 을 생성하여 반환한다
+
+````javascript
+/** ===== graphql/schema.js ===== */
+
+const { buildSchema } = require( 'graphql' );
+
+/** 하나의 entryPoint 를 사용하기 때문에, 이곳에 정의한다 */
+module.exports = buildSchema( `
+
+    type Post {
+        _id : ID!
+        title : String!
+        content : String!
+        imageUrl : String!
+        creator : User!
+        createdAt : String!
+        updatedAt : String!
+    }
+    
+    type RootQuery {
+        login( email : String!, password : String! ) : AuthData!
+        posts : PostData!
+    }
+    
+    type PostData {
+        posts : [ Post! ]!
+        totalPosts : Int!
+    }
+
+    schema {
+        query : RootQuery
+        mutation : RootMutation
+    }
+` );
+````
+
+- 마찬가지로, resolver 에 해당 schema 에서 정의한 데이터를 반환해주면 된다
+
+````javascript
+/** ===== graphql/resolvers.js ===== */
+const validator = require( 'validator' );
+const User = require( '../models/user' );
+const Post = require( '../models/post' );
+
+/** 들어오는 Query 를 위해 실행되는 논리 정의 */
+module.exports = {
+  /** 게시물 전부 가져오기 */
+  posts : async ( args , req ) => {
+
+    /** 검증되지 않은 사용자일 경우 처리 */
+    if ( !req.isAuth ){
+      const error = new Error( 'Not authenticated!' );
+      error.code = 401;
+      throw error;
+    }
+
+    /** 전체 Post 를 가지고 온후, 전체 갯수를 반환함 */
+    const totalPosts = await Post.find().countDocuments();
+
+    const posts = await Post.find()
+            /** sort : 데이터를 내림차순 정렬 - 최근에 작성된 순으로 정렬하여 반환 */
+            .sort( { createdAt : -1 } )
+            /** 참조 중인 User 테이블에서 creator 필드를 채워서 반환 */
+            .populate( 'creator' )
+
+    return {
+      posts : posts.map( p => ( {
+        ...p._doc ,
+        _id : p._id.toString(),
+        /**
+         * - 작성일시등은 Date 타입으로 저장되는데 GraphQL 은 읽지 못하기 때문에,
+         *   String 으로 변환해주면 된다
+         */
+        createdAt : posts.createdAt.toISOString(),
+        updatedAt : posts.updatedAt.toISOString(),
+      } ) ),
+      totalPosts,
+    };
+  },
+}
+````
+
+- 그 후, frontend 에서 아래처럼 게시물을 요청할 수 있는데, 모든 필드를 가져오고 싶다면 원하는 필드를 일일히 입력해야 하는데,
+
+
+- 추후, 필드 전체를 한번에 가져올 수 있는 방법이 있는지 체크해야 한다
+
+````javascript
+/** ========== frontend request ========== */
+let graphqlQuery = {
+  query : `
+    posts {
+      posts {
+        _id
+        title
+        content
+      }
+      totalPosts
+    }
+  `
+}
 
 /** 서버측 어플리케이션에 컨텐츠 전송 */
 fetch( `http://localhost:8080/graphql` , {

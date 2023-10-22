@@ -100,6 +100,39 @@ module.exports = {
         } , 'somesupersecretsecret' , { expiresIn : '1h' } );
         return { token , userId : user._id.toString() }
     },
+    /** 게시물 전부 가져오기 */
+    posts : async ( args , req ) => {
+
+        /** 검증되지 않은 사용자일 경우 처리 */
+        if ( !req.isAuth ){
+            const error = new Error( 'Not authenticated!' );
+            error.code = 401;
+            throw error;
+        }
+
+        /** 전체 Post 를 가지고 온후, 전체 갯수를 반환함 */
+        const totalPosts = await Post.find().countDocuments();
+
+        const posts = await Post.find()
+            /** sort : 데이터를 내림차순 정렬 - 최근에 작성된 순으로 정렬하여 반환 */
+            .sort( { createdAt : -1 } )
+            /** 참조 중인 User 테이블에서 creator 필드를 채워서 반환 */
+            .populate( 'creator' )
+
+        return {
+            posts : posts.map( p => ( {
+                ...p._doc ,
+                _id : p._id.toString(),
+                /**
+                 * - 작성일시등은 Date 타입으로 저장되는데 GraphQL 은 읽지 못하기 때문에,
+                 *   String 으로 변환해주면 된다
+                 */
+                createdAt : posts.createdAt.toISOString(),
+                updatedAt : posts.updatedAt.toISOString(),
+            } ) ),
+            totalPosts,
+        };
+    },
     /** 게시물 추가하기 */
     createPost : async ( { postInput } , req ) => {
         /** 검증되지 않은 사용자일 경우 처리 */
@@ -150,9 +183,10 @@ module.exports = {
         const createdPost = await post.save();
 
         /** 해당 사용자의 posts 목록도 업데이트 해준다 */
-        user.posts.push( post );
+        user.posts.push( createdPost );
 
-        // await user.save();
+        /** 사용자 데이터 저장 */
+        await user.save();
 
         return {
             ...createdPost._doc ,
