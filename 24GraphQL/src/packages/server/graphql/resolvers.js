@@ -117,8 +117,7 @@ module.exports = {
             /** sort : 데이터를 내림차순 정렬 - 최근에 작성된 순으로 정렬하여 반환 */
             .sort( { createdAt : -1 } )
             /** 참조 중인 User 테이블에서 creator 필드를 채워서 반환 */
-            .populate( 'creator' )
-
+            .populate( 'creator' );
         return {
             posts : posts.map( p => ( {
                 ...p._doc ,
@@ -127,8 +126,8 @@ module.exports = {
                  * - 작성일시등은 Date 타입으로 저장되는데 GraphQL 은 읽지 못하기 때문에,
                  *   String 으로 변환해주면 된다
                  */
-                createdAt : posts.createdAt.toISOString(),
-                updatedAt : posts.updatedAt.toISOString(),
+                createdAt : p.createdAt.toISOString(),
+                updatedAt : p.updatedAt.toISOString(),
             } ) ),
             totalPosts,
         };
