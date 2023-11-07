@@ -1240,4 +1240,138 @@ fetch( `http://localhost:8080/graphql` , {
 } )
 ````
 
-- 또한, 
+### pagination
+
+- 페이지네이션의 경우 frontend 에서 보여줄 페이지 갯수와 현재 페이지를 받아 해당 값으로 계산한 페이지네이션을 구현할 수 있다
+
+
+- RootQuery 에 page 파라미터를 받아 resolvers 에서 처리한다
+
+````javascript
+/** ===== graphql/schema.js ===== */
+
+const { buildSchema } = require( 'graphql' );
+
+/** 하나의 entryPoint 를 사용하기 때문에, 이곳에 정의한다 */
+module.exports = buildSchema( `
+
+    type Post {
+        _id : ID!
+        title : String!
+        content : String!
+        imageUrl : String!
+        creator : User!
+        createdAt : String!
+        updatedAt : String!
+    }
+    
+    type RootQuery {
+        login( email : String!, password : String! ) : AuthData!
+        posts( page : Int ) : PostData!
+    }
+    
+    type PostData {
+        posts : [ Post! ]!
+        totalPosts : Int!
+    }
+
+    schema {
+        query : RootQuery
+        mutation : RootMutation
+    }
+` );
+````
+
+- resolver 에서는 전달받은 page 값을 이용하여 서버에서 skip 할 값만큼 제외하고, 
+
+
+- 해당 페이지의 데이터를 조회후 frontend 에 반환한다
+
+````javascript
+/** ===== graphql/resolvers.js ===== */
+const validator = require( 'validator' );
+const User = require( '../models/user' );
+const Post = require( '../models/post' );
+
+/** 들어오는 Query 를 위해 실행되는 논리 정의 */
+module.exports = {
+  /** 해당 페이지의 게시물 가져오기 */
+  posts : async ( { page } , req ) => {
+
+    /** 검증되지 않은 사용자일 경우 처리 */
+    if ( !req.isAuth ){
+      const error = new Error( 'Not authenticated!' );
+      error.code = 401;
+      throw error;
+    }
+
+    /** page 를 전송하지 않았을 경우에는 무조건 1페이지부터 시작 */
+    if ( !page ){
+      page = 1;
+    }
+    /** 보여줄 페이지 갯수 */
+    const perPage = 2;
+    /** 전체 Post 를 가지고 온후, 전체 갯수를 반환함 */
+    const totalPosts = await Post.find().countDocuments();
+
+    const posts = await Post.find()
+            /** sort : 데이터를 내림차순 정렬 - 최근에 작성된 순으로 정렬하여 반환 */
+            .sort( { createdAt : -1 } )
+            /**
+             * - skip 메서드를 추가하면,
+             *   find 로 찾은 결과중 첫 번째부터 skip 갯수만큼 생략한다
+             */
+            .skip( ( page - 1 ) * perPage  )
+            /** limit 메서드는 find 로 가져오는 데이터양을 지정할 수 있다 */
+            .limit( perPage )
+            /** 참조 중인 User 테이블에서 creator 필드를 채워서 반환 */
+            .populate( 'creator' );
+    return {
+      posts : posts.map( p => ( {
+        ...p._doc ,
+        _id : p._id.toString(),
+        /**
+         * - 작성일시등은 Date 타입으로 저장되는데 GraphQL 은 읽지 못하기 때문에,
+         *   String 으로 변환해주면 된다
+         */
+        createdAt : p.createdAt.toISOString(),
+        updatedAt : p.updatedAt.toISOString(),
+      } ) ),
+      totalPosts,
+    };
+  },
+}
+````
+
+- frontend 에서는 받을 페이지를 전달하면, 서버에서는 해당 페이지에 맞는 데이터틀 계산해 DB 에 요청 후 반환해준다
+
+````javascript
+/** ========== frontend request ========== */
+let graphqlQuery = {
+  query : `
+    posts( page : ${ page } ) {
+      posts {
+        _id
+        title
+        content
+        creator {
+          name 
+        }
+        createdAt
+      }
+      totalPosts
+    }
+  `
+}
+
+/** 서버측 어플리케이션에 컨텐츠 전송 */
+fetch( `http://localhost:8080/graphql` , {
+  method : 'POST',
+  body : JSON.stringify( graphqlQuery ),
+  headers : {
+    Authorization : `Bearer ${ this.props.token }`,
+    'Content-Type' : 'application/json'
+  }
+} )
+````
+

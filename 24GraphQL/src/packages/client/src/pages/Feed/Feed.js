@@ -57,7 +57,7 @@ class Feed extends Component {
     const graphqlQuery = {
       query : `
         {  
-          posts {
+          posts( page : ${ page } ) {
             posts {
               _id
               title
@@ -208,6 +208,11 @@ class Feed extends Component {
             updatedPosts[ postIndex ] = post;
           }
           else {
+            /**
+             * - 새게시물을 추가할경우 기존게시물을 안보이게하기 위하여
+             * --> 배열에서 제거
+             */
+            updatedPosts.pop();
             updatedPosts.unshift( post );
           }
           return {

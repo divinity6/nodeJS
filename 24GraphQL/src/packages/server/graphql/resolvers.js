@@ -100,8 +100,8 @@ module.exports = {
         } , 'somesupersecretsecret' , { expiresIn : '1h' } );
         return { token , userId : user._id.toString() }
     },
-    /** 게시물 전부 가져오기 */
-    posts : async ( args , req ) => {
+    /** 해당 페이지의 게시물 가져오기 */
+    posts : async ( { page } , req ) => {
 
         /** 검증되지 않은 사용자일 경우 처리 */
         if ( !req.isAuth ){
@@ -110,14 +110,28 @@ module.exports = {
             throw error;
         }
 
+        /** page 를 전송하지 않았을 경우에는 무조건 1페이지부터 시작 */
+        if ( !page ){
+            page = 1;
+        }
+        /** 보여줄 페이지 갯수 */
+        const perPage = 2;
         /** 전체 Post 를 가지고 온후, 전체 갯수를 반환함 */
         const totalPosts = await Post.find().countDocuments();
 
         const posts = await Post.find()
             /** sort : 데이터를 내림차순 정렬 - 최근에 작성된 순으로 정렬하여 반환 */
             .sort( { createdAt : -1 } )
+            /**
+             * - skip 메서드를 추가하면,
+             *   find 로 찾은 결과중 첫 번째부터 skip 갯수만큼 생략한다
+             */
+            .skip( ( page - 1 ) * perPage  )
+            /** limit 메서드는 find 로 가져오는 데이터양을 지정할 수 있다 */
+            .limit( perPage )
             /** 참조 중인 User 테이블에서 creator 필드를 채워서 반환 */
             .populate( 'creator' );
+
         return {
             posts : posts.map( p => ( {
                 ...p._doc ,
