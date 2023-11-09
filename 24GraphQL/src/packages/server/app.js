@@ -1,4 +1,5 @@
 const path = require( 'path' );
+const fs = require("fs");
 const express = require( 'express' );
 const { v4: uuidv4 } = require( 'uuid' );
 const bodyParser = require( 'body-parser' );
@@ -97,8 +98,30 @@ app.use( ( req , res , next ) => {
     next();
 } );
 
-/** GraphQL 동작전 token 체크 미들웨어에서 먼저 체크 */
+/** GraphQL 및 REST API 동작전 token 체크 미들웨어에서 먼저 체크 */
 app.use( auth );
+
+/** put 요청으로 이미지를 받아옴 */
+app.put( '/post-image' , ( req , res , next ) => {
+    /** 인증되지 않았다면, return 시키고 라우트 보호 */
+    if ( !req.isAuth ){
+        throw new Error( 'Not authenticated!' );
+    }
+    /**
+     * - 이미지를 전송하면 multer 에서 받은 이미지를 가공해서 file 객체에 넣어주기 때문에,
+     *   이미지가 들어오지 않았다면 이미지가 들어오지 않았다는 응답을 보내주면 된다
+     * */
+    if ( !req.file ){
+        return res.status( 200 ).json( { message : 'No file provided!' } )
+    }
+    /** 이미지 경로가 multer 에 들어왔다면( fileStorage 에 저장되었다면 ), 기존 파일에서 이미지를 제거한다 */
+    if ( req.body.oldPath ){
+        clearImage( req.body.oldPath );
+    }
+    /** 파일이 저장된 경로를 반환한다 */
+    return res.status( 201 ).json( { message : 'File stored.' , filePath : req.file.path } );
+
+} );
 
 /** post 요청으로 제한하지않고 모든 middleware 타입으로 넘겨준다 */
 app.use( '/graphql' , graphqlHTTP( {
@@ -149,3 +172,17 @@ mongoose
     .catch( err => {
         console.log("<<StartApp Err>>", err);
     } );
+
+/**
+ * - Image 삭제 헬퍼함수
+ *
+ * @param filePath
+ */
+const clearImage = filePath => {
+    /** 현재 path 에서 한단계 상위로 올라가서 */
+    filePath = path.join( __dirname , '..' , filePath );
+    /** 파일을 삭제하고, 오류 로그를 남긴다 */
+    fs.unlink( filePath , err => {
+        console.log( '<< image delete error >>' , err );
+    } )
+};

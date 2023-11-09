@@ -62,6 +62,7 @@ class Feed extends Component {
               _id
               title
               content
+              imageUrl
               creator {
                 name 
               }
@@ -144,40 +145,59 @@ class Feed extends Component {
     });
 
     const formData = new FormData();
-    formData.append( 'title' , postData.title );
-    formData.append( 'content' , postData.content );
+    // formData.append( 'title' , postData.title );
+    // formData.append( 'content' , postData.content );
     formData.append( 'image' , postData.image );
 
-    let graphqlQuery = {
-      query : `
-        mutation {
-          createPost( postInput : { 
-            title : "${ postData.title }" , 
-            content : "${ postData.content }" , 
-            imageUrl: "some url" 
-          } ) {
-            _id
-            title
-            content
-            imageUrl
-            creator {
-              name
-            }
-            createdAt
-          }
-        }
-      `
+    /** formData 의 이미지 처리는 editMode 일때 사용한다 */
+    if ( this.state.editPost ){
+      formData.append( 'oldPath' , this.state.editPost.imagePath );
     }
 
-    /** 서버측 어플리케이션에 컨텐츠 전송 */
-    fetch( `http://localhost:8080/graphql` , {
-      method : 'POST',
+    /** GraphQL 을 보내기전에, Image 를 저장하기 위해, 일반적인 http-request query 를 보낸다 */
+    fetch( `http://localhost:8080/post-image` , {
+      method : 'PUT',
       headers : {
         Authorization : `Bearer ${ this.props.token }`,
-        'Content-Type' : 'application/json'
       },
-      body : JSON.stringify( graphqlQuery ),
+      body : formData
     } )
+      .then( res => res.json() )
+      .then( fileResData => {
+        /** 서버에서 전송한 filePath 필드를 가져옴 */
+        const imageUrl = fileResData.filePath;
+
+        let graphqlQuery = {
+          query : `
+                    mutation {
+                      createPost( postInput : { 
+                        title : "${ postData.title }" , 
+                        content : "${ postData.content }" , 
+                        imageUrl: "${ imageUrl }" 
+                      } ) {
+                        _id
+                        title
+                        content
+                        imageUrl
+                        creator {
+                          name
+                        }
+                        createdAt
+                      }
+                    }
+                  `
+        }
+
+        /** 서버측 어플리케이션에 컨텐츠 전송 */
+        return fetch( `http://localhost:8080/graphql` , {
+          method : 'POST',
+          headers : {
+            Authorization : `Bearer ${ this.props.token }`,
+            'Content-Type' : 'application/json'
+          },
+          body : JSON.stringify( graphqlQuery ),
+        } );
+      } )
       .then(res => {
         return res.json();
       })
@@ -195,7 +215,8 @@ class Feed extends Component {
           title: resData.data.createPost.title,
           content: resData.data.createPost.content,
           creator: resData.data.createPost.creator,
-          createdAt: resData.data.createPost.createdAt
+          createdAt: resData.data.createPost.createdAt,
+          imagePath : resData.data.createPost.imageUrl,
         };
         this.setState(prevState => {
           let updatedPosts = [ ...prevState.posts ];

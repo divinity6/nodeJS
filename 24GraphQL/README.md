@@ -1375,3 +1375,167 @@ fetch( `http://localhost:8080/graphql` , {
 } )
 ````
 
+---
+
+### uploadImage
+
+- GraphQL 은 JSON 데이터로만 작업할 수 있다
+
+
+- 따라서, image formData 처리는, GraphQL 을 사용하는 것보다, REST API 를 사용하는 것이 효율적이다
+
+- 이미지를 반환하는 엔드포인트에서 이미지를 저장하고 경로를 반환하게하는 것이 가장 깔끔하다
+
+````javascript
+/** ===== app.js ===== */
+const path = require( 'path' );
+const fs = require("fs");
+const express = require( 'express' );
+const multer = require( 'multer' );
+const app = express();
+const auth = require( './middleware/auth' );
+
+/** 파일을 어디에 설정할지 설정 */
+const fileStorage = multer.diskStorage( {
+  /** multer 에서 처리한 파일을 저장할 위치 */
+  destination : ( req , file , callback ) => {
+    /**
+     * - 첫번째 param - 에러 메시지( 존재하면, 에러가 있는것으로 판단 )
+     *
+     * - 두번째 param - 파일을 저장할 경로
+     */
+    callback( null , path.join( __dirname , 'images' ) );
+  },
+  /** multer 에서 처리한 파일의 파일이름 */
+  filename : ( req , file , callback ) => {
+    /**
+     * - 첫번째 param - 에러 메시지( 존재하면, 에러가 있는것으로 판단 )
+     *
+     * - 두번째 param - 파일 이름
+     */
+    callback( null , `${ uuidv4() }-${ file.originalname }` );
+  }
+} );
+
+const fileFilter = ( req , file , callback ) => {
+  /**
+   * - 첫번째 param - 에러 메시지( 존재하면, 에러가 있는것으로 판단 )
+   *
+   * - 두번째 param - 해당 파일을 저장할지 여부
+   */
+  if ( 'image/png' === file.mimetype ||
+          'image/jpg' === file.mimetype ||
+          'image/jpeg' === file.mimetype ){
+    callback( null , true );
+  }
+  else {
+    callback( null , false );
+  }
+}
+
+/** image body 필드값을 가져온다 */
+app.use( multer( { storage : fileStorage , fileFilter } ).single( 'image' ) );
+
+/** GraphQL 및 REST API 동작전 token 체크 미들웨어에서 먼저 체크 */
+app.use( auth );
+
+/** put 요청으로 이미지를 받아옴 */
+app.put( '/post-image' , ( req , res , next ) => {
+  /** 인증되지 않았다면, return 시키고 라우트 보호 */
+  if ( !req.isAuth ){
+    throw new Error( 'Not authenticated!' );
+  }
+    
+  /**
+   * - 이미지를 전송하면 multer 에서 받은 이미지를 가공해서 file 객체에 넣어주기 때문에,
+   *   이미지가 들어오지 않았다면 이미지가 들어오지 않았다는 응답을 보내주면 된다
+   * */
+  if ( !req.file ){
+    return res.status( 200 ).json( { message : 'No file provided!' } )
+  }
+
+  /** 이미지 경로가 multer 에 들어왔다면( fileStorage 에 저장되었다면 ), 기존 파일에서 이미지를 제거한다 */
+  if ( req.body.oldPath ){
+    clearImage( req.body.oldPath );
+  }
+  /** 파일이 저장된 경로를 반환한다 */
+  return res.status( 201 ).json( { message : 'File stored.' , filePath : req.file.path } );
+
+} );
+
+/**
+ * - Image 삭제 헬퍼함수
+ *
+ * @param filePath
+ */
+const clearImage = filePath => {
+  /** 현재 path 에서 한단계 상위로 올라가서 */
+  filePath = path.join( __dirname , '..' , filePath );
+  /** 파일을 삭제하고, 오류 로그를 남긴다 */
+  fs.unlink( filePath , err => {
+    console.log( '<< image delete error >>' , err );
+  } )
+};
+
+````
+
+- 그 후 frontend 에서는 formData 에 image 를 채워서 보내주면 된다
+
+
+- frontend 에서 이미지 파일을 보낼때는 'Content-Type' : 'application/json' 필드를 제거해줘야 한다
+
+
+- 해당 이미지 바이너리 데이터가 너무크기 때문에 파싱하지 못한다
+
+````javascript
+/** ========== frontend request ========== */
+const formData = new FormData();
+// formData.append( 'title' , postData.title );
+// formData.append( 'content' , postData.content );
+formData.append( 'image' , postData.image );
+
+/** GraphQL 을 보내기전에, Image 를 저장하기 위해, 일반적인 http-request query 를 보낸다 */
+fetch( `http://localhost:8080/post-image` , {
+  method : 'PUT',
+  headers : {
+    Authorization : `Bearer ${ this.props.token }`,
+  },
+  body : formData
+} )
+  .then( res => res.json() )
+  .then( fileResData => {
+    /** 서버에서 전송한 filePath 필드를 가져옴 */
+    const imageUrl = fileResData.filePath;
+
+    let graphqlQuery = {
+      query : `
+              mutation {
+                createPost( postInput : { 
+                  title : "${ postData.title }" , 
+                  content : "${ postData.content }" , 
+                  imageUrl: "${ imageUrl }" 
+                } ) {
+                  _id
+                  title
+                  content
+                  imageUrl
+                  creator {
+                    name
+                  }
+                  createdAt
+                }
+              }
+            `
+    }
+
+    /** 서버측 어플리케이션에 컨텐츠 전송 */
+    return fetch( `http://localhost:8080/graphql` , {
+      method : 'POST',
+      headers : {
+        Authorization : `Bearer ${ this.props.token }`,
+        'Content-Type' : 'application/json'
+      },
+      body : JSON.stringify( graphqlQuery ),
+    } ) 
+  } );
+````
