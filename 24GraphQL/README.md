@@ -1458,8 +1458,11 @@ app.put( '/post-image' , ( req , res , next ) => {
   if ( req.body.oldPath ){
     clearImage( req.body.oldPath );
   }
+  /** 절대 경로로 저장했기 때문에 split 으로 잘라서 도메인 위치부터 불러와야 한다 */
+  const fullPath = req.file.path.split( '/' );
+  const imageUrl = `${ fullPath[ fullPath.length - 2 ] }/${ fullPath[ fullPath.length - 1 ] }`;
   /** 파일이 저장된 경로를 반환한다 */
-  return res.status( 201 ).json( { message : 'File stored.' , filePath : req.file.path } );
+  return res.status( 201 ).json( { message : 'File stored.' , filePath : imageUrl } );
 
 } );
 
@@ -1538,4 +1541,125 @@ fetch( `http://localhost:8080/post-image` , {
       body : JSON.stringify( graphqlQuery ),
     } ) 
   } );
+````
+
+---
+
+### getPost
+
+- 게시물 단건 가져오기
+
+
+- 단건의 게시물을 가져올때는, 서버 Schema 에 단건 게시물을 정의해주고, 프론트에서 해당 graphQL 에 요청하면 된다
+
+
+- schema 에 가져올 post 를 정의해야 entryPoint 로 이용할 수 있다
+
+````javascript
+/** ===== graphql/schema.js ===== */
+
+const { buildSchema } = require( 'graphql' );
+
+/** 하나의 entryPoint 를 사용하기 때문에, 이곳에 정의한다 */
+module.exports = buildSchema( `
+
+    type Post {
+        _id : ID!
+        title : String!
+        content : String!
+        imageUrl : String!
+        creator : User!
+        createdAt : String!
+        updatedAt : String!
+    }
+    
+    type RootQuery {
+        login( email : String!, password : String! ) : AuthData!
+        posts( page : Int ) : PostData!
+        post( id : ID! ) : Post!
+    }
+    
+    type PostData {
+        posts : [ Post! ]!
+        totalPosts : Int!
+    }
+
+    schema {
+        query : RootQuery
+        mutation : RootMutation
+    }
+` );
+````
+
+- 그 후, 해당 post 의 데이터를 처리할 Resolver 를 추가해준다
+
+````javascript
+/** ===== graphql/resolvers.js ===== */
+const validator = require( 'validator' );
+const User = require( '../models/user' );
+const Post = require( '../models/post' );
+
+/** 들어오는 Query 를 위해 실행되는 논리 정의 */
+/** id 로 단일 게시물 가져오기 */
+post : async ( { id } , req ) => {
+  /** 검증되지 않은 사용자일 경우 처리 */
+  if ( !req.isAuth ){
+    const error = new Error( 'Not authenticated!' );
+    error.code = 401;
+    throw error;
+  }
+
+  const post = await Post.findById( id )
+          /** 참조 중인 User 테이블에서 creator 필드를 채워서 반환 */
+          .populate( 'creator' );
+
+  /** 가져온 게시물이 없다면 에러를 띄운다 */
+  if ( !post ){
+    const error = new Error( 'No post found!' );
+    error.code = 404;
+    throw error;
+  }
+
+  return {
+    ...post._doc,
+    _id : post._id.toString(),
+    createdAt : post.createdAt.toISOString(),
+    updatedAt : post.updatedAt.toISOString(),
+  }
+}
+````
+
+- frontend 에서는 해당 메시지를 보낼때, graphql 에 요청하도록하면 된다
+
+
+- 요청을 보낼때 헷갈리지말아야할게 rootQuery 는 문자열로 반드시 {} 객체로 감싸야한다...
+  - 이거 깜빡해서 한참찾음...
+
+
+````javascript
+/** ========== frontend request ========== */
+const postId = this.props.match.params.postId;
+const graphqlQuery = {
+          query : `
+            {
+                post( id : "${ postId }" ) {
+                    title
+                    content
+                    imageUrl
+                    creator {
+                      name
+                    }
+                    createdAt
+                }
+            }
+        `
+        }
+fetch(`http://localhost:8080/graphql`, {
+  method : 'POST',
+  headers : {
+    Authorization : `Bearer ${ this.props.token }`,
+    'Content-Type' : 'application/json'
+  },
+  body : JSON.stringify( graphqlQuery )
+} );
 ````

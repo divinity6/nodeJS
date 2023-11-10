@@ -118,8 +118,11 @@ app.put( '/post-image' , ( req , res , next ) => {
     if ( req.body.oldPath ){
         clearImage( req.body.oldPath );
     }
+    /** 절대 경로로 저장했기 때문에 split 으로 잘라서 도메인 위치부터 불러와야 한다 */
+    const fullPath = req.file.path.split( '/' );
+    const imageUrl = `${ fullPath[ fullPath.length - 2 ] }/${ fullPath[ fullPath.length - 1 ] }`;
     /** 파일이 저장된 경로를 반환한다 */
-    return res.status( 201 ).json( { message : 'File stored.' , filePath : req.file.path } );
+    return res.status( 201 ).json( { message : 'File stored.' , filePath : imageUrl } );
 
 } );
 

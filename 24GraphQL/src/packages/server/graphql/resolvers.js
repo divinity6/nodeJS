@@ -211,5 +211,33 @@ module.exports = {
             createdAt : createdPost.createdAt.toISOString(),
             updatedAt : createdPost.updatedAt.toISOString(),
         }
+    },
+    /** id 로 단일 게시물 가져오기 */
+    post : async ( { id } , req ) => {
+        console.log( 'id' , id );
+        /** 검증되지 않은 사용자일 경우 처리 */
+        if ( !req.isAuth ){
+            const error = new Error( 'Not authenticated!' );
+            error.code = 401;
+            throw error;
+        }
+
+        const post = await Post.findById( id )
+            /** 참조 중인 User 테이블에서 creator 필드를 채워서 반환 */
+            .populate( 'creator' );
+
+        /** 가져온 게시물이 없다면 에러를 띄운다 */
+        if ( !post ){
+            const error = new Error( 'No post found!' );
+            error.code = 404;
+            throw error;
+        }
+
+        return {
+            ...post._doc,
+            _id : post._id.toString(),
+            createdAt : post.createdAt.toISOString(),
+            updatedAt : post.updatedAt.toISOString(),
+        }
     }
 };
